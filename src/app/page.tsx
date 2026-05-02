@@ -116,6 +116,30 @@ export default async function HomePage() {
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard authed={!!user} status={onboardingStatus} />
 
+      {/* 정부 혜택 추천 — 별도 모듈 진입점 (모바일 BottomNav가 꽉 차서 홈에 카드로 노출) */}
+      <section>
+        <Link
+          href="/benefits"
+          className="block bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-100 rounded-2xl p-5 md:p-6 transition"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[11px] font-medium text-indigo-700 mb-1">
+                정부 혜택 추천 · NEW
+              </div>
+              <h2 className="text-lg md:text-xl font-bold text-stone-900 mb-1">
+                받을 수 있는 정부 지원금, 한 번에
+              </h2>
+              <p className="text-sm text-stone-600 leading-relaxed">
+                중앙정부·구청·시청의 혜택을 통합 매칭. 소상공인·청년·신혼·출산
+                등 사각지대 없이.
+              </p>
+            </div>
+            <div className="shrink-0 text-indigo-700 text-2xl leading-none mt-1">›</div>
+          </div>
+        </Link>
+      </section>
+
       {/* KAMIS 실시간 시세 — 매일 갱신, 첫 방문자도 즉시 가치 */}
       {kamisPrices.length > 0 && (
         <section>
