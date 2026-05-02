@@ -151,7 +151,7 @@ export default function SearchPage() {
               <Link
                 key={p.id}
                 href={`/products/${p.id}`}
-                className="card-clickable bg-white border border-stone-200 hover:border-brand-300 active:bg-stone-50 rounded-lg p-4 flex justify-between"
+                className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
               >
                 <div className="min-w-0">
                   <div className="text-xs text-stone-500">

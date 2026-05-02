@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { StoreMarker } from "@/components/StoresMap";
+import DirectionsButton from "@/components/DirectionsButton";
 import {
   searchMartsNearby,
   searchConveniencesNearby,
@@ -254,7 +255,7 @@ export default function StoresPage() {
                     <div className="font-semibold">{s.name}</div>
                     <div className="text-xs text-stone-500">{s.address}</div>
                   </div>
-                  <div className="text-right ml-4 shrink-0">
+                  <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1">
                     {s.distanceKm !== null && s.distanceKm !== undefined && (
                       <div className="text-sm font-bold">
                         {s.distanceKm.toFixed(1)}km
@@ -263,6 +264,9 @@ export default function StoresPage() {
                     <div className="text-xs text-stone-500">
                       {s.priceCount}건 가격
                     </div>
+                    {s.lat > 0 && s.lng > 0 && (
+                      <DirectionsButton name={s.name} lat={s.lat} lng={s.lng} />
+                    )}
                   </div>
                 </li>
               );

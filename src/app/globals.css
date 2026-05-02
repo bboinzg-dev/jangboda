@@ -13,10 +13,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 모바일 터치 active state — 카드 클릭 시 시각 피드백 */
+/* 카드 클릭 시각 피드백 — hover/active 모두 명확하게 */
 .card-clickable {
-  @apply transition-transform;
+  @apply transition-all duration-150 cursor-pointer;
+  /* 카드 우측 상단에 화살표 표시로 클릭 가능 명시 */
+}
+.card-clickable:hover {
+  @apply border-brand-400 shadow-md -translate-y-0.5;
 }
 .card-clickable:active {
-  @apply scale-[0.98] bg-stone-50;
+  @apply scale-[0.97] shadow-sm bg-brand-50/40 transition-none;
+}
+/* 카드 우측 상단 클릭 화살표 */
+.card-clickable::after {
+  content: "→";
+  @apply absolute top-2 right-2 text-stone-300 transition-colors;
+}
+.card-clickable:hover::after {
+  @apply text-brand-500;
 }
