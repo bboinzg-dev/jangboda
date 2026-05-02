@@ -7,6 +7,7 @@ import CartProductSearch, {
   type SearchableProduct,
 } from "@/components/CartProductSearch";
 import { useFavorites } from "@/components/FavoritesProvider";
+import RecipeRecommendations from "@/components/RecipeRecommendations";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -144,6 +145,15 @@ export default function CartPage() {
 
   const cartCount = cart.reduce((n, c) => n + c.quantity, 0);
 
+  // 장바구니 상품명 리스트 — 레시피 추천에 전달
+  const cartProductNames = useMemo(
+    () =>
+      cart
+        .map((c) => productMap.get(c.productId)?.name)
+        .filter((n): n is string => !!n),
+    [cart, productMap]
+  );
+
   return (
     <div className="space-y-4 pb-24 md:pb-6">
       <div>
@@ -244,6 +254,11 @@ export default function CartPage() {
           </button>
         </section>
       </div>
+
+      {/* ── 장바구니 재료로 만들 수 있는 요리 추천 ── */}
+      {cartProductNames.length > 0 && (
+        <RecipeRecommendations productNames={cartProductNames} />
+      )}
 
       {/* ── 비교 결과 ── */}
       {filteredResults && filteredResults.length > 0 && (

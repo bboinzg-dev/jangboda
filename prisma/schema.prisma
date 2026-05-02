@@ -323,3 +323,80 @@ model HaccpFacility {
   @@index([bsshNameNorm])
   @@index([bizStatus])
 }
+
+// 농산물이력추적 (식품안전나라 I1790 + I1800)
+model AgriTrace {
+  id              String   @id @default(cuid())
+  histTraceRegNo  String   @unique             // HIST_TRACE_REG_NO
+  regInstName     String?                       // REG_INSTT_NM
+  rprsntPrdltName String                        // RPRSNT_PRDLST_NM (대표품목)
+  presidentName   String?                       // PRSDNT_NM
+  orgnName        String?                       // ORGN_NM (단체/농가명)
+  validBeginDate  String?                       // VALD_PRICE_BGN_DT
+  validEndDate    String?                       // VALD_PRICE_END_DT
+  partners        Json?                         // I1800 거래처 정보 [{grpName, presidentName, telno}]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([rprsntPrdltName])
+}
+
+// 조리식품 레시피 (식품안전나라 COOKRCP01)
+model Recipe {
+  id              String   @id @default(cuid())
+  recipeSeq       String   @unique             // RCP_SEQ
+  name            String                        // RCP_NM
+  cookingMethod   String?                       // RCP_WAY2
+  category        String?                       // RCP_PAT2 (반찬/국/후식 등)
+  servingWeight   String?                       // INFO_WGT
+  caloriesKcal    Float?                        // INFO_ENG
+  carbsG          Float?                        // INFO_CAR
+  proteinG        Float?                        // INFO_PRO
+  fatG            Float?                        // INFO_FAT
+  sodiumMg        Float?                        // INFO_NA
+  hashtags        String?                       // HASH_TAG
+  imageMain       String?                       // ATT_FILE_NO_MAIN
+  imageBig        String?                       // ATT_FILE_NO_MK
+  ingredientsRaw  String?                       // RCP_PARTS_DTLS (원본 텍스트)
+  ingredientsList String[]                      // 파싱한 재료 토큰 (검색용)
+  steps           Json?                         // [{idx, text, image}]
+  tip             String?                       // RCP_NA_TIP
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([name])
+}
+
+// 건강기능식품 영양카테고리 (식품안전나라 I0760)
+model HealthFunctionalCategory {
+  id              String   @id @default(cuid())
+  groupCode       String   @unique             // HELT_ITM_GRP_CD
+  groupName       String                        // HELT_ITM_GRP_NM
+  largeCategoryCode String?                     // LCLAS_CD
+  largeCategoryName String?                     // LCLAS_NM
+  midCategoryCode   String?                     // MLSFC_CD
+  midCategoryName   String?                     // MLSFC_NM
+  smallCategoryCode String?                     // SCLAS_CD
+  smallCategoryName String?                     // SCLAS_NM
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([groupName])
+}
+
+// 건강기능식품 개별인정형 원료 (식품안전나라 I-0050)
+model HealthFunctionalRawMaterial {
+  id              String   @id @default(cuid())
+  recognitionNo   String   @unique             // HF_FNCLTY_MTRAL_RCOGN_NO
+  rawMaterialName String                        // RAWMTRL_NM
+  weightUnit      String?                       // WT_UNIT
+  dailyIntakeMin  String?                       // DAY_INTK_LOWLIMIT
+  dailyIntakeMax  String?                       // DAY_INTK_HIGHLIMIT
+  primaryFunction String?                       // PRIMARY_FNCLTY (주된 기능성)
+  warning         String?                       // IFTKN_ATNT_MATR_CN (섭취 주의사항)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([rawMaterialName])
+}

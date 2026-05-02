@@ -9,6 +9,8 @@ import PriceListClient, { type PriceRowData } from "@/components/PriceListClient
 import EmptyState from "@/components/EmptyState";
 import IngredientsPanel from "@/components/IngredientsPanel";
 import NutritionPanel from "@/components/NutritionPanel";
+import AgriTraceLookup from "@/components/AgriTraceLookup";
+import HealthFunctionalPanel from "@/components/HealthFunctionalPanel";
 
 export const revalidate = 30;
 
@@ -243,6 +245,18 @@ export default async function ProductDetailPage({
 
       {/* 영양 정보 — 식품영양성분DB는 가공식품/농수산물 모두 보유 → 모든 카테고리 표시 */}
       <NutritionPanel productId={product.id} />
+
+      {/* 농산물이력추적 — 농수산물(KAMIS)에만 표시 */}
+      {product.category === "농수산물" && (
+        <AgriTraceLookup productName={product.name} />
+      )}
+
+      {/* 건강기능식품 정보 — 매칭 없고 일반 상품 카테고리면 자체적으로 미표시 */}
+      <HealthFunctionalPanel
+        productId={product.id}
+        productName={product.name}
+        productCategory={product.category}
+      />
 
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
       {offlineRows.length === 0 && onlineRows.length === 0 ? (

@@ -29,6 +29,18 @@
     {
       "path": "/api/cron/sync-benefits",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/sync/agritrace",
+      "schedule": "0 5 * * 0"
+    },
+    {
+      "path": "/api/sync/recipes",
+      "schedule": "0 3 1 * *"
+    },
+    {
+      "path": "/api/sync/health-functional",
+      "schedule": "0 6 1 * *"
     }
   ],
   "functions": {
@@ -37,6 +49,9 @@
     "src/app/api/sync/csv/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/recalls/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/haccp/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/agritrace/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/recipes/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/health-functional/route.ts": { "maxDuration": 60 },
     "src/app/api/alerts/check/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 }
