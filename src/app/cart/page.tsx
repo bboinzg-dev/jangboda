@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
+import ProductSearchPicker from "@/components/ProductSearchPicker";
 
-type Product = { id: string; name: string; brand: string | null };
+type Product = {
+  id: string;
+  name: string;
+  brand: string | null;
+  category?: string;
+  unit?: string;
+};
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
   productId: string;
@@ -34,7 +41,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/products?limit=100")
+    fetch("/api/products?limit=500")
       .then((r) => r.json())
       .then((d) => setProducts(d.products));
   }, []);
@@ -82,21 +89,13 @@ export default function CartPage() {
         {cart.map((item, idx) => (
           <div
             key={idx}
-            className="flex gap-2 items-center text-sm"
+            className="flex gap-2 items-start text-sm"
           >
-            <select
-              value={item.productId}
-              onChange={(e) => updateItem(idx, { productId: e.target.value })}
-              className="flex-1 min-w-0 px-3 py-2 border border-stone-300 rounded"
-              aria-label="상품 선택"
-            >
-              <option value="">상품 선택...</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <ProductSearchPicker
+              products={products}
+              selectedId={item.productId}
+              onSelect={(id) => updateItem(idx, { productId: id })}
+            />
             <input
               type="number"
               min={1}
@@ -104,7 +103,7 @@ export default function CartPage() {
               onChange={(e) =>
                 updateItem(idx, { quantity: parseInt(e.target.value) || 1 })
               }
-              className="w-16 px-2 py-2 border border-stone-300 rounded text-center shrink-0"
+              className="w-16 px-2 py-2 border border-stone-300 rounded text-center shrink-0 mt-0"
               aria-label="수량"
             />
             <button

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
+import CameraCapture from "@/components/CameraCapture";
 
 type ParsedItem = {
   rawName: string;
@@ -27,8 +28,8 @@ type Product = { id: string; name: string; brand: string | null };
 
 export default function UploadPage() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-  // 미리보기용 data URL (썸네일 표시)
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
@@ -37,6 +38,14 @@ export default function UploadPage() {
   const [items, setItems] = useState<ParsedItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
+
+  function handleCameraCapture(dataUrl: string) {
+    setImagePreview(dataUrl);
+    setImageBase64(dataUrl.split(",")[1] ?? null);
+    setCameraOpen(false);
+    setResult(null);
+    setSubmitResult(null);
+  }
 
   async function loadStores() {
     if (stores.length > 0) return;
@@ -114,6 +123,12 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
+      {cameraOpen && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onCancel={() => setCameraOpen(false)}
+        />
+      )}
       <h1 className="text-2xl font-bold">📸 영수증 올리기</h1>
       <p className="text-stone-600">
         영수증 사진을 올리면 자동으로 품목을 인식해 가격을 등록합니다.
@@ -128,17 +143,46 @@ export default function UploadPage() {
           <label className="block text-sm font-medium mb-2">
             영수증 이미지 (선택)
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleFile(f);
-            }}
-            aria-label="영수증 사진"
-            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-          />
+
+          {/* 두 가지 입력 방법 */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="flex flex-col items-center gap-1 py-4 border-2 border-brand-200 hover:border-brand-400 hover:bg-brand-50 rounded-lg transition-colors"
+            >
+              <span className="text-2xl">📸</span>
+              <span className="text-sm font-medium text-brand-700">
+                카메라로 찍기
+              </span>
+              <span className="text-[10px] text-stone-500">즉시 촬영</span>
+            </button>
+
+            <label className="flex flex-col items-center gap-1 py-4 border-2 border-stone-200 hover:border-stone-400 hover:bg-stone-50 rounded-lg cursor-pointer transition-colors">
+              <span className="text-2xl">🖼️</span>
+              <span className="text-sm font-medium text-stone-700">
+                갤러리에서 선택
+              </span>
+              <span className="text-[10px] text-stone-500">기존 사진</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                }}
+                aria-label="영수증 사진"
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {imagePreview && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+              <span>✓</span>
+              <span>사진 준비됨 — 아래 "OCR 시작" 버튼을 누르세요</span>
+            </div>
+          )}
           <div className="text-xs text-stone-500 mt-1">
             이미지를 안 올려도 데모 데이터로 흐름을 확인할 수 있어요.
           </div>
