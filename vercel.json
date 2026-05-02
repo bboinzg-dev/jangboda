@@ -7,18 +7,23 @@
       "schedule": "0 16 * * *"
     },
     {
-      "path": "/api/sync/naver?limit=20&onlyMajor=true",
-      "schedule": "0 17 * * 1"
+      "path": "/api/sync/naver?limit=10&onlyMajor=true",
+      "schedule": "0 17 * * *"
     },
     {
       "path": "/api/alerts/check",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/benefits-deadline",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {
     "src/app/api/sync/naver/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/kamis/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/csv/route.ts": { "maxDuration": 60 },
-    "src/app/api/alerts/check/route.ts": { "maxDuration": 60 }
+    "src/app/api/alerts/check/route.ts": { "maxDuration": 60 },
+    "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 }
   }
 }

@@ -126,6 +126,27 @@ export default function CategoryForm({ category, initialValues }: Props) {
         {category === "household" && (
           <HouseholdFields values={values} setField={setField} />
         )}
+        {category === "incomeAssets" && (
+          <IncomeAssetsFields values={values} setField={setField} />
+        )}
+        {category === "employment" && (
+          <EmploymentFields values={values} setField={setField} />
+        )}
+        {category === "welfareStatus" && (
+          <WelfareStatusFields values={values} setField={setField} />
+        )}
+        {category === "children" && (
+          <ChildrenFields values={values} setField={setField} />
+        )}
+        {category === "health" && (
+          <HealthFields values={values} setField={setField} />
+        )}
+        {category === "education" && (
+          <EducationFields values={values} setField={setField} />
+        )}
+        {category === "special" && (
+          <SpecialFields values={values} setField={setField} />
+        )}
       </div>
 
       {/* 에러 표시 */}
@@ -232,7 +253,7 @@ function TextInput({
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "placeholder" | "type">) {
   return (
     <input
       type={type}
@@ -583,5 +604,504 @@ function HouseholdFields({ values, setField }: FieldProps) {
         />
       ))}
     </div>
+  );
+}
+
+// ───────── 만원 환산 헬퍼 ─────────
+function ManwonHint({ raw }: { raw: string }) {
+  const n = Number(raw);
+  if (!isFinite(n) || n <= 0) return null;
+  const manwon = Math.round(n / 10000).toLocaleString();
+  return <p className="mt-1 text-xs text-indigo-600">약 {manwon} 만원</p>;
+}
+
+// ───────── incomeAssets ─────────
+function IncomeAssetsFields({ values, setField }: FieldProps) {
+  const ownsHome = getBool(values, "ownsHome");
+  const ownsCar = getBool(values, "ownsCar");
+  return (
+    <>
+      <div>
+        <FieldLabel>건강보험 유형</FieldLabel>
+        <RadioGroup
+          name="insuranceType"
+          value={getStr(values, "insuranceType")}
+          onChange={(v) => setField("insuranceType", v)}
+          options={[
+            { value: "employer", label: "직장가입자" },
+            { value: "regional", label: "지역가입자" },
+            { value: "dependent", label: "피부양자" },
+            { value: "none", label: "없음" },
+          ]}
+        />
+      </div>
+
+      <div>
+        <FieldLabel hint="원 단위 정수 (예: 120000)">
+          월 건강보험료
+        </FieldLabel>
+        <TextInput
+          type="number"
+          value={getNum(values, "monthlyInsurancePremiumKrw")}
+          onChange={(v) =>
+            setField(
+              "monthlyInsurancePremiumKrw",
+              v === "" ? undefined : Number(v),
+            )
+          }
+          placeholder="120000"
+          min={0}
+        />
+        <ManwonHint raw={getNum(values, "monthlyInsurancePremiumKrw")} />
+      </div>
+
+      <div>
+        <FieldLabel hint="원 단위 정수 (예: 40000000 = 4천만원)">
+          연소득
+        </FieldLabel>
+        <TextInput
+          type="number"
+          value={getNum(values, "annualIncomeKrw")}
+          onChange={(v) =>
+            setField("annualIncomeKrw", v === "" ? undefined : Number(v))
+          }
+          placeholder="40000000"
+          min={0}
+        />
+        <ManwonHint raw={getNum(values, "annualIncomeKrw")} />
+      </div>
+
+      <div>
+        <FieldLabel hint="중위소득 대비 %">소득 구간 비율</FieldLabel>
+        <TextInput
+          type="number"
+          value={getNum(values, "incomeBracketRatio")}
+          onChange={(v) =>
+            setField("incomeBracketRatio", v === "" ? undefined : Number(v))
+          }
+          placeholder="예: 50, 100, 150"
+          min={0}
+          max={500}
+        />
+        <p className="mt-1 text-xs text-stone-400">
+          모르면 비워두세요. 연소득과 가구원 수로 추정 가능합니다.
+        </p>
+      </div>
+
+      <Toggle
+        label="자가 주택 보유"
+        value={ownsHome}
+        onChange={(v) => setField("ownsHome", v)}
+      />
+      {ownsHome && (
+        <div>
+          <FieldLabel hint="원 단위 (공시가격 기준 권장)">
+            주택 가격
+          </FieldLabel>
+          <TextInput
+            type="number"
+            value={getNum(values, "homeValueKrw")}
+            onChange={(v) =>
+              setField("homeValueKrw", v === "" ? undefined : Number(v))
+            }
+            placeholder="300000000"
+            min={0}
+          />
+          <ManwonHint raw={getNum(values, "homeValueKrw")} />
+        </div>
+      )}
+
+      <Toggle
+        label="자동차 보유"
+        value={ownsCar}
+        onChange={(v) => setField("ownsCar", v)}
+      />
+      {ownsCar && (
+        <div>
+          <FieldLabel hint="원 단위 (차량 가액)">자동차 가격</FieldLabel>
+          <TextInput
+            type="number"
+            value={getNum(values, "carValueKrw")}
+            onChange={(v) =>
+              setField("carValueKrw", v === "" ? undefined : Number(v))
+            }
+            placeholder="20000000"
+            min={0}
+          />
+          <ManwonHint raw={getNum(values, "carValueKrw")} />
+        </div>
+      )}
+
+      <div>
+        <FieldLabel hint="예금/적금/주식 등 합계">금융자산</FieldLabel>
+        <TextInput
+          type="number"
+          value={getNum(values, "financialAssetsKrw")}
+          onChange={(v) =>
+            setField("financialAssetsKrw", v === "" ? undefined : Number(v))
+          }
+          placeholder="10000000"
+          min={0}
+        />
+        <ManwonHint raw={getNum(values, "financialAssetsKrw")} />
+      </div>
+    </>
+  );
+}
+
+// ───────── employment ─────────
+function EmploymentFields({ values, setField }: FieldProps) {
+  const status = getStr(values, "status");
+  return (
+    <>
+      <div>
+        <FieldLabel>고용 상태</FieldLabel>
+        <RadioGroup
+          name="status"
+          value={status}
+          onChange={(v) => setField("status", v)}
+          options={[
+            { value: "employed", label: "재직 중" },
+            { value: "jobseeking", label: "구직 중" },
+            { value: "unemployed", label: "실업" },
+            { value: "retired", label: "은퇴" },
+            { value: "student", label: "학생" },
+          ]}
+        />
+      </div>
+
+      {status === "employed" && (
+        <div>
+          <FieldLabel>고용 형태</FieldLabel>
+          <RadioGroup
+            name="employmentType"
+            value={getStr(values, "employmentType")}
+            onChange={(v) => setField("employmentType", v)}
+            options={[
+              { value: "regular", label: "정규직" },
+              { value: "contract", label: "계약직" },
+              { value: "daily", label: "일용직" },
+              { value: "platform", label: "플랫폼 노동" },
+              { value: "freelance", label: "프리랜서" },
+            ]}
+          />
+        </div>
+      )}
+
+      <div className="divide-y divide-stone-100">
+        <Toggle
+          label="4대보험 가입"
+          value={getBool(values, "hasFourInsurances")}
+          onChange={(v) => setField("hasFourInsurances", v)}
+        />
+        <Toggle
+          label="경력단절 (출산/육아 등으로 일을 쉰 적 있음)"
+          value={getBool(values, "isCareerInterrupted")}
+          onChange={(v) => setField("isCareerInterrupted", v)}
+        />
+      </div>
+    </>
+  );
+}
+
+// ───────── welfareStatus ─────────
+function WelfareStatusFields({ values, setField }: FieldProps) {
+  const grade = getStr(values, "disabilityGrade");
+  return (
+    <>
+      <div>
+        <FieldLabel>기초생활수급 유형</FieldLabel>
+        <RadioGroup
+          name="basicLivelihoodType"
+          value={getStr(values, "basicLivelihoodType")}
+          onChange={(v) => setField("basicLivelihoodType", v)}
+          options={[
+            { value: "livelihood", label: "생계급여" },
+            { value: "medical", label: "의료급여" },
+            { value: "housing", label: "주거급여" },
+            { value: "education", label: "교육급여" },
+            { value: "none", label: "해당 없음" },
+          ]}
+        />
+      </div>
+
+      <Toggle
+        label="차상위 계층"
+        value={getBool(values, "isNearPoor")}
+        onChange={(v) => setField("isNearPoor", v)}
+      />
+
+      <div>
+        <FieldLabel>장애 등급</FieldLabel>
+        <RadioGroup
+          name="disabilityGrade"
+          value={grade}
+          onChange={(v) => setField("disabilityGrade", v)}
+          options={[
+            { value: "severe", label: "중증" },
+            { value: "mild", label: "경증" },
+            { value: "none", label: "없음" },
+          ]}
+        />
+      </div>
+
+      {grade && grade !== "none" && (
+        <div>
+          <FieldLabel hint="예: 지체, 시각, 청각 등">장애 유형</FieldLabel>
+          <TextInput
+            value={getStr(values, "disabilityType")}
+            onChange={(v) => setField("disabilityType", v)}
+            placeholder="예: 지체장애"
+          />
+        </div>
+      )}
+
+      <div className="divide-y divide-stone-100">
+        <Toggle
+          label="국가유공자"
+          value={getBool(values, "isVeteran")}
+          onChange={(v) => setField("isVeteran", v)}
+        />
+        <Toggle
+          label="보훈 대상자"
+          value={getBool(values, "isHonorRecipient")}
+          onChange={(v) => setField("isHonorRecipient", v)}
+        />
+      </div>
+    </>
+  );
+}
+
+// ───────── children ─────────
+type ChildItem = { birthYear?: number; stage?: string };
+
+function ChildrenFields({ values, setField }: FieldProps) {
+  const raw = values["children"];
+  const initial: ChildItem[] = Array.isArray(raw) ? (raw as ChildItem[]) : [];
+  const [list, setList] = useState<ChildItem[]>(initial);
+
+  function update(next: ChildItem[]) {
+    setList(next);
+    setField("children", next);
+  }
+  function add() {
+    update([...list, {}]);
+  }
+  function remove(idx: number) {
+    update(list.filter((_, i) => i !== idx));
+  }
+  function patch(idx: number, key: keyof ChildItem, value: unknown) {
+    const next = list.map((item, i) =>
+      i === idx ? { ...item, [key]: value } : item,
+    );
+    update(next);
+  }
+
+  const stageOptions = [
+    { value: "infant", label: "영아 (0~2세)" },
+    { value: "preschool", label: "유아 (3~5세)" },
+    { value: "elementary", label: "초등학생" },
+    { value: "middle", label: "중학생" },
+    { value: "high", label: "고등학생" },
+    { value: "university", label: "대학생" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {list.length === 0 && (
+        <p className="text-sm text-stone-500">
+          자녀가 없거나 입력하지 않으려면 그대로 두세요.
+        </p>
+      )}
+
+      {list.map((child, idx) => (
+        <div
+          key={idx}
+          className="border border-stone-200 rounded-lg p-4 space-y-3"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-stone-700">
+              자녀 {idx + 1}
+            </span>
+            <button
+              type="button"
+              onClick={() => remove(idx)}
+              className="text-xs text-rose-500 hover:text-rose-700"
+            >
+              삭제
+            </button>
+          </div>
+
+          <div>
+            <FieldLabel hint="예: 2018">출생연도</FieldLabel>
+            <TextInput
+              type="number"
+              value={child.birthYear !== undefined ? String(child.birthYear) : ""}
+              onChange={(v) =>
+                patch(idx, "birthYear", v === "" ? undefined : Number(v))
+              }
+              placeholder="2018"
+              min={1900}
+              max={2030}
+            />
+          </div>
+
+          <div>
+            <FieldLabel>학령</FieldLabel>
+            <Select
+              value={child.stage ?? ""}
+              onChange={(v) => patch(idx, "stage", v === "" ? undefined : v)}
+              options={stageOptions}
+            />
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={add}
+        className="w-full bg-white hover:bg-indigo-50 border border-dashed border-indigo-300 text-indigo-600 py-2.5 rounded-lg font-medium text-sm"
+      >
+        + 자녀 추가
+      </button>
+    </div>
+  );
+}
+
+// ───────── health ─────────
+function HealthFields({ values, setField }: FieldProps) {
+  const isPregnant = getBool(values, "isPregnant");
+  const hasChronic = getBool(values, "hasChronicCondition");
+
+  // chronicConditions는 배열로 저장. 입력 UI는 콤마로 구분된 텍스트.
+  const conditionsArr = Array.isArray(values["chronicConditions"])
+    ? (values["chronicConditions"] as string[])
+    : [];
+  const conditionsText = conditionsArr.join(", ");
+
+  return (
+    <>
+      <Toggle
+        label="임신 중"
+        value={isPregnant}
+        onChange={(v) => setField("isPregnant", v)}
+      />
+
+      {isPregnant && (
+        <div>
+          <FieldLabel>출산 예정일</FieldLabel>
+          <TextInput
+            type="date"
+            value={getStr(values, "expectedDeliveryDate")}
+            onChange={(v) => setField("expectedDeliveryDate", v)}
+          />
+        </div>
+      )}
+
+      <Toggle
+        label="만성질환 있음"
+        value={hasChronic}
+        onChange={(v) => setField("hasChronicCondition", v)}
+      />
+
+      {hasChronic && (
+        <div>
+          <FieldLabel hint="콤마(,)로 구분해서 입력">만성질환 목록</FieldLabel>
+          <TextInput
+            value={conditionsText}
+            onChange={(v) => {
+              const arr = v
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+              setField(
+                "chronicConditions",
+                arr.length > 0 ? arr : undefined,
+              );
+            }}
+            placeholder="예: 당뇨, 고혈압"
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+// ───────── education ─────────
+function EducationFields({ values, setField }: FieldProps) {
+  return (
+    <>
+      <div>
+        <FieldLabel>최종 학력</FieldLabel>
+        <RadioGroup
+          name="educationLevel"
+          value={getStr(values, "educationLevel")}
+          onChange={(v) => setField("educationLevel", v)}
+          options={[
+            { value: "highSchool", label: "고졸" },
+            { value: "college", label: "전문대졸" },
+            { value: "university", label: "대졸" },
+            { value: "graduate", label: "대학원 이상" },
+          ]}
+        />
+      </div>
+
+      <div className="divide-y divide-stone-100">
+        <Toggle
+          label="현재 재학 중"
+          value={getBool(values, "isCurrentlyEnrolled")}
+          onChange={(v) => setField("isCurrentlyEnrolled", v)}
+        />
+        <Toggle
+          label="학자금 대출 보유"
+          value={getBool(values, "hasStudentLoan")}
+          onChange={(v) => setField("hasStudentLoan", v)}
+        />
+      </div>
+    </>
+  );
+}
+
+// ───────── special ─────────
+function SpecialFields({ values, setField }: FieldProps) {
+  return (
+    <>
+      <div>
+        <FieldLabel>병역 상태</FieldLabel>
+        <RadioGroup
+          name="militaryStatus"
+          value={getStr(values, "militaryStatus")}
+          onChange={(v) => setField("militaryStatus", v)}
+          options={[
+            { value: "serving", label: "복무 중" },
+            { value: "discharged", label: "제대" },
+            { value: "exempt", label: "면제" },
+            { value: "none", label: "해당 없음" },
+          ]}
+        />
+      </div>
+
+      <div className="divide-y divide-stone-100">
+        <Toggle
+          label="외국인"
+          value={getBool(values, "isForeigner")}
+          onChange={(v) => setField("isForeigner", v)}
+        />
+        <Toggle
+          label="농업인 (영농 종사)"
+          value={getBool(values, "isFarmer")}
+          onChange={(v) => setField("isFarmer", v)}
+        />
+        <Toggle
+          label="청년 (만 19~39세)"
+          value={getBool(values, "isYouth")}
+          onChange={(v) => setField("isYouth", v)}
+        />
+      </div>
+
+      <p className="text-xs text-stone-400">
+        청년 지원 사업 대부분이 만 19~39세를 기준으로 합니다. (사업별 상이)
+      </p>
+    </>
   );
 }

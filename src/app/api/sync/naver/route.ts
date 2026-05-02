@@ -60,7 +60,10 @@ export async function POST(req: NextRequest) {
   if (authErr) return authErr;
 
   const { searchParams } = new URL(req.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+  // default 10 — 60초 timeout 안전 마진 (이전 20은 504 가끔 발생)
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "10"), 30);
+  const startedAt = Date.now();
+  const TIMEOUT_BUDGET_MS = 50_000; // Vercel 60s에서 10s 여유
   const onlyMajor = searchParams.get("onlyMajor") === "true";
 
   const products = await prisma.product.findMany({
@@ -175,6 +178,8 @@ export async function POST(req: NextRequest) {
     storesCreated,
     usedMockCount,
     skippedNonMajor,
+    abortedEarly,
+    elapsedMs: Date.now() - startedAt,
     samples: samples.slice(0, 5),
   });
 }
