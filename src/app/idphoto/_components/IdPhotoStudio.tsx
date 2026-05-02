@@ -1,9 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CameraCapture from "@/components/CameraCapture";
 
-type SpecPublic = {
+// 정책 타입은 specs.ts와 동일하게 클라이언트에 복제 (server-only 모듈을 import하지 않기 위함)
+export type BackgroundKey =
+  | "white"
+  | "off_white"
+  | "light_gray"
+  | "light_blue"
+  | "dark_gray"
+  | "light_gray_gradient"
+  | "light_blue_gradient"
+  | "sky_blue_gradient"
+  | "navy_gradient";
+
+export type BackgroundStyle = "solid" | "gradient";
+
+export type BackgroundPolicy =
+  | { kind: "strict_white" }
+  | { kind: "white_preferred"; allowed: BackgroundKey[] }
+  | { kind: "free"; recommended: BackgroundKey };
+
+export type SpecPublic = {
   idx: number;
   name: string;
   display: string;
@@ -11,7 +30,32 @@ type SpecPublic = {
   width_px: number;
   height_px: number;
   desc: string;
+  backgroundPolicy: BackgroundPolicy;
+  regulationNote: string;
 };
+
+export type BackgroundOption = {
+  key: BackgroundKey;
+  label: string;
+  style: BackgroundStyle;
+  swatch: string;
+  blurb: string;
+};
+
+function isBackgroundAllowed(
+  policy: BackgroundPolicy,
+  key: BackgroundKey,
+): boolean {
+  if (policy.kind === "strict_white") return key === "white";
+  if (policy.kind === "white_preferred") return policy.allowed.includes(key);
+  return true;
+}
+
+function getDefaultBackground(policy: BackgroundPolicy): BackgroundKey {
+  if (policy.kind === "strict_white") return "white";
+  if (policy.kind === "white_preferred") return "white";
+  return policy.recommended;
+}
 
 const ACCEPT_MIME = "image/jpeg,image/png,image/webp";
 const MAX_LONG_EDGE = 2048;
@@ -98,8 +142,17 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
+export default function IdPhotoStudio({
+  specs,
+  backgroundOptions,
+}: {
+  specs: SpecPublic[];
+  backgroundOptions: BackgroundOption[];
+}) {
   const [typeIdx, setTypeIdx] = useState(0);
+  const [bgKey, setBgKey] = useState<BackgroundKey>(
+    getDefaultBackground(specs[0].backgroundPolicy),
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMime, setImageMime] = useState<string | null>(null);
@@ -111,6 +164,15 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const spec = specs[typeIdx];
+
+  // 종류 변경 시 정책에 맞춰 배경 자동 보정 (현재 선택이 허용되지 않으면 기본값으로)
+  useEffect(() => {
+    if (!isBackgroundAllowed(spec.backgroundPolicy, bgKey)) {
+      setBgKey(getDefaultBackground(spec.backgroundPolicy));
+    }
+    // bgKey가 종속적이라 spec 변경 시에만 보정
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeIdx]);
 
   async function ingestSource(source: File | Blob) {
     setError(null);
@@ -155,6 +217,7 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           typeIdx,
+          backgroundKey: bgKey,
           imageBase64,
           mimeType: imageMime,
         }),
@@ -286,6 +349,64 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
           ))}
         </select>
         <p className="text-xs text-stone-500 mt-2">{spec.desc}</p>
+        <div className="mt-3 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+          📜 <b>배경 규정:</b> {spec.regulationNote}
+        </div>
+      </section>
+
+      <section className="bg-white border border-stone-200 rounded-2xl p-5">
+        <h2 className="font-semibold mb-1">3. 배경색</h2>
+        <p className="text-xs text-stone-500 mb-3">
+          {spec.backgroundPolicy.kind === "strict_white"
+            ? "이 종류는 공식 규정상 흰색 단색만 사용 가능합니다."
+            : spec.backgroundPolicy.kind === "white_preferred"
+              ? "흰색 권장. 옅은 단색까지 선택 가능 (그라데이션은 비공식)."
+              : "자유롭게 선택. 이력서·명함판은 그라데이션이 한국 사진관 표준입니다."}
+        </p>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          {backgroundOptions.map((opt) => {
+            const allowed = isBackgroundAllowed(spec.backgroundPolicy, opt.key);
+            const selected = bgKey === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                disabled={!allowed}
+                onClick={() => allowed && setBgKey(opt.key)}
+                title={
+                  allowed
+                    ? `${opt.label} — ${opt.blurb}`
+                    : `${opt.label} — 이 종류에서는 사용할 수 없습니다`
+                }
+                className={`relative rounded-lg border-2 p-1.5 transition ${
+                  selected
+                    ? "border-brand-500 ring-2 ring-brand-200"
+                    : allowed
+                      ? "border-stone-200 hover:border-stone-400"
+                      : "border-stone-100 opacity-40 cursor-not-allowed"
+                }`}
+              >
+                <div
+                  className="aspect-square rounded w-full border border-stone-200"
+                  style={{ background: opt.swatch }}
+                />
+                <div className="text-[10px] mt-1 text-stone-700 truncate">
+                  {opt.label}
+                </div>
+                {opt.style === "gradient" && (
+                  <div className="absolute top-1 right-1 text-[8px] bg-stone-900/70 text-white rounded px-1 leading-tight">
+                    GR
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-stone-500 mt-3 leading-relaxed">
+          <b>현재 선택:</b>{" "}
+          {backgroundOptions.find((o) => o.key === bgKey)?.label} —{" "}
+          {backgroundOptions.find((o) => o.key === bgKey)?.blurb}
+        </p>
       </section>
 
       <section className="grid grid-cols-2 gap-3">

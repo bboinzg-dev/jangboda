@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { IDPHOTO_COOKIE, isCookieValid } from "@/lib/idphoto/auth";
-import { PHOTO_SPECS, getPrompt } from "@/lib/idphoto/specs";
+import {
+  PHOTO_SPECS,
+  getPrompt,
+  isBackgroundAllowed,
+  BACKGROUND_OPTIONS,
+  type BackgroundKey,
+} from "@/lib/idphoto/specs";
 import { callGeminiForIdPhoto } from "@/lib/idphoto/gemini";
 
 // 큰 이미지 처리를 위해 body 크기 제한 명시.
@@ -16,11 +22,13 @@ const ALLOWED_MIMES = new Set([
   "image/webp",
 ]);
 
+const VALID_BG_KEYS = new Set<string>(BACKGROUND_OPTIONS.map((b) => b.key));
+
 // POST /api/idphoto/process
 // 본문(JSON):
-//   { typeIdx: number (0-9), imageBase64: string, mimeType: string }
+//   { typeIdx: number (0-9), backgroundKey?: string, imageBase64: string, mimeType: string }
 //   imageBase64 는 data: 접두어 없이 순수 base64.
-// 응답: { imageBase64, mimeType, spec: { name, size, width_px, height_px } }
+// 응답: { imageBase64, mimeType, spec, backgroundKey }
 export async function POST(req: NextRequest) {
   // 1) 쿠키 게이트 — 통과해야만 Gemini API(유료) 호출
   const cookie = cookies().get(IDPHOTO_COOKIE.name)?.value;
@@ -34,6 +42,7 @@ export async function POST(req: NextRequest) {
   // 2) 본문 파싱
   let body: {
     typeIdx?: unknown;
+    backgroundKey?: unknown;
     imageBase64?: unknown;
     mimeType?: unknown;
   };
@@ -50,6 +59,11 @@ export async function POST(req: NextRequest) {
     typeof body.typeIdx === "number" && Number.isFinite(body.typeIdx)
       ? Math.floor(body.typeIdx)
       : -1;
+  const rawBgKey =
+    typeof body.backgroundKey === "string" ? body.backgroundKey : "white";
+  const backgroundKey: BackgroundKey = (
+    VALID_BG_KEYS.has(rawBgKey) ? rawBgKey : "white"
+  ) as BackgroundKey;
   const imageBase64 =
     typeof body.imageBase64 === "string" ? body.imageBase64 : "";
   const mimeType =
@@ -61,6 +75,18 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // 정책 검증 — 클라이언트가 우회해 strict_white 종류에 다른 색을 보내도 거부
+  const spec = PHOTO_SPECS[typeIdx];
+  if (!isBackgroundAllowed(spec.backgroundPolicy, backgroundKey)) {
+    return NextResponse.json(
+      {
+        error: `「${spec.name}」 규정상 선택한 배경색은 사용할 수 없습니다.`,
+      },
+      { status: 400 },
+    );
+  }
+
   if (!imageBase64) {
     return NextResponse.json(
       { error: "이미지가 전송되지 않았습니다." },
@@ -84,14 +110,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 4) Gemini 호출
-  const spec = PHOTO_SPECS[typeIdx];
-  const prompt = getPrompt(spec.name);
+  const prompt = getPrompt(spec, backgroundKey);
 
   try {
     const result = await callGeminiForIdPhoto(imageBase64, mimeType, prompt);
     return NextResponse.json({
       imageBase64: result.imageBase64,
       mimeType: result.mimeType,
+      backgroundKey,
       spec: {
         name: spec.name,
         display: spec.display,

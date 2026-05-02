@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { IDPHOTO_COOKIE, isCookieValid } from "@/lib/idphoto/auth";
-import { PHOTO_SPECS_PUBLIC } from "@/lib/idphoto/specs";
+import { PHOTO_SPECS_PUBLIC, BACKGROUND_OPTIONS } from "@/lib/idphoto/specs";
 import IdPhotoClient from "./_components/IdPhotoClient";
 
 // 캐싱 금지 — 쿠키 상태에 따라 화면이 바뀜
@@ -35,7 +35,11 @@ export default function IdPhotoPage() {
         </p>
       </header>
 
-      <IdPhotoClient unlocked={unlocked} specs={PHOTO_SPECS_PUBLIC} />
+      <IdPhotoClient
+        unlocked={unlocked}
+        specs={PHOTO_SPECS_PUBLIC}
+        backgroundOptions={BACKGROUND_OPTIONS}
+      />
     </div>
   );
 }
