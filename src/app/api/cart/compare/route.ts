@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
         chainName: store.chain.name,
         chainCategory: store.chain.category,
         address: store.address,
+        lat: store.lat,
+        lng: store.lng,
         availableCount,
         totalItems: items.length,
         total,
