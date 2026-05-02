@@ -17,13 +17,16 @@ export type ParsedReceipt = {
   rawText: string;
 };
 
-// 실제 CLOVA OCR 응답을 파싱하는 자리 (구현 시 채울 것)
+// CLOVA OCR — Receipt 도메인이면 구조화된 응답, General/Custom이면 텍스트 추출
+// Domain 종류와 무관하게 작동하도록 chain 처리
 async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
-  const url = process.env.CLOVA_OCR_URL;
+  let url = process.env.CLOVA_OCR_URL;
   const secret = process.env.CLOVA_OCR_SECRET;
   if (!url || !secret) {
     throw new Error("CLOVA OCR 환경변수가 설정되지 않음");
   }
+  // http 받았으면 https로 강제 (NCP 스펙은 https)
+  url = url.replace(/^http:\/\//i, "https://");
 
   const body = {
     version: "V2",
@@ -48,13 +51,60 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
   });
 
   if (!res.ok) {
-    throw new Error(`CLOVA OCR 호출 실패: ${res.status}`);
+    const errText = await res.text().catch(() => "");
+    throw new Error(`CLOVA OCR ${res.status}: ${errText.slice(0, 200)}`);
   }
 
   const json = await res.json();
-  // CLOVA의 receipt OCR 응답을 ParsedReceipt 형태로 변환
-  // (실제 응답 스펙: https://api.ncloud-docs.com/docs/ai-application-service-ocr-receipt)
-  return parseClovaResponse(json);
+
+  // 1순위: Receipt OCR 구조화된 응답이 있으면 그걸로
+  const structured = parseClovaResponse(json);
+  if (structured.items.length > 0 || structured.storeHint) {
+    return structured;
+  }
+
+  // 2순위: General/Custom OCR — fields[] 또는 inferText에서 텍스트 합쳐서 휴리스틱 파서
+  const fullText = extractClovaPlainText(json);
+  if (fullText.trim()) {
+    return parseReceiptText(fullText);
+  }
+
+  return { items: [], rawText: JSON.stringify(json).slice(0, 300) };
+}
+
+// CLOVA General/Custom OCR 응답에서 평문 텍스트 추출
+// 응답 구조:
+//   { images: [{ inferText?, fields?: [{ inferText, boundingPoly... }] }] }
+function extractClovaPlainText(json: unknown): string {
+  type Field = { inferText?: string; lineBreak?: boolean };
+  type Image = { inferText?: string; fields?: Field[] };
+  type Resp = { images?: Image[] };
+
+  const r = json as Resp;
+  const img = r?.images?.[0];
+  if (!img) return "";
+
+  // inferText가 있으면 그대로
+  if (img.inferText && img.inferText.trim()) return img.inferText;
+
+  // 없으면 fields[]를 줄 단위로 합침
+  if (Array.isArray(img.fields)) {
+    const lines: string[] = [];
+    let current = "";
+    for (const f of img.fields) {
+      const t = (f.inferText ?? "").trim();
+      if (!t) continue;
+      current = current ? `${current} ${t}` : t;
+      if (f.lineBreak) {
+        lines.push(current);
+        current = "";
+      }
+    }
+    if (current) lines.push(current);
+    return lines.join("\n");
+  }
+
+  return "";
 }
 
 // CLOVA Receipt OCR 응답 파서
