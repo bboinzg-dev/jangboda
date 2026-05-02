@@ -12,7 +12,7 @@ import {
   type DiscoveredStore,
 } from "@/lib/kakaoLocal";
 import FavoriteToggle from "@/components/FavoriteToggle";
-import { createClient, isAuthConfigured } from "@/lib/supabase/client";
+import { useFavorites } from "@/components/FavoritesProvider";
 import EmptyState from "@/components/EmptyState";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
@@ -63,26 +63,7 @@ export default function StoresPage() {
   const [filter, setFilter] = useState<FilterCategory>("all");
   const [regionQuery, setRegionQuery] = useState("");
   const [regionLabel, setRegionLabel] = useState<string | null>(null);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [authed, setAuthed] = useState(false);
-
-  // 로그인 상태 + 즐겨찾기 목록 가져오기
-  useEffect(() => {
-    if (!isAuthConfigured()) return;
-    const sb = createClient();
-    sb.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      setAuthed(true);
-      fetch("/api/favorites")
-        .then((r) => r.json())
-        .then((d) => {
-          const ids = new Set<string>(
-            (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
-          );
-          setFavoriteIds(ids);
-        });
-    });
-  }, []);
+  const { authed, ids: favoriteIds } = useFavorites();
 
   async function load(lat?: number, lng?: number) {
     setLoading(true);

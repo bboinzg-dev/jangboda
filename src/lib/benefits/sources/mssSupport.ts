@@ -1,8 +1,9 @@
-// 출처: 중소벤처기업부 중소기업 지원사업 공고조회 / 엔드포인트: https://apis.data.go.kr/1421000/bizinfo/getBizinfoSupportList / 갱신주기: 일 1회
-// JSON/XML 모두 지원. JSON 우선, 실패 시 XML 폴백.
+// 출처: 중소벤처기업부 중소기업 지원사업 공고 조회 서비스 / 엔드포인트: https://apis.data.go.kr/1421000/bizinfo/pblancBsnsService / 갱신주기: 실시간
+// 데이터셋 ID: 15157820. 기업마당 최신 지원사업 공고를 중앙부처/지자체/유관기관 통합 제공.
+// JSON/XML 모두 지원 (produces=application/json,application/xml). JSON 우선, 실패 시 XML 폴백.
 import { SOURCE_CODES, type BenefitRaw } from "../types";
 
-const BASE_URL = "https://apis.data.go.kr/1421000/bizinfo/getBizinfoSupportList";
+const BASE_URL = "https://apis.data.go.kr/1421000/bizinfo/pblancBsnsService";
 
 function extractTag(xml: string, tag: string): string | undefined {
   const re = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, "i");
@@ -86,7 +87,7 @@ export async function fetchMssSupport(
     const re = /<([a-zA-Z0-9_]+)>([\s\S]*?)<\/\1>/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(block)) !== null) raw[m[1]] = m[2].trim();
-    // extractTag로 일관된 매핑 적용
+    // extractTag로 CDATA 포함 일관 추출
     const fromTag = (k: string) => extractTag(block, k);
     return mapItem({
       ...raw,
@@ -99,11 +100,18 @@ export async function fetchMssSupport(
       pldirSportRealmLclasCodeNm: fromTag("pldirSportRealmLclasCodeNm"),
       pblancUrl: fromTag("pblancUrl"),
       trgetNm: fromTag("trgetNm"),
-      areaNm: fromTag("areaNm"),
+      hashtags: fromTag("hashtags"),
+      reqstMthPapersCn: fromTag("reqstMthPapersCn"),
+      refrncNm: fromTag("refrncNm"),
+      rceptEngnHmpgUrl: fromTag("rceptEngnHmpgUrl"),
+      creatPnttm: fromTag("creatPnttm"),
+      updtPnttm: fromTag("updtPnttm"),
     });
   });
 }
 
+// pblancBsnsService 응답 명세 기준 매핑.
+// 지역 정보는 별도 areaNm 필드가 없고 소관기관명(jrsdInsttNm)에 "대전광역시" 등 지역명이 들어옴.
 function mapItem(item: Record<string, unknown>): BenefitRaw {
   const get = (k: string): string | undefined => {
     const v = item[k];
@@ -111,16 +119,18 @@ function mapItem(item: Record<string, unknown>): BenefitRaw {
   };
   const [start, end] = parsePeriod(get("reqstBeginEndDe"));
   const sourceId = get("pblancId") ?? get("id") ?? "";
-  const areaNm = get("areaNm");
+  // jrsdInsttNm이 시·도명을 포함할 경우 그대로 regionCodes에 사용 (정규화는 후속 단계)
+  const jrsd = get("jrsdInsttNm");
   return {
     sourceCode: SOURCE_CODES.MSS_SUPPORT,
     sourceId: String(sourceId),
     title: get("pblancNm") ?? "",
     summary: get("bsnsSumryCn"),
-    agency: get("jrsdInsttNm") ?? get("excInsttNm"),
+    agency: get("excInsttNm") ?? jrsd,
     category: get("pldirSportRealmLclasCodeNm"),
     targetType: "business",
-    regionCodes: areaNm ? [areaNm] : ["00000"],
+    regionCodes: jrsd ? [jrsd] : ["00000"],
+    applyUrl: get("rceptEngnHmpgUrl"),
     detailUrl: get("pblancUrl"),
     applyStartAt: start,
     applyEndAt: end,
@@ -128,6 +138,9 @@ function mapItem(item: Record<string, unknown>): BenefitRaw {
       trgetNm: get("trgetNm"),
       reqstBeginEndDe: get("reqstBeginEndDe"),
       pldirSportRealmLclasCodeNm: get("pldirSportRealmLclasCodeNm"),
+      hashtags: get("hashtags"),
+      reqstMthPapersCn: get("reqstMthPapersCn"),
+      refrncNm: get("refrncNm"),
     },
     rawData: item,
   };

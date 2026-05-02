@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
 import { unitPriceLabel } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
@@ -8,7 +8,7 @@ import TrustBadge from "@/components/TrustBadge";
 import DirectionsButton from "@/components/DirectionsButton";
 import ReportPriceButton from "@/components/ReportPriceButton";
 import FavoriteToggle from "@/components/FavoriteToggle";
-import { createClient, isAuthConfigured } from "@/lib/supabase/client";
+import { useFavorites } from "@/components/FavoritesProvider";
 
 type TrustInfo = {
   count: number;
@@ -43,26 +43,8 @@ export default function PriceListClient({
   emptyHint,
   showFavoriteFilter = true,
 }: Props) {
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [authed, setAuthed] = useState(false);
+  const { authed, ids: favoriteIds } = useFavorites();
   const [favoriteOnly, setFavoriteOnly] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthConfigured()) return;
-    const sb = createClient();
-    sb.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      setAuthed(true);
-      fetch("/api/favorites")
-        .then((r) => r.json())
-        .then((d) => {
-          const ids = new Set<string>(
-            (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
-          );
-          setFavoriteIds(ids);
-        });
-    });
-  }, []);
 
   // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 가격 낮은 순)
   const filtered = favoriteOnly

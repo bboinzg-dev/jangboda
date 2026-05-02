@@ -1,8 +1,9 @@
-// 출처: 중소벤처기업부 사업공고 / 엔드포인트: https://apis.data.go.kr/1421000/mssBizService_v2/getMssBizList / 갱신주기: 일 1회
-// 응답은 XML 표준 공공데이터 포맷. 외부 의존성 없이 정규식으로 <item> 블록을 파싱.
+// 출처: 중소벤처기업부 사업공고 / 엔드포인트: https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2 / 갱신주기: 실시간
+// 데이터셋 ID: 15113297. 응답은 XML 표준 공공데이터 포맷(produces=application/xml).
+// 외부 의존성 없이 정규식으로 <item> 블록을 파싱.
 import { SOURCE_CODES, type BenefitRaw } from "../types";
 
-const BASE_URL = "https://apis.data.go.kr/1421000/mssBizService_v2/getMssBizList";
+const BASE_URL = "https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2";
 
 // XML 텍스트에서 단일 태그값 추출. CDATA 처리. 매칭 없으면 undefined.
 function extractTag(xml: string, tag: string): string | undefined {
@@ -53,8 +54,8 @@ export async function fetchMssBiz(
   url.searchParams.set("serviceKey", serviceKey);
   url.searchParams.set("pageNo", String(pageNo));
   url.searchParams.set("numOfRows", String(numOfRows));
-  // 일부 v2 엔드포인트는 type=json 지원. 실패 시 XML 폴백되므로 양쪽 모두 처리.
-  url.searchParams.set("type", "json");
+  // mssBizService_v2는 produces=application/xml만 지원 (swagger 명세 기준).
+  // type/dataType 파라미터를 받지 않으므로 항상 XML로 응답. JSON 분기는 미래 호환을 위해 유지.
 
   const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) {
@@ -64,7 +65,7 @@ export async function fetchMssBiz(
   const text = await res.text();
   const trimmed = text.trim();
 
-  // JSON 응답 시도
+  // JSON 응답 시도 (현재는 XML만 반환되지만 호환성 유지)
   if (trimmed.startsWith("{")) {
     try {
       const json = JSON.parse(trimmed) as {
@@ -80,35 +81,37 @@ export async function fetchMssBiz(
     }
   }
 
-  // XML 처리
+  // XML 처리 (실제 응답 형식)
   const itemBlocks = extractItems(text);
   return itemBlocks.map((block) => mapXmlItem(block));
 }
 
-// 공공데이터 표준 사업공고 응답에서 자주 등장하는 필드명을 보수적으로 매핑
+// swagger 명세 기준 응답 필드 매핑.
+// 사업공고는 단순 게시물 형태(itemId/title/dataContents/applicationStartDate 등)로
+// agency/category 정보가 없음. 담당부서를 agency로 사용.
 function mapJsonItem(item: Record<string, unknown>): BenefitRaw {
   const get = (k: string): string | undefined => {
     const v = item[k];
     return typeof v === "string" ? v : v != null ? String(v) : undefined;
   };
-  const sourceId =
-    get("pblancId") ?? get("bsnsSumryCn") ?? get("noticeId") ?? get("id") ?? "";
+  const sourceId = get("itemId") ?? "";
   return {
     sourceCode: SOURCE_CODES.MSS_BIZ,
     sourceId: String(sourceId),
-    title: get("pblancNm") ?? get("bsnsTitle") ?? get("title") ?? "",
-    summary: get("bsnsSumryCn") ?? get("pblancCn"),
-    agency: get("jrsdInsttNm") ?? get("excInsttNm"),
-    category: get("pldirSportRealmLclasCodeNm") ?? get("bsnsRealmCodeNm"),
+    title: get("title") ?? "",
+    summary: get("dataContents"),
+    agency: get("writerPosition") ?? "중소벤처기업부",
     targetType: "business",
     regionCodes: ["00000"],
-    detailUrl: get("pblancUrl") ?? get("rceptInsttUrl"),
-    applyStartAt: parseDate(get("reqstBeginDe") ?? get("rceptBgngDt")),
-    applyEndAt: parseDate(get("reqstEndDe") ?? get("rceptEndDt")),
+    detailUrl: get("viewUrl"),
+    applyStartAt: parseDate(get("applicationStartDate")),
+    applyEndAt: parseDate(get("applicationEndDate")),
     eligibilityRules: {
-      reqstBeginEndDe: get("reqstBeginEndDe"),
-      trgetNm: get("trgetNm"),
-      sportTrgetNm: get("sportTrgetNm"),
+      writerName: get("writerName"),
+      writerPhone: get("writerPhone"),
+      writerEmail: get("writerEmail"),
+      fileName: get("fileName"),
+      fileUrl: get("fileUrl"),
     },
     rawData: item,
   };
@@ -116,9 +119,9 @@ function mapJsonItem(item: Record<string, unknown>): BenefitRaw {
 
 function mapXmlItem(block: string): BenefitRaw {
   const get = (tag: string) => extractTag(block, tag);
-  const sourceId = get("pblancId") ?? get("noticeId") ?? get("id") ?? "";
+  const sourceId = get("itemId") ?? "";
   const raw: Record<string, unknown> = {};
-  // <태그>값</태그> 형태를 모두 raw에 수집
+  // <태그>값</태그> 형태를 모두 raw에 수집 (fileName/fileUrl 중복은 마지막 값만 보존)
   const re = /<([a-zA-Z0-9_]+)>([\s\S]*?)<\/\1>/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(block)) !== null) {
@@ -127,19 +130,20 @@ function mapXmlItem(block: string): BenefitRaw {
   return {
     sourceCode: SOURCE_CODES.MSS_BIZ,
     sourceId: String(sourceId),
-    title: get("pblancNm") ?? get("bsnsTitle") ?? get("title") ?? "",
-    summary: get("bsnsSumryCn") ?? get("pblancCn"),
-    agency: get("jrsdInsttNm") ?? get("excInsttNm"),
-    category: get("pldirSportRealmLclasCodeNm") ?? get("bsnsRealmCodeNm"),
+    title: get("title") ?? "",
+    summary: get("dataContents"),
+    agency: get("writerPosition") ?? "중소벤처기업부",
     targetType: "business",
     regionCodes: ["00000"],
-    detailUrl: get("pblancUrl") ?? get("rceptInsttUrl"),
-    applyStartAt: parseDate(get("reqstBeginDe") ?? get("rceptBgngDt")),
-    applyEndAt: parseDate(get("reqstEndDe") ?? get("rceptEndDt")),
+    detailUrl: get("viewUrl"),
+    applyStartAt: parseDate(get("applicationStartDate")),
+    applyEndAt: parseDate(get("applicationEndDate")),
     eligibilityRules: {
-      reqstBeginEndDe: get("reqstBeginEndDe"),
-      trgetNm: get("trgetNm"),
-      sportTrgetNm: get("sportTrgetNm"),
+      writerName: get("writerName"),
+      writerPhone: get("writerPhone"),
+      writerEmail: get("writerEmail"),
+      fileName: get("fileName"),
+      fileUrl: get("fileUrl"),
     },
     rawData: raw,
   };

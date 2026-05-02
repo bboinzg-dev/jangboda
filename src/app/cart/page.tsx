@@ -6,7 +6,7 @@ import { formatWon } from "@/lib/format";
 import CartProductSearch, {
   type SearchableProduct,
 } from "@/components/CartProductSearch";
-import { createClient, isAuthConfigured } from "@/lib/supabase/client";
+import { useFavorites } from "@/components/FavoritesProvider";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -34,7 +34,7 @@ export default function CartPage() {
   const [results, setResults] = useState<Comparison[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const { ids: favoriteIds } = useFavorites();
   const [favoriteOnly, setFavoriteOnly] = useState(false);
 
   // 인기 정렬로 fetch — priceCount 많은 순
@@ -42,22 +42,6 @@ export default function CartPage() {
     fetch("/api/products?limit=500&sort=popular")
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []));
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthConfigured()) return;
-    const sb = createClient();
-    sb.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      fetch("/api/favorites")
-        .then((r) => r.json())
-        .then((d) => {
-          const ids = new Set<string>(
-            (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
-          );
-          setFavoriteIds(ids);
-        });
-    });
   }, []);
 
   // 장바구니 productId 빠른 조회
