@@ -11,6 +11,8 @@ import IngredientsPanel from "@/components/IngredientsPanel";
 import NutritionPanel from "@/components/NutritionPanel";
 import AgriTraceLookup from "@/components/AgriTraceLookup";
 import HealthFunctionalPanel from "@/components/HealthFunctionalPanel";
+import CattleTracePanel from "@/components/CattleTracePanel";
+import SeafoodTracePanel from "@/components/SeafoodTracePanel";
 
 export const revalidate = 30;
 
@@ -256,6 +258,18 @@ export default async function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         productCategory={product.category}
+      />
+
+      {/* 쇠고기 이력추적 — 한우/쇠고기/소고기/정육 상품에서만 자체적으로 노출 */}
+      <CattleTracePanel
+        productCategory={product.category}
+        productName={product.name}
+      />
+
+      {/* 수산물 이력추적 — 수산물/해산물 카테고리 또는 어종 키워드 매칭 시 자체 노출 */}
+      <SeafoodTracePanel
+        productCategory={product.category}
+        productName={product.name}
       />
 
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
