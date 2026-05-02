@@ -35,5 +35,12 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
   }
 
-  return NextResponse.json({ stores: result });
+  return NextResponse.json(
+    { stores: result },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+      },
+    }
+  );
 }

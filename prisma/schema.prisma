@@ -118,6 +118,7 @@ model User {
   priceAlerts   PriceAlert[]
   pushSubs      PushSubscription[]
   favorites     FavoriteStore[]
+  benefitProfile BenefitProfile?
 }
 
 // 즐겨찾기 매장 — 사용자가 자주 가는 매장 표시
@@ -173,4 +174,84 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+}
+
+// ═══════════════════════════════════════════════════
+// 정부 혜택 추천 모듈 (/benefits) — 장보다 앱 안의 별도 모듈
+// 코드는 분리하되 인증·사용자는 공유. 향후 User.points로 게이팅 예정.
+// ═══════════════════════════════════════════════════
+
+// 사용자 입력 프로필 (User 1:1)
+// 11개 카테고리(인구학/소득재산/가구/수급자격/거주/고용/사업자/자녀/건강/교육/특수자격)는
+// data 필드(Json)에 저장. zod 스키마(src/lib/benefits/types.ts)로 검증.
+model BenefitProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data        Json     @default("{}")
+  // 매칭 빈도 높은 필드는 별도 컬럼으로 인덱스
+  birthYear   Int?
+  regionCode  String?  // 행정안전부 5자리 행정구역코드 (시군구)
+  hasBusiness Boolean  @default(false)
+  completeness Int     @default(0) // 0~100, 입력 완성도
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  matches     BenefitMatch[]
+
+  @@index([regionCode])
+}
+
+// 혜택 마스터 카탈로그 (출처별 동기화)
+model Benefit {
+  id           String   @id @default(cuid())
+  // 출처 식별 (sourceCode + sourceId 조합으로 멱등 upsert)
+  sourceCode   String   // GOV24 | MSS_BIZ | MSS_SUPPORT | BIZINFO | SEOUL | NTS | MANUAL
+  sourceId     String   // 출처의 원본 ID
+  // 핵심 메타
+  title        String
+  summary      String?
+  agency       String?  // 제공기관명
+  category     String?  // 일자리|교육|주거|건강|돌봄|문화|사업자|기타
+  // 대상/지역
+  targetType   String   @default("individual") // individual | household | business | mixed
+  regionCodes  String[] // ["00000"]=전국, ["11000"]=서울, ["11680"]=강남구
+  // 자격 조건 (matcher가 해석하는 룰 트리)
+  eligibilityRules Json @default("{}")
+  // 신청 정보
+  applyUrl     String?
+  detailUrl    String?
+  applyStartAt DateTime?
+  applyEndAt   DateTime?
+  // 원본 (디버깅/재처리용)
+  rawData      Json?
+  // 운영
+  active       Boolean  @default(true)
+  lastSyncedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  matches      BenefitMatch[]
+
+  @@unique([sourceCode, sourceId])
+  @@index([category, active])
+  @@index([applyEndAt, active])
+  @@index([targetType, active])
+}
+
+// 매칭 결과 캐시 (Profile × Benefit)
+// matcher가 자격 룰 평가 후 저장. 사용자 행동(저장/숨김/신청)도 여기 기록.
+model BenefitMatch {
+  id             String          @id @default(cuid())
+  profileId      String
+  profile        BenefitProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  benefitId      String
+  benefit        Benefit         @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  score          Int             // 0~100, 자격 충족도
+  status         String          // matched | uncertain | notEligible
+  missingFields  String[]        // 정확도를 올리려면 추가로 입력해야 할 필드
+  userAction     String?         // saved | dismissed | applied
+  notifiedAt     DateTime?       // 마감 임박 푸시 발송 시각
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([profileId, benefitId])
+  @@index([profileId, status, score])
 }

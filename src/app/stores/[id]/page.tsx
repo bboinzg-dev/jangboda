@@ -6,7 +6,7 @@ import { unitPriceLabel } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
 import DirectionsButton from "@/components/DirectionsButton";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const CATEGORY_ICONS: Record<string, string> = {
   mart: "🛒",

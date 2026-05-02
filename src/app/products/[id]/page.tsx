@@ -8,7 +8,7 @@ import PriceHistoryChart from "@/components/PriceHistoryChart";
 import PriceListClient, { type PriceRowData } from "@/components/PriceListClient";
 import EmptyState from "@/components/EmptyState";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 type PriceRow = PriceRowData;
 

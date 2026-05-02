@@ -56,15 +56,23 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({
-    products: products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      brand: p.brand,
-      category: p.category,
-      unit: p.unit,
-      priceCount: p._count.prices,
-      stats: stats.get(p.id),
-    })),
-  });
+  return NextResponse.json(
+    {
+      products: products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        brand: p.brand,
+        category: p.category,
+        unit: p.unit,
+        priceCount: p._count.prices,
+        stats: stats.get(p.id),
+      })),
+    },
+    {
+      headers: {
+        // 60초 CDN 캐시 + 5분 stale-while-revalidate (사용자 즉시 응답, 백그라운드 갱신)
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

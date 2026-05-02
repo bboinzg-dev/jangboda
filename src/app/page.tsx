@@ -7,7 +7,8 @@ import OnboardingCard, {
   type OnboardingStatus,
 } from "@/components/OnboardingCard";
 
-export const dynamic = "force-dynamic";
+// ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분 (개인화는 OnboardingCard client 컴포넌트가 fetch)
+export const revalidate = 60;
 
 // 온보딩 진행 상태 — 로그인 사용자의 favorites/receipts/prices 카운트
 async function getOnboardingStatus(

@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/cart", label: "장보기" },
   { href: "/stores", label: "주변 매장" },
   { href: "/profile", label: "내 정보" },
+  { href: "/benefits", label: "정부 혜택" },
 ];
 
 const SECONDARY_ITEMS = [

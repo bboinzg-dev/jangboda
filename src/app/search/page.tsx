@@ -6,7 +6,8 @@ import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import EmptyState from "@/components/EmptyState";
 
-export const dynamic = "force-dynamic";
+// search는 client에서 /api/products로 fetch — 페이지 자체는 정적
+export const dynamic = "force-static";
 
 type SortBy = "min" | "unit";
 
