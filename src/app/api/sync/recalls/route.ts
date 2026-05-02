@@ -13,57 +13,86 @@ export async function POST(req: NextRequest) {
 
   const { recalls, usedMock, total, error } = await fetchRecalls();
 
-  let inserted = 0;
-  let updated = 0;
+  // 페이지 내 동일 externalSeq 중복 제거 (안전성)
+  const seen = new Set<string>();
+  const inputItems: typeof recalls = [];
   for (const r of recalls) {
-    const existing = await prisma.recall.findUnique({
-      where: { externalSeq: r.externalSeq },
-      select: { id: true },
-    });
-    await prisma.recall.upsert({
-      where: { externalSeq: r.externalSeq },
-      create: {
-        externalSeq: r.externalSeq,
-        productName: r.productName,
-        manufacturer: r.manufacturer,
-        barcode: r.barcode,
-        reason: r.reason,
-        grade: r.grade,
-        productType: r.productType,
-        foodTypeName: r.foodTypeName,
-        packageUnit: r.packageUnit,
-        manufacturedAt: r.manufacturedAt,
-        expiryInfo: r.expiryInfo,
-        recallMethod: r.recallMethod,
-        imageUrls: r.imageUrls,
-        manufacturerAddress: r.manufacturerAddress,
-        manufacturerTel: r.manufacturerTel,
-        licenseNo: r.licenseNo,
-        reportNo: r.reportNo,
-        registeredAt: r.registeredAt,
-      },
-      update: {
-        productName: r.productName,
-        manufacturer: r.manufacturer,
-        barcode: r.barcode,
-        reason: r.reason,
-        grade: r.grade,
-        productType: r.productType,
-        foodTypeName: r.foodTypeName,
-        packageUnit: r.packageUnit,
-        manufacturedAt: r.manufacturedAt,
-        expiryInfo: r.expiryInfo,
-        recallMethod: r.recallMethod,
-        imageUrls: r.imageUrls,
-        manufacturerAddress: r.manufacturerAddress,
-        manufacturerTel: r.manufacturerTel,
-        licenseNo: r.licenseNo,
-        reportNo: r.reportNo,
-        registeredAt: r.registeredAt,
-      },
-    });
-    if (existing) updated++;
-    else inserted++;
+    if (seen.has(r.externalSeq)) continue;
+    seen.add(r.externalSeq);
+    inputItems.push(r);
+  }
+
+  // 1) 한 번의 쿼리로 기존 externalSeq 조회
+  const allKeys = inputItems.map((r) => r.externalSeq);
+  const existingRows = await prisma.recall.findMany({
+    where: { externalSeq: { in: allKeys } },
+    select: { externalSeq: true },
+  });
+  const existingSet = new Set(existingRows.map((r) => r.externalSeq));
+
+  // 2) 신규는 createMany 일괄 삽입
+  const toCreate = inputItems
+    .filter((r) => !existingSet.has(r.externalSeq))
+    .map((r) => ({
+      externalSeq: r.externalSeq,
+      productName: r.productName,
+      manufacturer: r.manufacturer,
+      barcode: r.barcode,
+      reason: r.reason,
+      grade: r.grade,
+      productType: r.productType,
+      foodTypeName: r.foodTypeName,
+      packageUnit: r.packageUnit,
+      manufacturedAt: r.manufacturedAt,
+      expiryInfo: r.expiryInfo,
+      recallMethod: r.recallMethod,
+      imageUrls: r.imageUrls,
+      manufacturerAddress: r.manufacturerAddress,
+      manufacturerTel: r.manufacturerTel,
+      licenseNo: r.licenseNo,
+      reportNo: r.reportNo,
+      registeredAt: r.registeredAt,
+    }));
+
+  let inserted = 0;
+  if (toCreate.length > 0) {
+    await prisma.recall.createMany({ data: toCreate, skipDuplicates: true });
+    inserted = toCreate.length;
+  }
+
+  // 3) 기존 레코드는 50개씩 병렬 update
+  const toUpdate = inputItems.filter((r) => existingSet.has(r.externalSeq));
+  let updated = 0;
+  const CHUNK = 50;
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const slice = toUpdate.slice(i, i + CHUNK);
+    await Promise.all(
+      slice.map((r) =>
+        prisma.recall.update({
+          where: { externalSeq: r.externalSeq },
+          data: {
+            productName: r.productName,
+            manufacturer: r.manufacturer,
+            barcode: r.barcode,
+            reason: r.reason,
+            grade: r.grade,
+            productType: r.productType,
+            foodTypeName: r.foodTypeName,
+            packageUnit: r.packageUnit,
+            manufacturedAt: r.manufacturedAt,
+            expiryInfo: r.expiryInfo,
+            recallMethod: r.recallMethod,
+            imageUrls: r.imageUrls,
+            manufacturerAddress: r.manufacturerAddress,
+            manufacturerTel: r.manufacturerTel,
+            licenseNo: r.licenseNo,
+            reportNo: r.reportNo,
+            registeredAt: r.registeredAt,
+          },
+        })
+      )
+    );
+    updated += slice.length;
   }
 
   return NextResponse.json({

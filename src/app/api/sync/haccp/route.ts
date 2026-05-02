@@ -103,29 +103,32 @@ export async function POST(req: NextRequest) {
     // 2) skipDuplicates된 건들 (이미 존재 = 업데이트 대상)에 대해 변경분 update
     //    insertedThisPage < dedup.length 이면 차이만큼 update 시도.
     if (insertedThisPage < dedup.length) {
-      // 어떤 게 신규였는지 알 수 없으니, 전체에 대해 updateMany(licenseNo)
-      // — 단순/안전성 우선. 이미 같은 값이면 no-op.
-      // Postgres 한정으로 빠르지만 시간 budget 보호 위해 트랜잭션으로 묶어 한번에.
+      // 어떤 게 신규였는지 알 수 없으니, 전체에 대해 update.
+      // 50개씩 병렬화하여 round-trip 최소화.
       try {
-        await prisma.$transaction(
-          dedup.map((r) =>
-            prisma.haccpFacility.updateMany({
-              where: { licenseNo: r.licenseNo },
-              data: {
-                bsshName: r.bsshName,
-                bsshNameNorm: normalizeBsshName(r.bsshName),
-                industryName: r.industryName ?? null,
-                presidentName: r.presidentName ?? null,
-                address: r.address ?? null,
-                appnDate: r.appnDate ?? null,
-                appnNo: r.appnNo ?? null,
-                productListName: r.productListName ?? null,
-                bizStatus: r.bizStatus ?? null,
-                bizCloseDate: r.bizCloseDate ?? null,
-              },
-            })
-          )
-        );
+        const CHUNK = 50;
+        for (let i = 0; i < dedup.length; i += CHUNK) {
+          const slice = dedup.slice(i, i + CHUNK);
+          await Promise.all(
+            slice.map((r) =>
+              prisma.haccpFacility.updateMany({
+                where: { licenseNo: r.licenseNo },
+                data: {
+                  bsshName: r.bsshName,
+                  bsshNameNorm: normalizeBsshName(r.bsshName),
+                  industryName: r.industryName ?? null,
+                  presidentName: r.presidentName ?? null,
+                  address: r.address ?? null,
+                  appnDate: r.appnDate ?? null,
+                  appnNo: r.appnNo ?? null,
+                  productListName: r.productListName ?? null,
+                  bizStatus: r.bizStatus ?? null,
+                  bizCloseDate: r.bizCloseDate ?? null,
+                },
+              })
+            )
+          );
+        }
         updated += dedup.length - insertedThisPage;
       } catch (e) {
         lastError = `update 트랜잭션 실패: ${e instanceof Error ? e.message : String(e)}`;
@@ -228,8 +231,18 @@ async function reconcileProductHaccp(): Promise<number> {
     select: { id: true, manufacturer: true, hasHaccp: true },
   });
 
+  // 매칭 결과를 먼저 메모리에 모은 뒤 50개씩 병렬 update
+  type UpdateOp =
+    | {
+        kind: "set";
+        id: string;
+        info: { licenseNo: string; bsshName: string; appnDate: string | null; appnNo: string | null };
+      }
+    | { kind: "clear"; id: string };
+
+  const ops: UpdateOp[] = [];
   let matched = 0;
-  // 일괄 처리 — 각 상품에 대해 norm 비교
+
   for (const p of products) {
     if (!p.manufacturer) continue;
     const mNorm = normalizeBsshName(p.manufacturer);
@@ -262,26 +275,41 @@ async function reconcileProductHaccp(): Promise<number> {
     }
 
     if (best) {
-      await prisma.product.update({
-        where: { id: p.id },
-        data: {
-          hasHaccp: true,
-          haccpInfo: {
-            licenseNo: best.licenseNo,
-            bsshName: best.bsshName,
-            appnDate: best.appnDate,
-            appnNo: best.appnNo,
-          },
+      ops.push({
+        kind: "set",
+        id: p.id,
+        info: {
+          licenseNo: best.licenseNo,
+          bsshName: best.bsshName,
+          appnDate: best.appnDate,
+          appnNo: best.appnNo,
         },
       });
       matched += 1;
     } else if (p.hasHaccp) {
       // 이전엔 매칭됐지만 이번엔 매칭 안 됨 (폐업/취소 등) → 끄기
-      await prisma.product.update({
-        where: { id: p.id },
-        data: { hasHaccp: false, haccpInfo: Prisma.DbNull },
-      });
+      ops.push({ kind: "clear", id: p.id });
     }
+  }
+
+  // 50개씩 병렬 update
+  const CHUNK = 50;
+  for (let i = 0; i < ops.length; i += CHUNK) {
+    const slice = ops.slice(i, i + CHUNK);
+    await Promise.all(
+      slice.map((op) => {
+        if (op.kind === "set") {
+          return prisma.product.update({
+            where: { id: op.id },
+            data: { hasHaccp: true, haccpInfo: op.info },
+          });
+        }
+        return prisma.product.update({
+          where: { id: op.id },
+          data: { hasHaccp: false, haccpInfo: Prisma.DbNull },
+        });
+      })
+    );
   }
 
   return matched;

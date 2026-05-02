@@ -73,45 +73,72 @@ export async function POST(req: NextRequest) {
       parsed.push(p);
     }
 
-    // 신규/업데이트 카운트 — 미리 존재하는 recipeSeq 조회
+    // 1) 한 번의 쿼리로 기존 recipeSeq 조회
     const existingRows = await prisma.recipe.findMany({
       where: { recipeSeq: { in: parsed.map((p) => p.recipeSeq) } },
       select: { recipeSeq: true },
     });
     const existingSet = new Set(existingRows.map((r) => r.recipeSeq));
 
-    // 페이지 단위 트랜잭션으로 upsert (속도 ↑)
     try {
-      await prisma.$transaction(
-        parsed.map((p) => {
-          const data = {
-            name: p.name,
-            cookingMethod: p.cookingMethod,
-            category: p.category,
-            servingWeight: p.servingWeight,
-            caloriesKcal: p.caloriesKcal,
-            carbsG: p.carbsG,
-            proteinG: p.proteinG,
-            fatG: p.fatG,
-            sodiumMg: p.sodiumMg,
-            hashtags: p.hashtags,
-            imageMain: p.imageMain,
-            imageBig: p.imageBig,
-            ingredientsRaw: p.ingredientsRaw,
-            ingredientsList: p.ingredientsList,
-            steps: p.steps as unknown as object,
-            tip: p.tip,
-          };
-          return prisma.recipe.upsert({
-            where: { recipeSeq: p.recipeSeq },
-            update: data,
-            create: { recipeSeq: p.recipeSeq, ...data },
-          });
-        })
-      );
-      for (const p of parsed) {
-        if (existingSet.has(p.recipeSeq)) updated++;
-        else inserted++;
+      // 2) 신규는 createMany 일괄 삽입
+      const toCreate = parsed
+        .filter((p) => !existingSet.has(p.recipeSeq))
+        .map((p) => ({
+          recipeSeq: p.recipeSeq,
+          name: p.name,
+          cookingMethod: p.cookingMethod,
+          category: p.category,
+          servingWeight: p.servingWeight,
+          caloriesKcal: p.caloriesKcal,
+          carbsG: p.carbsG,
+          proteinG: p.proteinG,
+          fatG: p.fatG,
+          sodiumMg: p.sodiumMg,
+          hashtags: p.hashtags,
+          imageMain: p.imageMain,
+          imageBig: p.imageBig,
+          ingredientsRaw: p.ingredientsRaw,
+          ingredientsList: p.ingredientsList,
+          steps: p.steps as unknown as object,
+          tip: p.tip,
+        }));
+      if (toCreate.length > 0) {
+        await prisma.recipe.createMany({ data: toCreate, skipDuplicates: true });
+        inserted += toCreate.length;
+      }
+
+      // 3) 기존은 50개씩 병렬 update
+      const toUpdate = parsed.filter((p) => existingSet.has(p.recipeSeq));
+      const CHUNK = 50;
+      for (let i = 0; i < toUpdate.length; i += CHUNK) {
+        const slice = toUpdate.slice(i, i + CHUNK);
+        await Promise.all(
+          slice.map((p) =>
+            prisma.recipe.update({
+              where: { recipeSeq: p.recipeSeq },
+              data: {
+                name: p.name,
+                cookingMethod: p.cookingMethod,
+                category: p.category,
+                servingWeight: p.servingWeight,
+                caloriesKcal: p.caloriesKcal,
+                carbsG: p.carbsG,
+                proteinG: p.proteinG,
+                fatG: p.fatG,
+                sodiumMg: p.sodiumMg,
+                hashtags: p.hashtags,
+                imageMain: p.imageMain,
+                imageBig: p.imageBig,
+                ingredientsRaw: p.ingredientsRaw,
+                ingredientsList: p.ingredientsList,
+                steps: p.steps as unknown as object,
+                tip: p.tip,
+              },
+            })
+          )
+        );
+        updated += slice.length;
       }
     } catch (e) {
       lastError = `upsert 트랜잭션 실패: ${e instanceof Error ? e.message : String(e)}`;

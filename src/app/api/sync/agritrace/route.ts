@@ -83,36 +83,47 @@ export async function POST(req: NextRequest) {
     });
     const existingSet = new Set(existingRecords.map((r) => r.histTraceRegNo));
 
-    // 트랜잭션으로 upsert 일괄 — createMany skipDuplicates는 update 안 됨, partners 보존 위해 upsert.
+    // bulk 패턴 — createMany(skipDuplicates) + 병렬 update.
+    // partners는 Phase 2에서 별도 갱신 — Phase 1 update에선 건드리지 않음.
     try {
-      await prisma.$transaction(
-        dedup.map((r) =>
-          prisma.agriTrace.upsert({
-            where: { histTraceRegNo: r.histTraceRegNo },
-            create: {
-              histTraceRegNo: r.histTraceRegNo,
-              regInstName: r.regInstName ?? null,
-              rprsntPrdltName: r.rprsntPrdltName,
-              presidentName: r.presidentName ?? null,
-              orgnName: r.orgnName ?? null,
-              validBeginDate: r.validBeginDate ?? null,
-              validEndDate: r.validEndDate ?? null,
-            },
-            update: {
-              regInstName: r.regInstName ?? null,
-              rprsntPrdltName: r.rprsntPrdltName,
-              presidentName: r.presidentName ?? null,
-              orgnName: r.orgnName ?? null,
-              validBeginDate: r.validBeginDate ?? null,
-              validEndDate: r.validEndDate ?? null,
-              // partners는 Phase 2에서 별도 갱신 — 여기선 건드리지 않음
-            },
-          })
-        )
-      );
-      for (const r of dedup) {
-        if (existingSet.has(r.histTraceRegNo)) updated += 1;
-        else inserted += 1;
+      // 1) 신규는 createMany 일괄 삽입
+      const toCreate = dedup
+        .filter((r) => !existingSet.has(r.histTraceRegNo))
+        .map((r) => ({
+          histTraceRegNo: r.histTraceRegNo,
+          regInstName: r.regInstName ?? null,
+          rprsntPrdltName: r.rprsntPrdltName,
+          presidentName: r.presidentName ?? null,
+          orgnName: r.orgnName ?? null,
+          validBeginDate: r.validBeginDate ?? null,
+          validEndDate: r.validEndDate ?? null,
+        }));
+      if (toCreate.length > 0) {
+        await prisma.agriTrace.createMany({ data: toCreate, skipDuplicates: true });
+        inserted += toCreate.length;
+      }
+
+      // 2) 기존은 50개씩 병렬 update
+      const toUpdate = dedup.filter((r) => existingSet.has(r.histTraceRegNo));
+      const CHUNK = 50;
+      for (let i = 0; i < toUpdate.length; i += CHUNK) {
+        const slice = toUpdate.slice(i, i + CHUNK);
+        await Promise.all(
+          slice.map((r) =>
+            prisma.agriTrace.update({
+              where: { histTraceRegNo: r.histTraceRegNo },
+              data: {
+                regInstName: r.regInstName ?? null,
+                rprsntPrdltName: r.rprsntPrdltName,
+                presidentName: r.presidentName ?? null,
+                orgnName: r.orgnName ?? null,
+                validBeginDate: r.validBeginDate ?? null,
+                validEndDate: r.validEndDate ?? null,
+              },
+            })
+          )
+        );
+        updated += slice.length;
       }
     } catch (e) {
       lastError = `upsert 트랜잭션 실패: ${e instanceof Error ? e.message : String(e)}`;
@@ -167,23 +178,39 @@ export async function POST(req: NextRequest) {
     }
 
     // 각 그룹별로 update — 레코드 없으면 (P2025) skip
-    for (const [regNo, partners] of grouped.entries()) {
+    // partners는 per-record JSON write라 bulk 불가 — 50개씩 병렬화로 round-trip 최소화
+    const groupedEntries = [...grouped.entries()];
+    const PARTNERS_CHUNK = 50;
+    for (let i = 0; i < groupedEntries.length; i += PARTNERS_CHUNK) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) {
         partial = true;
         break;
       }
-      try {
-        await prisma.agriTrace.update({
-          where: { histTraceRegNo: regNo },
-          data: { partners: partners as unknown as Prisma.InputJsonValue },
-        });
-        partnersAttached += 1;
-      } catch (e) {
-        // P2025: Record to update not found — I1790에 없는 거래처는 skip
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
-          continue;
-        }
-        lastError = `partners update 실패(${regNo}): ${e instanceof Error ? e.message : String(e)}`;
+      const slice = groupedEntries.slice(i, i + PARTNERS_CHUNK);
+      const results = await Promise.all(
+        slice.map(async ([regNo, partners]) => {
+          try {
+            await prisma.agriTrace.update({
+              where: { histTraceRegNo: regNo },
+              data: { partners: partners as unknown as Prisma.InputJsonValue },
+            });
+            return { ok: true as const };
+          } catch (e) {
+            // P2025: Record to update not found — I1790에 없는 거래처는 skip
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
+              return { ok: false as const, skipped: true };
+            }
+            return {
+              ok: false as const,
+              skipped: false,
+              error: `partners update 실패(${regNo}): ${e instanceof Error ? e.message : String(e)}`,
+            };
+          }
+        })
+      );
+      for (const r of results) {
+        if (r.ok) partnersAttached += 1;
+        else if (!r.skipped && r.error) lastError = r.error;
       }
     }
   }

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         dedup.push(r);
       }
 
-      // 신규/업데이트 분기 위해 기존 PK 조회
+      // 1) 한 번의 쿼리로 기존 groupCode 조회
       const existingCodes = new Set(
         (
           await prisma.healthFunctionalCategory.findMany({
@@ -62,10 +62,11 @@ export async function POST(req: NextRequest) {
         ).map((r) => r.groupCode)
       );
 
-      const upserts = dedup.map((r) =>
-        prisma.healthFunctionalCategory.upsert({
-          where: { groupCode: r.groupCode },
-          create: {
+      try {
+        // 2) 신규는 createMany 일괄 삽입
+        const toCreate = dedup
+          .filter((r) => !existingCodes.has(r.groupCode))
+          .map((r) => ({
             groupCode: r.groupCode,
             groupName: r.groupName,
             largeCategoryCode: r.largeCategoryCode ?? null,
@@ -74,24 +75,37 @@ export async function POST(req: NextRequest) {
             midCategoryName: r.midCategoryName ?? null,
             smallCategoryCode: r.smallCategoryCode ?? null,
             smallCategoryName: r.smallCategoryName ?? null,
-          },
-          update: {
-            groupName: r.groupName,
-            largeCategoryCode: r.largeCategoryCode ?? null,
-            largeCategoryName: r.largeCategoryName ?? null,
-            midCategoryCode: r.midCategoryCode ?? null,
-            midCategoryName: r.midCategoryName ?? null,
-            smallCategoryCode: r.smallCategoryCode ?? null,
-            smallCategoryName: r.smallCategoryName ?? null,
-          },
-        })
-      );
+          }));
+        if (toCreate.length > 0) {
+          await prisma.healthFunctionalCategory.createMany({
+            data: toCreate,
+            skipDuplicates: true,
+          });
+          categoriesInserted += toCreate.length;
+        }
 
-      try {
-        await prisma.$transaction(upserts);
-        for (const r of dedup) {
-          if (existingCodes.has(r.groupCode)) categoriesUpdated += 1;
-          else categoriesInserted += 1;
+        // 3) 기존은 50개씩 병렬 update
+        const toUpdate = dedup.filter((r) => existingCodes.has(r.groupCode));
+        const CHUNK = 50;
+        for (let i = 0; i < toUpdate.length; i += CHUNK) {
+          const slice = toUpdate.slice(i, i + CHUNK);
+          await Promise.all(
+            slice.map((r) =>
+              prisma.healthFunctionalCategory.update({
+                where: { groupCode: r.groupCode },
+                data: {
+                  groupName: r.groupName,
+                  largeCategoryCode: r.largeCategoryCode ?? null,
+                  largeCategoryName: r.largeCategoryName ?? null,
+                  midCategoryCode: r.midCategoryCode ?? null,
+                  midCategoryName: r.midCategoryName ?? null,
+                  smallCategoryCode: r.smallCategoryCode ?? null,
+                  smallCategoryName: r.smallCategoryName ?? null,
+                },
+              })
+            )
+          );
+          categoriesUpdated += slice.length;
         }
       } catch (e) {
         lastError = `카테고리 upsert 실패: ${e instanceof Error ? e.message : String(e)}`;
@@ -129,6 +143,7 @@ export async function POST(req: NextRequest) {
         dedup.push(r);
       }
 
+      // 1) 한 번의 쿼리로 기존 recognitionNo 조회
       const existingNos = new Set(
         (
           await prisma.healthFunctionalRawMaterial.findMany({
@@ -138,10 +153,11 @@ export async function POST(req: NextRequest) {
         ).map((r) => r.recognitionNo)
       );
 
-      const upserts = dedup.map((r) =>
-        prisma.healthFunctionalRawMaterial.upsert({
-          where: { recognitionNo: r.recognitionNo },
-          create: {
+      try {
+        // 2) 신규는 createMany 일괄 삽입
+        const toCreate = dedup
+          .filter((r) => !existingNos.has(r.recognitionNo))
+          .map((r) => ({
             recognitionNo: r.recognitionNo,
             rawMaterialName: r.rawMaterialName,
             weightUnit: r.weightUnit ?? null,
@@ -149,23 +165,36 @@ export async function POST(req: NextRequest) {
             dailyIntakeMax: r.dailyIntakeMax ?? null,
             primaryFunction: r.primaryFunction ?? null,
             warning: r.warning ?? null,
-          },
-          update: {
-            rawMaterialName: r.rawMaterialName,
-            weightUnit: r.weightUnit ?? null,
-            dailyIntakeMin: r.dailyIntakeMin ?? null,
-            dailyIntakeMax: r.dailyIntakeMax ?? null,
-            primaryFunction: r.primaryFunction ?? null,
-            warning: r.warning ?? null,
-          },
-        })
-      );
+          }));
+        if (toCreate.length > 0) {
+          await prisma.healthFunctionalRawMaterial.createMany({
+            data: toCreate,
+            skipDuplicates: true,
+          });
+          rawMaterialsInserted += toCreate.length;
+        }
 
-      try {
-        await prisma.$transaction(upserts);
-        for (const r of dedup) {
-          if (existingNos.has(r.recognitionNo)) rawMaterialsUpdated += 1;
-          else rawMaterialsInserted += 1;
+        // 3) 기존은 50개씩 병렬 update
+        const toUpdate = dedup.filter((r) => existingNos.has(r.recognitionNo));
+        const CHUNK = 50;
+        for (let i = 0; i < toUpdate.length; i += CHUNK) {
+          const slice = toUpdate.slice(i, i + CHUNK);
+          await Promise.all(
+            slice.map((r) =>
+              prisma.healthFunctionalRawMaterial.update({
+                where: { recognitionNo: r.recognitionNo },
+                data: {
+                  rawMaterialName: r.rawMaterialName,
+                  weightUnit: r.weightUnit ?? null,
+                  dailyIntakeMin: r.dailyIntakeMin ?? null,
+                  dailyIntakeMax: r.dailyIntakeMax ?? null,
+                  primaryFunction: r.primaryFunction ?? null,
+                  warning: r.warning ?? null,
+                },
+              })
+            )
+          );
+          rawMaterialsUpdated += slice.length;
         }
       } catch (e) {
         lastError = `원료 upsert 실패: ${e instanceof Error ? e.message : String(e)}`;
