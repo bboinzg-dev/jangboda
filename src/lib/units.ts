@@ -100,7 +100,13 @@ export function unitPriceLabel(price: number, unit: string): string | null {
   const q = parseUnit(unit);
   if (!q || q.value <= 0) return null;
   const perUnit = (price * q.basisDenominator) / q.value;
-  // 너무 작은 단위(원/g)에서 1원 미만 같은 결과는 안내 가치 적음
   if (perUnit < 1) return null;
   return `${q.basisLabel} ${Math.round(perUnit).toLocaleString("ko-KR")}원`;
+}
+
+// 가격과 단위를 받아 단가 숫자(정렬용) 반환 — 파싱 실패 시 null
+export function unitPriceValue(price: number, unit: string): number | null {
+  const q = parseUnit(unit);
+  if (!q || q.value <= 0) return null;
+  return (price * q.basisDenominator) / q.value;
 }

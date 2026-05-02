@@ -56,11 +56,56 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
   return parseClovaResponse(json);
 }
 
+// CLOVA Receipt OCR 응답 파서
+// 실제 응답 스펙: https://api.ncloud-docs.com/docs/ai-application-service-ocr-receipt
+// 응답 형태:
+// { images: [{ receipt: { result: { storeInfo, paymentInfo, subResults[].items[], totalPrice } } }] }
 function parseClovaResponse(json: unknown): ParsedReceipt {
-  // 단순화: 실제 연동 시 CLOVA receipt API 응답 구조에 맞춰 채울 것
+  type ClovaText = { text?: string; formatted?: { value?: string } };
+  type ClovaItem = {
+    name?: ClovaText;
+    count?: ClovaText;
+    price?: { price?: ClovaText };
+  };
+  type ClovaSub = { items?: ClovaItem[] };
+  type ClovaReceipt = {
+    storeInfo?: { name?: ClovaText };
+    paymentInfo?: { date?: ClovaText };
+    subResults?: ClovaSub[];
+    totalPrice?: { price?: ClovaText };
+  };
+  type ClovaResp = {
+    images?: Array<{ receipt?: { result?: ClovaReceipt }; inferText?: string }>;
+  };
+
+  const resp = json as ClovaResp;
+  const img = resp?.images?.[0];
+  const result = img?.receipt?.result;
+
+  const textOf = (t?: ClovaText) =>
+    t?.formatted?.value ?? t?.text ?? "";
+  const numOf = (t?: ClovaText) => {
+    const s = textOf(t).replace(/[^\d]/g, "");
+    return s ? parseInt(s, 10) : 0;
+  };
+
+  const items: ParsedReceiptItem[] = [];
+  for (const sub of result?.subResults ?? []) {
+    for (const it of sub.items ?? []) {
+      const name = textOf(it.name).trim();
+      const price = numOf(it.price?.price);
+      const count = numOf(it.count) || 1;
+      if (!name || price <= 0) continue;
+      items.push({ rawName: name, price, quantity: count });
+    }
+  }
+
   return {
-    items: [],
-    rawText: JSON.stringify(json).slice(0, 500),
+    storeHint: textOf(result?.storeInfo?.name).trim() || undefined,
+    items,
+    totalAmount: numOf(result?.totalPrice?.price) || undefined,
+    receiptDate: textOf(result?.paymentInfo?.date).trim() || undefined,
+    rawText: img?.inferText?.slice(0, 1000) ?? JSON.stringify(json).slice(0, 500),
   };
 }
 

@@ -4,6 +4,7 @@ import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
 import { notFound } from "next/navigation";
 import SourceBadge, { isOnlineStore } from "@/components/SourceBadge";
 import { unitPriceLabel } from "@/lib/units";
+import PriceAlertButton from "@/components/PriceAlertButton";
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +185,13 @@ export default async function ProductDetailPage({
               : "온라인이 더 쌉니다 — 시키는 게 이득 (배송비 별도 확인)"}
           </div>
         )}
+        <div className="mt-4">
+          <PriceAlertButton
+            productId={product.id}
+            productName={product.name}
+            currentMinPrice={minPrice}
+          />
+        </div>
       </header>
 
       <section>
