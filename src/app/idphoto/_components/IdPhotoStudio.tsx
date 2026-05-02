@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import CameraCapture from "@/components/CameraCapture";
 
 type SpecPublic = {
   idx: number;
@@ -17,10 +18,10 @@ const MAX_LONG_EDGE = 2048;
 const TARGET_BYTES = 4 * 1024 * 1024;
 
 // Canvas로 이미지 리사이즈 + JPEG 재인코딩 — 서버 전송량 최소화 + EXIF 회전 처리.
-async function compressImageFile(
-  file: File,
+async function compressImageSource(
+  source: File | Blob,
 ): Promise<{ base64: string; mimeType: string; previewUrl: string }> {
-  const bitmap = await loadBitmap(file);
+  const bitmap = await loadBitmap(source);
   const { width, height } = scaleDown(bitmap.width, bitmap.height, MAX_LONG_EDGE);
 
   const canvas = document.createElement("canvas");
@@ -47,18 +48,18 @@ async function compressImageFile(
   return { base64, mimeType: "image/jpeg", previewUrl };
 }
 
-async function loadBitmap(file: File): Promise<ImageBitmap> {
+async function loadBitmap(source: File | Blob): Promise<ImageBitmap> {
   // createImageBitmap이 EXIF orientation을 자동으로 적용
   if (typeof createImageBitmap === "function") {
     try {
-      return await createImageBitmap(file, { imageOrientation: "from-image" });
+      return await createImageBitmap(source, { imageOrientation: "from-image" });
     } catch {
       // 일부 브라우저에서 옵션 미지원 — 폴백으로 옵션 없이
-      return await createImageBitmap(file);
+      return await createImageBitmap(source);
     }
   }
   // 정말 옛날 브라우저용 폴백
-  const url = URL.createObjectURL(file);
+  const url = URL.createObjectURL(source);
   try {
     const img = new Image();
     img.src = url;
@@ -71,6 +72,11 @@ async function loadBitmap(file: File): Promise<ImageBitmap> {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return await res.blob();
 }
 
 function scaleDown(w: number, h: number, max: number) {
@@ -101,25 +107,38 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
   const [resultName, setResultName] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const spec = specs[typeIdx];
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function ingestSource(source: File | Blob) {
     setError(null);
     setResultDataUrl(null);
     try {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       const { base64, mimeType, previewUrl: pUrl } =
-        await compressImageFile(file);
+        await compressImageSource(source);
       setImageBase64(base64);
       setImageMime(mimeType);
       setPreviewUrl(pUrl);
     } catch (err) {
       setError((err as Error).message ?? "이미지를 읽을 수 없습니다.");
     }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await ingestSource(file);
+    // 같은 파일 재선택 가능하도록 input 초기화
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleCameraCapture(dataUrl: string) {
+    setCameraOpen(false);
+    const blob = await dataUrlToBlob(dataUrl);
+    await ingestSource(blob);
   }
 
   async function handleProcess() {
@@ -186,18 +205,43 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
     <div className="space-y-6">
       <section className="bg-white border border-stone-200 rounded-2xl p-5">
         <h2 className="font-semibold mb-3">1. 사진 선택</h2>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-stone-100 hover:bg-stone-200 rounded-lg text-sm font-semibold text-stone-700"
+          >
+            📂 갤러리에서 선택
+          </button>
+          <button
+            type="button"
+            onClick={() => setCameraOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-50 hover:bg-brand-100 rounded-lg text-sm font-semibold text-brand-700"
+          >
+            📸 카메라로 찍기
+          </button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
           accept={ACCEPT_MIME}
-          capture="user"
           onChange={handleFileChange}
-          className="block w-full text-sm text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+          className="hidden"
         />
         <p className="text-[11px] text-stone-400 mt-2">
           JPEG / PNG / WEBP · 정면 얼굴이 선명한 사진이 좋아요.
         </p>
       </section>
+
+      {cameraOpen && (
+        <CameraCapture
+          facingMode="user"
+          title="📸 증명사진 촬영"
+          showGuide={false}
+          onCapture={handleCameraCapture}
+          onCancel={() => setCameraOpen(false)}
+        />
+      )}
 
       <section className="bg-white border border-stone-200 rounded-2xl p-5">
         <h2 className="font-semibold mb-3">2. 증명사진 종류</h2>

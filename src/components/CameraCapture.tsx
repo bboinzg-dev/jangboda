@@ -5,12 +5,21 @@ import { useEffect, useRef, useState } from "react";
 type Props = {
   onCapture: (dataUrl: string) => void;
   onCancel: () => void;
+  facingMode?: "environment" | "user"; // 기본: environment (영수증 등 후면)
+  title?: string; // 상단 표시 텍스트
+  showGuide?: boolean; // 가이드 박스 표시 여부 (영수증용 박스)
 };
 
 // 인앱 카메라 캡처 — getUserMedia 기반
-// 모바일: 후면 카메라 우선 (facingMode: environment)
+// 모바일: facingMode prop으로 전후면 선택 (기본 후면)
 // 데스크톱: webcam 사용
-export default function CameraCapture({ onCapture, onCancel }: Props) {
+export default function CameraCapture({
+  onCapture,
+  onCancel,
+  facingMode = "environment",
+  title = "📸 영수증 촬영",
+  showGuide = true,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -29,7 +38,7 @@ export default function CameraCapture({ onCapture, onCancel }: Props) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: { ideal: "environment" },
+            facingMode: { ideal: facingMode },
             width: { ideal: 1920 },
             height: { ideal: 1440 },
           },
@@ -99,7 +108,7 @@ export default function CameraCapture({ onCapture, onCancel }: Props) {
     // 다시 시작
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: { facingMode: { ideal: facingMode } },
         audio: false,
       });
       streamRef.current = stream;
@@ -120,7 +129,7 @@ export default function CameraCapture({ onCapture, onCancel }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="flex justify-between items-center p-3 text-white">
-        <span className="font-medium text-sm">📸 영수증 촬영</span>
+        <span className="font-medium text-sm">{title}</span>
         <button
           onClick={onCancel}
           aria-label="닫기"
@@ -163,8 +172,8 @@ export default function CameraCapture({ onCapture, onCancel }: Props) {
                 카메라 준비 중...
               </div>
             )}
-            {/* 영수증 가이드 박스 */}
-            {ready && (
+            {/* 가이드 박스 (옵션) */}
+            {ready && showGuide && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="border-2 border-white/40 rounded-lg w-[80%] h-[80%] max-w-[420px] max-h-[600px]" />
               </div>
