@@ -96,11 +96,12 @@ export default function UploadPage() {
     const data = await res.json();
     setSubmitting(false);
     if (data.ok) {
-      setSubmitResult(
-        `✅ ${data.count}건 등록 완료! 포인트가 적립되었습니다.`
-      );
+      const awardedNote = data.awarded
+        ? `포인트 +${data.count * 2}점 적립`
+        : "로그인하면 포인트가 적립됩니다";
+      setSubmitResult(`✅ ${data.count}건 등록 완료! ${awardedNote}.`);
     } else {
-      setSubmitResult(`❌ 실패: ${data.error}`);
+      setSubmitResult(`❌ 실패: ${data.error ?? "알 수 없는 오류"}`);
     }
   }
 

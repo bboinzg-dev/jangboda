@@ -45,7 +45,11 @@ export default function ContributePage() {
     const data = await res.json();
     setSubmitting(false);
     if (data.ok) {
-      setMsg("✅ 가격 등록 완료! 포인트 +5 적립");
+      setMsg(
+        data.awarded
+          ? "✅ 가격 등록 완료! 포인트 +5 적립"
+          : "✅ 가격 등록 완료! (로그인하면 포인트 적립)"
+      );
       setPrice("");
     } else {
       setMsg(`❌ ${data.error}`);

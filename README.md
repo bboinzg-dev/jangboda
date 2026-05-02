@@ -132,6 +132,20 @@ npm run dev
 - KAMIS API는 무료지만 호출 한도 있음 → 매일 1회 cron으로 충분
 - 데이터 10만 건 넘어가면 SQLite → PostgreSQL 마이그레이션 권장
 
+## 카카오맵으로 전환하기 (선택)
+
+기본은 무료 OpenStreetMap + Leaflet. 한국 도로명/한글 라벨이 더 자연스러운 카카오맵으로 전환하려면:
+
+1. https://developers.kakao.com/console/app 에서 애플리케이션 등록
+2. 플랫폼 → Web에 도메인 등록 (`https://jangboda.vercel.app`, `http://localhost:3000`)
+3. 발급받은 **JavaScript 키**를 환경변수로 추가:
+   ```
+   NEXT_PUBLIC_KAKAO_MAP_APP_KEY="your_javascript_key_here"
+   ```
+4. `npm run build` (NEXT_PUBLIC_*는 빌드 타임 inline) → 자동으로 카카오맵 전환됨
+
+키 미설정이면 OpenStreetMap이 그대로 작동합니다.
+
 ## 보안 노트
 
 - `/api/sync/*` 엔드포인트는 환경변수 `SYNC_TOKEN` 설정 시 인증 필요

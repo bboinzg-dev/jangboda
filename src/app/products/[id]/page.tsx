@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
 import { notFound } from "next/navigation";
 import SourceBadge, { isOnlineStore } from "@/components/SourceBadge";
+import { unitPriceLabel } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
 
@@ -59,9 +60,11 @@ async function getProductDetail(id: string) {
 
 function PriceList({
   rows,
+  unit,
   emptyHint,
 }: {
   rows: PriceRow[];
+  unit: string;
   emptyHint: React.ReactNode;
 }) {
   if (rows.length === 0) {
@@ -102,6 +105,12 @@ function PriceList({
               <div className="text-lg font-bold text-stone-900">
                 {formatWon(p.price)}
               </div>
+              {(() => {
+                const upl = unitPriceLabel(p.price, unit);
+                return upl ? (
+                  <div className="text-[11px] text-stone-500 -mt-0.5">{upl}</div>
+                ) : null;
+              })()}
               <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">
                 <SourceBadge source={p.source} />
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}>
@@ -185,6 +194,7 @@ export default async function ProductDetailPage({
           </span>
         </h2>
         <PriceList
+          unit={product.unit}
           rows={offlineRows}
           emptyHint={
             <>
@@ -209,6 +219,7 @@ export default async function ProductDetailPage({
           </span>
         </h2>
         <PriceList
+          unit={product.unit}
           rows={onlineRows}
           emptyHint={
             <>

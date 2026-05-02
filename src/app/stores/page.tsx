@@ -4,14 +4,23 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { StoreMarker } from "@/components/StoresMap";
 
-const StoresMap = dynamic(() => import("@/components/StoresMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[400px] bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm">
-      지도 로딩 중...
-    </div>
-  ),
-});
+// 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
+const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
+
+const StoresMap = dynamic(
+  () =>
+    HAS_KAKAO
+      ? import("@/components/KakaoStoresMap")
+      : import("@/components/StoresMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm">
+        지도 로딩 중...
+      </div>
+    ),
+  }
+);
 
 export default function StoresPage() {
   const [stores, setStores] = useState<StoreMarker[]>([]);

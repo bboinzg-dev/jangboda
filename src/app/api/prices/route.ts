@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 const PriceSchema = z.object({
   productId: z.string(),
@@ -8,36 +9,48 @@ const PriceSchema = z.object({
   price: z.number().int().positive(),
   isOnSale: z.boolean().optional(),
   source: z.enum(["manual", "receipt"]).default("manual"),
-  contributorId: z.string().optional(),
   receiptId: z.string().optional(),
 });
 
-// POST /api/prices — 수동 가격 등록 또는 영수증 매칭 후 일괄 등록
+// POST /api/prices — 수동 가격 등록 (로그인 사용자만 contributor로 적립)
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const items = Array.isArray(body) ? body : [body];
 
-  const created = [];
-  for (const raw of items) {
-    const parsed = PriceSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "유효하지 않은 입력", detail: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
-    const price = await prisma.price.create({ data: parsed.data });
-    created.push(price);
+  // 로그인 사용자 자동 contributor 매핑
+  const user = await getCurrentUser();
+  const contributorId = user?.id;
 
-    // 기여자 포인트 적립 (수동 +5, 영수증 +2)
-    if (parsed.data.contributorId) {
-      const award = parsed.data.source === "manual" ? 5 : 2;
-      await prisma.user.update({
-        where: { id: parsed.data.contributorId },
-        data: { points: { increment: award } },
+  const created = [];
+  await prisma.$transaction(async (tx) => {
+    for (const raw of items) {
+      const parsed = PriceSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(JSON.stringify(parsed.error.flatten()));
+      }
+      const price = await tx.price.create({
+        data: { ...parsed.data, contributorId },
+      });
+      created.push(price);
+    }
+
+    // 포인트 적립 — 로그인 사용자만 (수동 +5/건, 영수증 +2/건)
+    if (contributorId) {
+      const award = items.reduce(
+        (sum, i) => sum + (i.source === "receipt" ? 2 : 5),
+        0
+      );
+      await tx.user.upsert({
+        where: { id: contributorId },
+        update: { points: { increment: award } },
+        create: {
+          id: contributorId,
+          nickname: `사용자-${contributorId.slice(0, 4)}`,
+          points: award,
+        },
       });
     }
-  }
+  });
 
-  return NextResponse.json({ ok: true, count: created.length });
+  return NextResponse.json({ ok: true, count: created.length, awarded: !!contributorId });
 }

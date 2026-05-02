@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseReceipt } from "@/lib/ocr";
 import { matchProduct, matchStore } from "@/lib/matcher";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 // POST /api/receipts — 영수증 이미지 업로드 + OCR 파싱 + 자동 매칭 시도
-// body: { imageBase64?: string, uploaderId?: string }
+// body: { imageBase64?: string }
+// 로그인 사용자가 있으면 자동으로 contributor로 사용 (uploaderId 제거됨)
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { imageBase64, uploaderId } = body;
+  const { imageBase64 } = body;
 
-  // 입력 크기 제한 — base64는 약 1.33배 부풀림. 8MB까지 허용 (사진 한 장 기준)
   if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 8 * 1024 * 1024) {
     return NextResponse.json({ error: "이미지 크기 초과 (8MB 제한)" }, { status: 413 });
   }
+
+  const user = await getCurrentUser();
+  const uploaderId = user?.id;
 
   const { receipt, usedMock } = await parseReceipt(imageBase64 ?? null);
 
@@ -53,17 +57,32 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/receipts — 사용자가 매칭/매장을 수정한 뒤 가격 일괄 확정
+// 로그인 사용자만 자신이 업로드한 영수증을 확정 가능 (uploaderId 일치 검증)
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { receiptId, storeId, items, uploaderId } = body as {
+  const { receiptId, storeId, items } = body as {
     receiptId: string;
     storeId: string;
-    uploaderId?: string;
     items: { productId: string; price: number; quantity: number }[];
   };
 
   if (!receiptId || !storeId || !Array.isArray(items)) {
     return NextResponse.json({ error: "필수 필드 누락" }, { status: 400 });
+  }
+
+  const user = await getCurrentUser();
+  const uploaderId = user?.id;
+
+  // 영수증 소유자 검증 (다른 사람 영수증을 확정하는 걸 막음)
+  const receipt = await prisma.receipt.findUnique({
+    where: { id: receiptId },
+    select: { uploaderId: true },
+  });
+  if (!receipt) {
+    return NextResponse.json({ error: "영수증을 찾을 수 없음" }, { status: 404 });
+  }
+  if (receipt.uploaderId && receipt.uploaderId !== uploaderId) {
+    return NextResponse.json({ error: "권한 없음" }, { status: 403 });
   }
 
   const validItems = items.filter((i) => i.productId && i.price > 0);
