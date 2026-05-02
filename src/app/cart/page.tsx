@@ -286,8 +286,25 @@ export default function CartPage() {
             </div>
           )}
 
+          {filteredResults && filteredResults.length === 0 && results && results.length > 0 && (
+            <div className="bg-stone-50 border border-stone-200 rounded-lg px-4 py-6 text-center text-sm text-stone-600">
+              {favoriteOnly
+                ? "★ 즐겨찾기 매장에는 이 상품들이 등록되지 않았어요"
+                : "비교할 매장이 없어요"}
+              <br />
+              {favoriteOnly && (
+                <button
+                  onClick={() => setFavoriteOnly(false)}
+                  className="text-xs text-brand-600 hover:underline mt-2 inline-block"
+                >
+                  ★ 즐겨찾기 필터 해제하고 전체 보기
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="space-y-3">
-            {filteredResults.map((r, i) => (
+            {(filteredResults ?? []).map((r, i) => (
               <div
                 key={r.storeId}
                 className={`bg-white border rounded-xl p-4 ${
