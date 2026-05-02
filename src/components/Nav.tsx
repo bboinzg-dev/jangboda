@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import AuthButton from "./AuthButton";
 
 const NAV_ITEMS = [
   { href: "/search", label: "상품 검색" },
@@ -38,6 +39,9 @@ export default function Nav() {
           >
             영수증 올리기
           </Link>
+          <span className="ml-1 pl-2 border-l border-stone-200">
+            <AuthButton />
+          </span>
         </nav>
 
         {/* 모바일 햄버거 + 영수증 버튼 */}
@@ -85,6 +89,9 @@ export default function Nav() {
             >
               가격 직접 입력
             </Link>
+            <div className="border-t border-stone-200 mt-2 pt-2">
+              <AuthButton />
+            </div>
           </div>
         </nav>
       )}

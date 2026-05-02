@@ -123,11 +123,13 @@ export default function UploadPage() {
           <input
             type="file"
             accept="image/*"
+            capture="environment"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleFile(f);
             }}
-            className="block w-full text-sm"
+            aria-label="영수증 사진"
+            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
           />
           <div className="text-xs text-stone-500 mt-1">
             이미지를 안 올려도 데모 데이터로 흐름을 확인할 수 있어요.
