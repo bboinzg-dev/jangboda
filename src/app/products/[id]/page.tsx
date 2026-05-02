@@ -142,6 +142,53 @@ export default async function ProductDetailPage({
         <div className="text-stone-600 text-sm mt-1">
           {product.brand} · {product.unit}
         </div>
+
+        {/* 제조/원산지/등급/인증 정보 */}
+        {(product.manufacturer ||
+          product.origin ||
+          product.grade ||
+          (product.certifications && product.certifications.length > 0)) && (
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            {product.manufacturer && (
+              <div className="bg-stone-50 rounded px-2 py-1.5">
+                <div className="text-[10px] text-stone-500">제조</div>
+                <div className="font-medium text-stone-700 truncate">
+                  {product.manufacturer}
+                </div>
+              </div>
+            )}
+            {product.origin && (
+              <div className="bg-stone-50 rounded px-2 py-1.5">
+                <div className="text-[10px] text-stone-500">원산지</div>
+                <div className="font-medium text-stone-700 truncate">
+                  {product.origin}
+                </div>
+              </div>
+            )}
+            {product.grade && (
+              <div className="bg-amber-50 rounded px-2 py-1.5">
+                <div className="text-[10px] text-amber-700">등급</div>
+                <div className="font-medium text-amber-800 truncate">
+                  {product.grade}
+                </div>
+              </div>
+            )}
+            {product.certifications && product.certifications.length > 0 && (
+              <div className="bg-emerald-50 rounded px-2 py-1.5">
+                <div className="text-[10px] text-emerald-700">인증</div>
+                <div className="font-medium text-emerald-800 truncate">
+                  {product.certifications.join(", ")}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {product.description && (
+          <div className="mt-2 text-xs text-stone-500">
+            {product.description}
+          </div>
+        )}
+
         {prices.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-3">
             <PriceStat label="전체 최저가" value={formatWon(minPrice)} highlight />

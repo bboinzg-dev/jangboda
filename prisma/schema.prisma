@@ -42,17 +42,22 @@ model Store {
 
 // 상품 (정규화된 SKU 단위)
 model Product {
-  id        String   @id @default(cuid())
-  name      String   // "농심 신라면 멀티팩"
-  brand     String?  // "농심"
-  category  String   // "라면/면류"
-  unit      String   // "120g x 5개"
-  barcode   String?  @unique
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  prices    Price[]
-  aliases   ProductAlias[]
-  priceAlerts PriceAlert[]
+  id           String   @id @default(cuid())
+  name         String   // "농심 신라면 멀티팩"
+  brand        String?  // 짧은 브랜드 — "농심"
+  manufacturer String?  // 정식 제조사 — "(주)농심" / 농산물은 농가/공급자
+  origin       String?  // 원산지 — "국내산", "충북 청송", "호주산" 등
+  grade        String?  // 등급/품질 — "1++", "특품", "유기농", "친환경"
+  certifications String[] // 인증 리스트 — ["HACCP", "유기농", "친환경"]
+  category     String   // "라면/면류"
+  unit         String   // "120g x 5개"
+  barcode      String?  @unique  // GS1 바코드 (한국 880XXX...)
+  imageUrl     String?
+  description  String?  // 자유 메모 (제조국, 유통기한, 영양정보 등)
+  createdAt    DateTime @default(now())
+  prices       Price[]
+  aliases      ProductAlias[]
+  priceAlerts  PriceAlert[]
 
   @@index([category])
   @@index([name])

@@ -72,6 +72,22 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: "asc" },
   });
 
+  // 가공식품 — 네이버 검색 결과 첫 항목의 maker/brand로 manufacturer 자동 채움
+  // (이미 채워진 상품은 그대로)
+  for (const p of products) {
+    if (!p.manufacturer && p.brand) {
+      // 다음 단계 fetch에서 maker 정보 가져옴 — 일단 brand를 manufacturer로
+      try {
+        await prisma.product.update({
+          where: { id: p.id },
+          data: { manufacturer: p.brand },
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   // 1단계 (병렬): 모든 상품에 대해 네이버 검색 + outlier 계산
   const fetched = await Promise.all(
     products.map(async (product) => {

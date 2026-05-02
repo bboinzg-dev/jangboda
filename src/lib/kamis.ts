@@ -12,6 +12,10 @@ export type KamisPrice = {
   unit: string;
   retailPrice: number;
   date: string;
+  // KAMIS 응답에 등급/품종/원산지 일부 있음 — 농수산물 풍부화에 활용
+  grade?: string;     // 등급 — "특품", "상품" 등 (rank/kind_name)
+  kindName?: string;  // 품종 — "조생", "후지" 등
+  origin?: string;    // 원산지 — 도매시장이나 산지 (있으면)
 };
 
 const KAMIS_BASE = "http://www.kamis.or.kr/service/price/xml.do";
@@ -112,6 +116,9 @@ async function callKamisAll(
           unit: it.unit ? `1${it.unit}` : target.unit,
           retailPrice: price,
           date,
+          grade: it.rank || it.kind_name,  // 등급 (특품/상품 등)
+          kindName: it.kind_name,          // 품종 (조생/후지 등)
+          origin: it.country_name || it.local_name, // 원산지 (있으면)
         });
       }
     } catch (e) {

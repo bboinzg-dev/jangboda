@@ -55,10 +55,26 @@ export async function POST(req: NextRequest) {
           name: productName,
           category: "농수산물",
           unit: k.unit,
-          brand: "농수산물 (시세)",
+          brand: "농수산물",
+          manufacturer: "KAMIS 전국 평균",
+          origin: k.origin || "국내산",
+          grade: k.grade,
+          description: k.kindName ? `품종: ${k.kindName}` : null,
           aliases: { create: [{ alias: productName }] },
         },
       });
+    } else {
+      // 기존 상품에 manufacturer/origin 비어있으면 채움
+      if (!product.manufacturer || !product.origin || !product.grade) {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            manufacturer: product.manufacturer || "KAMIS 전국 평균",
+            origin: product.origin || (k.origin ?? "국내산"),
+            grade: product.grade || k.grade,
+          },
+        });
+      }
     }
 
     // KAMIS는 매일 갱신용 — 같은 (product, store, source: kamis)의 기존 row 제거
