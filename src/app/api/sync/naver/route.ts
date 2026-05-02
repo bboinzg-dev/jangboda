@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { fetchNaverShop, pickLowestByMall } from "@/lib/naverShop";
 
+// Vercel 함수 timeout — 네이버 API 호출 N회로 시간 소요. 60초까지 허용.
+export const maxDuration = 60;
+
 // "120g x 5개" → "5개" 같은 단위 키워드 추출 (검색 정밀도 향상용)
 function extractUnitKeyword(unit: string): string {
   if (!unit) return "";
