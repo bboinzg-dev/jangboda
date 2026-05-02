@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { StoreMarker } from "./StoresMap";
 
-// 카카오맵 한정 글로벌 타입 (런타임 SDK 로드 후 window.kakao로 접근)
 declare global {
   interface Window {
     kakao: {
@@ -29,6 +28,9 @@ declare global {
           options?: unknown
         ) => unknown;
         Size: new (w: number, h: number) => unknown;
+        event: {
+          addListener: (target: unknown, type: string, handler: () => void) => void;
+        };
       };
     };
   }
@@ -63,25 +65,34 @@ function loadKakaoSdk(appKey: string): Promise<void> {
 
 export default function KakaoStoresMap({ stores, myLocation, height = "400px" }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [overlayMessage, setOverlayMessage] = useState<string | null>("지도 준비 중...");
+  const [fatalError, setFatalError] = useState<string | null>(null);
 
   useEffect(() => {
     const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
     if (!appKey) {
-      setError("KAKAO 키 미설정");
+      setFatalError("KAKAO 키 미설정");
       return;
     }
     if (!containerRef.current) return;
 
+    const offline = stores.filter((s) => s.lat !== 0 || s.lng !== 0);
+    if (offline.length === 0) {
+      // 매장 데이터가 아직 안 들어왔거나 모두 가상매장(lat=0)인 경우
+      setOverlayMessage("매장 정보 로딩 중...");
+      return;
+    }
+
     let cancelled = false;
+    setOverlayMessage("지도 그리는 중...");
+
     loadKakaoSdk(appKey)
       .then(() => {
         if (cancelled || !containerRef.current) return;
-        const offline = stores.filter((s) => s.lat !== 0 || s.lng !== 0);
-        if (offline.length === 0) {
-          setError("표시할 매장 없음");
-          return;
-        }
+
+        // 컨테이너 비우기 (재실행 시 누적 방지)
+        containerRef.current.innerHTML = "";
+
         const center = myLocation
           ? new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng)
           : new window.kakao.maps.LatLng(offline[0].lat, offline[0].lng);
@@ -109,16 +120,7 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
             </div>`,
             removable: true,
           });
-          (marker as unknown as { setMap: (m: unknown) => void; }).setMap = marker.setMap;
-          // Marker 클릭 이벤트
-          window.kakao.maps && (window.kakao.maps as unknown as Record<string, unknown>);
-          // 카카오 SDK는 event.addListener 패턴
-          // 단순화: 인포윈도우 자동 표시 대신 직접 attach
-          (window as unknown as { kakao: { maps: { event: { addListener: (...args: unknown[]) => void } } } }).kakao.maps.event?.addListener?.(
-            marker,
-            "click",
-            () => info.open(map, marker)
-          );
+          window.kakao.maps.event.addListener(marker, "click", () => info.open(map, marker));
         });
 
         if (myLocation) {
@@ -127,9 +129,11 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
             map,
           });
         }
+
+        setOverlayMessage(null); // 성공 → overlay 제거
       })
       .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : String(e));
+        setFatalError(e instanceof Error ? e.message : String(e));
       });
 
     return () => {
@@ -137,22 +141,30 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
     };
   }, [stores, myLocation]);
 
-  if (error) {
+  if (fatalError) {
     return (
       <div
         style={{ height }}
         className="bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm"
       >
-        {error === "KAKAO 키 미설정" ? "카카오맵 키 미설정 (OpenStreetMap 사용 중)" : `카카오맵 오류: ${error}`}
+        {fatalError === "KAKAO 키 미설정"
+          ? "카카오맵 키 미설정 (OpenStreetMap 사용 중)"
+          : `카카오맵 오류: ${fatalError}`}
       </div>
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      style={{ height }}
-      className="rounded-lg overflow-hidden border border-stone-200"
-    />
+    <div className="relative" style={{ height }}>
+      <div
+        ref={containerRef}
+        className="rounded-lg overflow-hidden border border-stone-200 h-full w-full"
+      />
+      {overlayMessage && (
+        <div className="absolute inset-0 bg-stone-100/90 rounded-lg flex items-center justify-center text-stone-500 text-sm pointer-events-none">
+          {overlayMessage}
+        </div>
+      )}
+    </div>
   );
 }
