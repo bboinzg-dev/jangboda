@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function SyncPage() {
   const [kamisResult, setKamisResult] = useState<string | null>(null);
+  const [naverResult, setNaverResult] = useState<string | null>(null);
   const [csvText, setCsvText] = useState(
     "product,store,chain,price,category,unit\n신라면,롯데마트 잠실점,롯데마트,4280,라면/면류,120g x 5개"
   );
@@ -22,6 +23,26 @@ export default function SyncPage() {
         data.error ? ` — ${data.error}` : ""
       }`
     );
+  }
+
+  async function syncNaver() {
+    setBusy(true);
+    setNaverResult(null);
+    const res = await fetch("/api/sync/naver?limit=20", { method: "POST" });
+    const data = await res.json();
+    setBusy(false);
+    if (data.ok) {
+      const sampleStr = (data.samples ?? [])
+        .map((s: { product: string; malls: string[] }) => `${s.product}: ${s.malls.join(", ")}`)
+        .join(" / ");
+      setNaverResult(
+        `✅ ${data.inserted}건 가격 등록, 신규 매장 ${data.storesCreated}개 (mock 사용 ${data.usedMockCount}회)${
+          sampleStr ? ` — ${sampleStr}` : ""
+        }`
+      );
+    } else {
+      setNaverResult(`❌ ${data.error ?? "실패"}`);
+    }
   }
 
   async function importCsv() {
@@ -70,6 +91,30 @@ export default function SyncPage() {
         </button>
         {kamisResult && (
           <div className="text-sm text-emerald-700 pt-2">{kamisResult}</div>
+        )}
+      </section>
+
+      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-3">
+        <div>
+          <h2 className="font-bold">🛍️ 네이버 쇼핑 (온라인 쇼핑몰)</h2>
+          <p className="text-xs text-stone-500 mt-1">
+            카탈로그 상품을 네이버에서 검색해 쿠팡, G마켓, SSG, 11번가 등의
+            가격을 한 번에 가져옵니다.
+            <br />
+            농수산물 카테고리는 제외 (이름이 너무 일반적이라 매칭 노이즈 큼).
+          </p>
+        </div>
+        <button
+          onClick={syncNaver}
+          disabled={busy}
+          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          네이버에서 온라인 가격 가져오기
+        </button>
+        {naverResult && (
+          <div className="text-xs text-emerald-700 pt-2 break-all">
+            {naverResult}
+          </div>
         )}
       </section>
 
