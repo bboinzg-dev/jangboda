@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { CATEGORIES } from "@/lib/benefits/types";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { RematchButton } from "./_components/RematchButton";
+import { stripHtml } from "@/lib/benefits/sanitize";
 
 export const dynamic = "force-dynamic";
 
@@ -144,14 +145,14 @@ export default async function BenefitsHomePage() {
                           )}
                         </div>
                         <h3 className="font-semibold text-stone-900 leading-snug line-clamp-2">
-                          {m.benefit.title}
+                          {stripHtml(m.benefit.title)}
                         </h3>
                       </div>
                       <ScoreBadge score={m.score} status={m.status} />
                     </div>
                     {m.benefit.summary && (
                       <p className="text-sm text-stone-600 line-clamp-2 mb-2">
-                        {m.benefit.summary}
+                        {stripHtml(m.benefit.summary)}
                       </p>
                     )}
                     <div className="flex items-center gap-3 text-xs text-stone-500">

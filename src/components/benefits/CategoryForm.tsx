@@ -6,6 +6,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CATEGORIES, type CategoryKey } from "@/lib/benefits/types";
+import {
+  SIDO_NAMES,
+  sigunguOf,
+  sigunguName,
+} from "@/lib/benefits/regions";
 
 type Props = {
   category: CategoryKey;
@@ -433,30 +438,108 @@ function DemographicsFields({ values, setField }: FieldProps) {
 }
 
 // ───────── residence ─────────
+// 시도 코드("11") 목록 — "00000"(전국) 제외한 17개
+const SIDO_OPTIONS: { code: string; sidoCode2: string; name: string }[] =
+  Object.entries(SIDO_NAMES)
+    .filter(([code]) => code !== "00000")
+    .map(([code, name]) => ({ code, sidoCode2: code.slice(0, 2), name }));
+
 function ResidenceFields({ values, setField }: FieldProps) {
+  // initialValues.regionCode로 시도/시군구 초기값 추정
+  const initialRegionCode = getStr(values, "regionCode");
+  // 5자리 코드면 앞 2자리, 그 외는 빈 문자열
+  const initialSido2 =
+    initialRegionCode.length === 5 ? initialRegionCode.slice(0, 2) : "";
+  // "XX000" 형태면 시군구 미선택, 그 외 5자리면 시군구 선택됨
+  const initialSigungu =
+    initialRegionCode.length === 5 && !initialRegionCode.endsWith("000")
+      ? initialRegionCode
+      : "";
+
+  const [sido2, setSido2] = useState<string>(initialSido2);
+  const [sigungu, setSigungu] = useState<string>(initialSigungu);
+
+  const sigunguList = sido2 ? sigunguOf(sido2) : [];
+
+  // 시도 변경 핸들러
+  function handleSidoChange(next: string) {
+    setSido2(next);
+    setSigungu("");
+    if (!next) {
+      // 시도 미선택 → regionCode/regionName 비움
+      setField("regionCode", undefined);
+      setField("regionName", undefined);
+      return;
+    }
+    // 시도만 선택, 시군구 미선택 → "XX000"으로 set, regionName은 시도명만
+    const sidoFullCode = next + "000";
+    setField("regionCode", sidoFullCode);
+    setField("regionName", SIDO_NAMES[sidoFullCode] ?? undefined);
+  }
+
+  // 시군구 변경 핸들러
+  function handleSigunguChange(next: string) {
+    setSigungu(next);
+    if (!next) {
+      // 시군구 해제 → 시도만 set
+      if (sido2) {
+        const sidoFullCode = sido2 + "000";
+        setField("regionCode", sidoFullCode);
+        setField("regionName", SIDO_NAMES[sidoFullCode] ?? undefined);
+      } else {
+        setField("regionCode", undefined);
+        setField("regionName", undefined);
+      }
+      return;
+    }
+    const sgName = sigunguName(next);
+    const sidoFullCode = next.slice(0, 2) + "000";
+    const sidoName = SIDO_NAMES[sidoFullCode] ?? "";
+    setField("regionCode", next);
+    setField(
+      "regionName",
+      sgName ? `${sidoName} ${sgName}` : sidoName || undefined,
+    );
+  }
+
   return (
     <>
       <div>
-        <FieldLabel hint="행안부 5자리 시군구 코드">행정구역 코드</FieldLabel>
-        <TextInput
-          value={getStr(values, "regionCode")}
-          onChange={(v) => setField("regionCode", v)}
-          placeholder="예: 11680 (서울 강남구)"
-          maxLength={5}
-        />
-        <p className="mt-1 text-xs text-stone-400">
-          정확한 코드를 모르면 비워두고 지역명만 입력해도 됩니다. (선택 UI는
-          추후 제공)
-        </p>
+        <FieldLabel>거주 시/도</FieldLabel>
+        <select
+          value={sido2}
+          onChange={(e) => handleSidoChange(e.target.value)}
+          className="w-full px-3 py-2 border border-stone-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+        >
+          <option value="">선택 안 함</option>
+          {SIDO_OPTIONS.map((o) => (
+            <option key={o.sidoCode2} value={o.sidoCode2}>
+              {o.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
-        <FieldLabel>지역명</FieldLabel>
-        <TextInput
-          value={getStr(values, "regionName")}
-          onChange={(v) => setField("regionName", v)}
-          placeholder="예: 서울특별시 강남구"
-        />
+        <FieldLabel hint={sido2 ? "" : "시/도 먼저 선택"}>
+          거주 시/군/구
+        </FieldLabel>
+        <select
+          value={sigungu}
+          onChange={(e) => handleSigunguChange(e.target.value)}
+          disabled={!sido2}
+          className="w-full px-3 py-2 border border-stone-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 disabled:bg-stone-50 disabled:text-stone-400"
+        >
+          <option value="">선택 안 함 (시/도 단위로만 매칭)</option>
+          {sigunguList.map((sg) => (
+            <option key={sg.code} value={sg.code}>
+              {sg.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-stone-400">
+          시/군/구를 미선택하면 시/도 단위로만 매칭됩니다.
+        </p>
       </div>
 
       <div>

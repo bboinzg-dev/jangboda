@@ -39,33 +39,112 @@ const prisma = new PrismaClient();
 // 정부 발표 직후~행안부 카탈로그 등록까지 시차가 있어 직접 추가
 // ───────────────────────────────────────────────────
 const MANUAL_ITEMS: BenefitRaw[] = [
+  // ─── 워크넷/HRD-Net 직업훈련 5종 (개별 강좌 대신 메타 1건씩) ───
+  // ※ 고유가 피해지원금은 GOV24(보조금24)에 이미 등록되어 있어 MANUAL 중복 항목 제거됨
   {
     sourceCode: SOURCE_CODES.MANUAL,
-    sourceId: "high-oil-price-relief-2026",
-    title: "고유가 피해지원금 (2026년)",
+    sourceId: "hrd-tomorrow-card",
+    title: "국민내일배움카드",
     summary:
-      "중동전쟁 극복 추경 사업. 1차(4/27~5/8) 기초수급/차상위/한부모, 2차(5/18~7/3) 소득 하위 70% 일반 국민. 1인당 10만~60만원.",
-    agency: "행정안전부",
-    category: "민생지원",
+      "구직자·재직자·자영업자가 직업능력개발 훈련 비용을 정부 지원으로 받을 수 있는 카드. 5년간 300~500만원 한도.",
+    agency: "고용노동부",
+    category: "고용·창업",
     targetType: "individual",
     regionCodes: ["00000"],
     eligibilityRules: {
       지원대상:
-        "1차: 기초생활수급자, 차상위계층, 한부모가족. 2차: 소득 하위 70% 일반 국민.",
-      선정기준:
-        "1차는 취약계층 직접 신청. 2차는 건강보험료 등 소득 기준. 인구감소지역 +5만원.",
+        "만 15세 이상 실업·재직·자영업자 누구나 (공무원·사립학교 교직원·졸업예정자 등 일부 제외)",
+      선정기준: "고용보험 가입 이력 또는 구직 등록자",
       지원내용:
-        "기초수급 1인당 55만원, 차상위/한부모 45만원, 인구감소지역 +5만원(최대 60만원).",
-      신청방법:
-        "신용/체크카드, 지역사랑상품권, 선불카드 중 선택. 매출 30억 이하 소상공인 매장 또는 지역사랑상품권 가맹점에서 사용. 사용기한 2026-08-31.",
-      지원유형: "현금성 민생지원",
+        "5년간 300만원(일반)~500만원(취약계층) 훈련비 + 훈련장려금",
+      신청방법: "HRD-Net 또는 가까운 고용센터 방문/온라인 신청",
+      지원유형: "훈련/교육",
     },
-    applyStartAt: new Date("2026-04-27"),
-    applyEndAt: new Date("2026-07-03"),
-    detailUrl:
-      "https://www.mois.go.kr/frt/sub/a06/b07/highOilPriceSupport/screen.do",
-    applyUrl:
-      "https://www.mois.go.kr/frt/sub/a06/b07/highOilPriceSupport/screen.do",
+    detailUrl: "https://www.hrd.go.kr/hrdp/ti/ptiao/PTIAO0100L.do",
+    applyUrl: "https://www.hrd.go.kr/hrdp/ti/ptiao/PTIAO0100L.do",
+  },
+  {
+    sourceCode: SOURCE_CODES.MANUAL,
+    sourceId: "hrd-employer-training",
+    title: "사업주 직업능력개발 훈련",
+    summary:
+      "사업주가 소속 근로자에게 직업훈련 실시 시 훈련비·인건비를 정부 지원. 중소기업 우대.",
+    agency: "고용노동부",
+    category: "고용·창업",
+    targetType: "business",
+    regionCodes: ["00000"],
+    eligibilityRules: {
+      지원대상: "고용보험 가입 사업주 (우선지원 대상기업 우대)",
+      선정기준: "사전 훈련계획 신고 + 인정받은 훈련과정 실시",
+      지원내용:
+        "훈련비(과정·시간 비례) + 훈련수당·임금의 일부. 중소기업은 추가 가산",
+      신청방법: "HRD-Net에서 훈련과정 검색 → 사전신고 → 실시 후 환급 신청",
+      지원유형: "훈련/교육",
+    },
+    detailUrl: "https://www.hrd.go.kr/hrdp/em/pemao/PEMAO0100L.do",
+    applyUrl: "https://www.hrd.go.kr/hrdp/em/pemao/PEMAO0100L.do",
+  },
+  {
+    sourceCode: SOURCE_CODES.MANUAL,
+    sourceId: "hrd-consortium",
+    title: "국가인적자원개발 컨소시엄",
+    summary:
+      "여러 중소기업이 공동으로 훈련시설을 활용해 근로자 직업훈련을 받는 사업. 훈련비 전액 지원.",
+    agency: "고용노동부",
+    category: "고용·창업",
+    targetType: "business",
+    regionCodes: ["00000"],
+    eligibilityRules: {
+      지원대상: "운영기관(대기업·대학 등)과 협약한 중소기업 및 그 근로자",
+      선정기준: "운영기관 선정 → 회원기업 모집",
+      지원내용: "훈련비·기숙사·교통비 등 사업주·근로자 부담 없이 훈련 제공",
+      신청방법: "운영기관 또는 회원기업 통해 신청",
+      지원유형: "훈련/교육",
+    },
+    detailUrl: "https://www.c-hrd.net/",
+    applyUrl: "https://www.c-hrd.net/",
+  },
+  {
+    sourceCode: SOURCE_CODES.MANUAL,
+    sourceId: "hrd-work-learn",
+    title: "일학습병행제",
+    summary:
+      "기업 현장에서 일하면서 학습 → 국가인정 자격·학위 취득. 청년·미취업자 + 사업주 훈련수당 지원.",
+    agency: "고용노동부",
+    category: "고용·창업",
+    targetType: "mixed",
+    regionCodes: ["00000"],
+    eligibilityRules: {
+      지원대상: "만 15~34세 청년 미취업자(학습근로자) + 참여 사업주",
+      선정기준: "공동훈련센터/대학 등이 매칭한 기업·근로자",
+      지원내용:
+        "학습근로자: 임금·훈련비. 사업주: 훈련 인프라·기업현장교사 인건비 등",
+      신청방법: "참여기업 채용공고 → HRD-Net 학습근로자 신청",
+      지원유형: "훈련/교육",
+    },
+    detailUrl: "https://www.bizhrd.net/",
+    applyUrl: "https://www.bizhrd.net/",
+  },
+  {
+    sourceCode: SOURCE_CODES.MANUAL,
+    sourceId: "hrd-jobseeker-program",
+    title: "구직자 취업역량 강화 프로그램",
+    summary:
+      "구직 의사가 있는 미취업자를 위한 취업상담·집단상담·심리검사·취업알선 패키지.",
+    agency: "고용노동부",
+    category: "고용·창업",
+    targetType: "individual",
+    regionCodes: ["00000"],
+    eligibilityRules: {
+      지원대상: "만 18세 이상 구직 의사가 있는 미취업자",
+      선정기준: "워크넷 구직 등록 후 고용센터 방문 상담",
+      지원내용:
+        "1:1 취업상담, 집단상담 프로그램(취업희망/성취), 심리검사, 취업알선",
+      신청방법: "워크넷 구직 등록 + 가까운 고용센터 방문",
+      지원유형: "취업지원",
+    },
+    detailUrl: "https://www.work24.go.kr/",
+    applyUrl: "https://www.work24.go.kr/",
   },
 ];
 

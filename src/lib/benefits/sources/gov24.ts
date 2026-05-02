@@ -1,5 +1,6 @@
 // 출처: 행정안전부 공공서비스(혜택)정보 / 엔드포인트: https://api.odcloud.kr/api/gov24/v3/serviceList / 갱신주기: 일 1회
 import { SOURCE_CODES, type BenefitRaw } from "../types";
+import { regionFromAgency } from "../regions";
 
 const BASE_URL = "https://api.odcloud.kr/api/gov24/v3/serviceList";
 
@@ -88,7 +89,8 @@ export async function fetchGov24(
       agency: item.소관기관명,
       category: item.서비스분야,
       targetType: mapTargetType(item.사용자구분),
-      regionCodes: ["00000"], // 행안부 서비스는 기본 전국 단위
+      // 소관기관명에서 시도 코드 추정 — 지자체 사업이면 해당 시도, 아니면 전국("00000")
+      regionCodes: regionFromAgency(item.소관기관명) ?? ["00000"],
       detailUrl: item.상세조회URL,
       applyEndAt: parseDate(item.신청기한),
       eligibilityRules: {

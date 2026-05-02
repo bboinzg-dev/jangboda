@@ -3,19 +3,11 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { regionCodesLabel } from "@/lib/benefits/regions";
+import { sourceLabel } from "@/lib/benefits/types";
+import { categoryGroup } from "@/lib/benefits/categories";
+import { stripHtml } from "@/lib/benefits/sanitize";
 
 export const dynamic = "force-dynamic";
-
-// 출처 코드별 한글 라벨
-const SOURCE_LABELS: Record<string, string> = {
-  GOV24: "정부24",
-  MSS_BIZ: "중기부 사업공고",
-  MSS_SUPPORT: "중기부 지원사업",
-  BIZINFO: "기업마당",
-  SEOUL: "서울 열린데이터",
-  NTS: "국세청",
-  MANUAL: "수동 등록",
-};
 
 // eligibilityRules에서 사람이 읽을 자유텍스트 키들
 // matcher가 해석하는 룰 외에 원본 안내문이 들어 있는 키들
@@ -75,7 +67,9 @@ export default async function BenefitDetailPage({
 
   const match = await getMatchForCurrentUser(benefit.id);
 
-  const sourceLabel = SOURCE_LABELS[benefit.sourceCode] ?? benefit.sourceCode;
+  // 출처 라벨 + 카테고리 그룹 라벨 (단일 소스 함수 사용)
+  const srcLabel = sourceLabel(benefit.sourceCode);
+  const catLabel = benefit.category ? categoryGroup(benefit.category) : null;
   const remainDays = daysUntil(benefit.applyEndAt);
   const isClosingSoon = remainDays !== null && remainDays >= 0 && remainDays <= 30;
   const isClosed = remainDays !== null && remainDays < 0;
@@ -85,7 +79,9 @@ export default async function BenefitDetailPage({
   const textBlocks = ELIGIBILITY_TEXT_KEYS.map((k) => {
     const v = rules[k.key];
     if (typeof v === "string" && v.trim().length > 0) {
-      return { label: k.label, text: v.trim() };
+      // HWP 에디터에서 export된 HTML 태그/엔티티 제거
+      const cleaned = stripHtml(v);
+      if (cleaned.length > 0) return { label: k.label, text: cleaned };
     }
     return null;
   }).filter((x): x is { label: string; text: string } => x !== null);
@@ -105,11 +101,11 @@ export default async function BenefitDetailPage({
       <header className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-6">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <span className="text-xs font-medium bg-indigo-600 text-white px-2 py-0.5 rounded">
-            {sourceLabel}
+            {srcLabel}
           </span>
-          {benefit.category && (
+          {catLabel && (
             <span className="text-xs font-medium bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded">
-              {benefit.category}
+              {catLabel}
             </span>
           )}
           {isClosed && (
@@ -123,10 +119,12 @@ export default async function BenefitDetailPage({
             </span>
           )}
         </div>
-        <h1 className="text-2xl font-bold text-stone-900">{benefit.title}</h1>
+        <h1 className="text-2xl font-bold text-stone-900">
+          {stripHtml(benefit.title)}
+        </h1>
         {benefit.summary && (
-          <p className="text-stone-700 text-sm mt-2 leading-relaxed">
-            {benefit.summary}
+          <p className="text-stone-700 text-sm mt-2 leading-relaxed whitespace-pre-line">
+            {stripHtml(benefit.summary)}
           </p>
         )}
         {benefit.agency && (

@@ -189,6 +189,23 @@ export const SOURCE_CODES = {
 
 export type SourceCode = (typeof SOURCE_CODES)[keyof typeof SOURCE_CODES];
 
+// 출처 코드 → 사용자 표시용 한국어 라벨
+// 카탈로그/상세 페이지의 배지 등에서 사용
+export const SOURCE_LABELS: Record<string, string> = {
+  GOV24: "정부24",
+  MSS_BIZ: "중기부 사업공고",
+  MSS_SUPPORT: "중기부 지원사업",
+  BIZINFO: "기업마당",
+  SEOUL: "서울 열린데이터",
+  NTS: "국세청",
+  MANUAL: "직접 등록",
+};
+
+// 매핑 없는 코드는 원본 그대로 반환 — UI에서 안전 표시
+export function sourceLabel(code: string): string {
+  return SOURCE_LABELS[code] ?? code;
+}
+
 // ───────────────────────────────────────────────────
 // fetcher가 반환하는 통일 형식
 // 각 출처별 fetcher는 외부 API 응답을 이 형식으로 정규화

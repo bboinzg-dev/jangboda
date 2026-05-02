@@ -2,32 +2,17 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { SIDO_FILTER_OPTIONS, regionCodesLabel } from "@/lib/benefits/regions";
+import { sourceLabel } from "@/lib/benefits/types";
+import {
+  CATEGORY_GROUP_KEYS,
+  categoryGroup,
+  originalsForGroup,
+} from "@/lib/benefits/categories";
+import { stripHtml } from "@/lib/benefits/sanitize";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
-
-const SOURCE_LABELS: Record<string, string> = {
-  GOV24: "정부24",
-  MSS_BIZ: "중기부",
-  MSS_SUPPORT: "중기부",
-  BIZINFO: "기업마당",
-  SEOUL: "서울",
-  NTS: "국세청",
-  MANUAL: "수동",
-};
-
-// 카테고리 필터 옵션 (시드/실데이터 기준 자주 등장하는 라벨)
-const CATEGORY_OPTIONS = [
-  "일자리",
-  "교육",
-  "주거",
-  "건강",
-  "돌봄",
-  "문화",
-  "사업자",
-  "기타",
-];
 
 const TARGET_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "individual", label: "개인" },
@@ -36,7 +21,7 @@ const TARGET_OPTIONS: Array<{ value: string; label: string }> = [
 ];
 
 type SearchParams = {
-  category?: string;
+  category?: string; // 그룹 키 ("일자리", "사업·창업" 등) — 빈값이면 전체
   region?: string; // 앞 2자리 시도 코드 ("11", "26" 등) — 빈값이면 전체
   endingSoon?: string; // "1"이면 30일 이내
   target?: string;
@@ -47,7 +32,7 @@ type SearchParams = {
 function parseSearchParams(sp: SearchParams) {
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   return {
-    category: sp.category?.trim() || "",
+    category: sp.category?.trim() || "", // 그룹 키
     region: sp.region?.trim() || "", // "11", "26" 등 앞 2자리. "" = 전체
     endingSoon: sp.endingSoon === "1",
     target: sp.target?.trim() || "",
@@ -60,7 +45,16 @@ function parseSearchParams(sp: SearchParams) {
 function buildWhere(f: ReturnType<typeof parseSearchParams>): Prisma.BenefitWhereInput {
   const where: Prisma.BenefitWhereInput = { active: true };
 
-  if (f.category) where.category = f.category;
+  // 카테고리는 그룹 키 — 그룹에 속하는 원본 카테고리들에 대해 in 검색
+  if (f.category) {
+    const originals = originalsForGroup(f.category);
+    if (originals.length > 0) {
+      where.category = { in: originals };
+    } else {
+      // 알 수 없는 그룹 키 — 매칭 0건 강제 (안전)
+      where.category = { in: ["__no_match__"] };
+    }
+  }
   if (f.target) where.targetType = f.target;
 
   if (f.q) {
@@ -194,9 +188,9 @@ export default async function BenefitsCatalogPage({
               className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm bg-white focus:outline-none focus:border-indigo-400"
             >
               <option value="">전체</option>
-              {CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {CATEGORY_GROUP_KEYS.map((g) => (
+                <option key={g} value={g}>
+                  {g}
                 </option>
               ))}
             </select>
@@ -296,7 +290,10 @@ export default async function BenefitsCatalogPage({
           {items.map((b) => {
             const remain = daysUntil(b.applyEndAt);
             const isClosingSoon = remain !== null && remain >= 0 && remain <= 30;
-            const sourceLabel = SOURCE_LABELS[b.sourceCode] ?? b.sourceCode;
+            // 출처 코드 → 한국어 라벨 (types.ts 단일 소스)
+            const srcLabel = sourceLabel(b.sourceCode);
+            // 원본 카테고리 → 그룹명 (필터 기준과 일치)
+            const catLabel = b.category ? categoryGroup(b.category) : null;
             return (
               <li
                 key={b.id}
@@ -309,11 +306,11 @@ export default async function BenefitsCatalogPage({
                 />
                 <div className="flex flex-wrap items-center gap-1.5 mb-2 relative pointer-events-none">
                   <span className="text-[11px] font-medium bg-indigo-600 text-white px-1.5 py-0.5 rounded">
-                    {sourceLabel}
+                    {srcLabel}
                   </span>
-                  {b.category && (
+                  {catLabel && (
                     <span className="text-[11px] font-medium bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded">
-                      {b.category}
+                      {catLabel}
                     </span>
                   )}
                   {isClosingSoon && (
@@ -323,11 +320,11 @@ export default async function BenefitsCatalogPage({
                   )}
                 </div>
                 <div className="font-semibold text-stone-900 leading-snug pointer-events-none">
-                  {b.title}
+                  {stripHtml(b.title)}
                 </div>
                 {b.summary && (
                   <div className="text-xs text-stone-600 mt-1 line-clamp-2 pointer-events-none">
-                    {b.summary}
+                    {stripHtml(b.summary)}
                   </div>
                 )}
                 <div className="text-xs text-stone-500 mt-3 flex flex-wrap gap-x-3 gap-y-1 pointer-events-none">
