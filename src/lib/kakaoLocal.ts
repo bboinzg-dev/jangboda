@@ -2,6 +2,73 @@
 // 클라이언트(브라우저)에서만 사용. SDK가 services 라이브러리와 함께 로드되어 있어야 함.
 // (SDK 로드는 src/components/KakaoStoresMap.tsx에서 처리 — libraries=services)
 
+export type GeocodeResult = {
+  address: string;
+  roadAddress?: string;
+  lat: number;
+  lng: number;
+  placeName?: string;
+};
+
+// 주소/지명 검색 → 좌표 (예: "강남역" → 37.498, 127.027)
+export async function geocodeAddress(query: string): Promise<GeocodeResult | null> {
+  return new Promise((resolve) => {
+    const maps = (window as unknown as {
+      kakao?: { maps?: Record<string, unknown> & { services?: unknown } };
+    }).kakao?.maps;
+    if (typeof window === "undefined" || !maps?.services) {
+      resolve(null);
+      return;
+    }
+    const services = maps.services as unknown as {
+      Places: new () => {
+        keywordSearch: (
+          q: string,
+          cb: (data: Array<Record<string, string>>, status: string) => void
+        ) => void;
+      };
+      Geocoder: new () => {
+        addressSearch: (
+          q: string,
+          cb: (data: Array<Record<string, string>>, status: string) => void
+        ) => void;
+      };
+      Status: { OK: string };
+    };
+
+    // 주소 형태면 Geocoder, 아니면 Places (지명/POI)
+    const geocoder = new services.Geocoder();
+    geocoder.addressSearch(query, (data, status) => {
+      if (status === services.Status.OK && data.length > 0) {
+        const r = data[0];
+        resolve({
+          address: r.address_name ?? "",
+          roadAddress: r.road_address_name,
+          lat: parseFloat(r.y),
+          lng: parseFloat(r.x),
+        });
+        return;
+      }
+      // fallback to keyword search (POI/지명)
+      const places = new services.Places();
+      places.keywordSearch(query, (pdata, pstatus) => {
+        if (pstatus === services.Status.OK && pdata.length > 0) {
+          const r = pdata[0];
+          resolve({
+            address: r.address_name ?? "",
+            roadAddress: r.road_address_name,
+            placeName: r.place_name,
+            lat: parseFloat(r.y),
+            lng: parseFloat(r.x),
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  });
+}
+
 export type DiscoveredStore = {
   name: string;
   address: string;

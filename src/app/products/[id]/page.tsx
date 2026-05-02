@@ -1,35 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
+import { formatWon } from "@/lib/format";
 import { notFound } from "next/navigation";
-import SourceBadge, { isOnlineStore } from "@/components/SourceBadge";
-import { unitPriceLabel } from "@/lib/units";
+import { isOnlineStore } from "@/components/SourceBadge";
 import PriceAlertButton from "@/components/PriceAlertButton";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
-import TrustBadge from "@/components/TrustBadge";
-import DirectionsButton from "@/components/DirectionsButton";
-import ReportPriceButton from "@/components/ReportPriceButton";
+import PriceListClient, { type PriceRowData } from "@/components/PriceListClient";
 
 export const dynamic = "force-dynamic";
 
-type TrustInfo = {
-  count: number;
-  latestDate: Date;
-};
-
-type PriceRow = {
-  priceId: string;
-  storeId: string;
-  storeName: string;
-  chainName: string;
-  lat: number;
-  lng: number;
-  price: number;
-  updatedAt: Date;
-  source: string;
-  online: boolean;
-  trust?: TrustInfo;
-};
+type PriceRow = PriceRowData;
 
 type HistoryPoint = {
   date: Date;
@@ -123,93 +103,6 @@ async function getProductDetail(id: string) {
   }
 }
 
-function PriceList({
-  rows,
-  unit,
-  emptyHint,
-}: {
-  rows: PriceRow[];
-  unit: string;
-  emptyHint: React.ReactNode;
-}) {
-  if (rows.length === 0) {
-    return (
-      <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-stone-500 text-sm">
-        {emptyHint}
-      </div>
-    );
-  }
-  const sorted = [...rows].sort((a, b) => a.price - b.price);
-  const minPrice = sorted[0].price;
-
-  return (
-    <ul className="space-y-2">
-      {sorted.map((p, i) => {
-        const tag = freshnessTag(p.updatedAt);
-        const savingsPct =
-          p.price > minPrice ? Math.round(((p.price - minPrice) / minPrice) * 100) : 0;
-        const showDirections = !p.online && p.lat > 0 && p.lng > 0;
-        return (
-          <li
-            key={p.storeId}
-            className={`bg-white border rounded-lg p-4 flex items-center justify-between ${
-              i === 0 ? "border-brand-400 bg-brand-50/30" : "border-stone-200"
-            }`}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              {i === 0 && (
-                <span className="bg-brand-500 text-white text-xs px-2 py-0.5 rounded-full shrink-0">
-                  최저가
-                </span>
-              )}
-              <div className="min-w-0">
-                <div className="font-semibold truncate">{p.chainName}</div>
-                <div className="text-xs text-stone-500 truncate">{p.storeName}</div>
-                {showDirections && (
-                  <div className="mt-1.5">
-                    <DirectionsButton name={p.storeName} lat={p.lat} lng={p.lng} />
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-right shrink-0 ml-3">
-              <div className="text-lg font-bold text-stone-900">
-                {formatWon(p.price)}
-              </div>
-              {(() => {
-                const upl = unitPriceLabel(p.price, unit);
-                return upl ? (
-                  <div className="text-[11px] text-stone-500 -mt-0.5">{upl}</div>
-                ) : null;
-              })()}
-              <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">
-                <SourceBadge source={p.source} />
-                {p.trust && (
-                  <TrustBadge
-                    count={p.trust.count}
-                    latestDate={p.trust.latestDate}
-                    source={p.source}
-                  />
-                )}
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}>
-                  {tag.label}
-                </span>
-                <span className="text-xs text-stone-500">
-                  {formatRelativeDate(p.updatedAt)}
-                </span>
-                {savingsPct > 0 && (
-                  <span className="text-xs text-rose-500">+{savingsPct}%</span>
-                )}
-                <ReportPriceButton priceId={p.priceId} currentPrice={p.price} />
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 export default async function ProductDetailPage({
   params,
 }: {
@@ -289,7 +182,7 @@ export default async function ProductDetailPage({
             ({offlineRows.length}개 매장, 낮은 순)
           </span>
         </h2>
-        <PriceList
+        <PriceListClient
           unit={product.unit}
           rows={offlineRows}
           emptyHint={
@@ -314,7 +207,8 @@ export default async function ProductDetailPage({
             ({onlineRows.length}개 몰, 낮은 순)
           </span>
         </h2>
-        <PriceList
+        <PriceListClient
+          showFavoriteFilter={false}
           unit={product.unit}
           rows={onlineRows}
           emptyHint={

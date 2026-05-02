@@ -8,7 +8,7 @@ import SourceBadge from "@/components/SourceBadge";
 export const dynamic = "force-dynamic";
 
 async function getProfileData(userId: string) {
-  const [user, myPrices, myReceipts, topUsers] = await Promise.all([
+  const [user, myPrices, myReceipts, topUsers, favorites] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -38,6 +38,13 @@ async function getProfileData(userId: string) {
       take: 10,
       select: { id: true, nickname: true, points: true },
     }),
+    prisma.favoriteStore.findMany({
+      where: { userId },
+      include: {
+        store: { include: { chain: true, _count: { select: { prices: true } } } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const myRank =
@@ -45,7 +52,7 @@ async function getProfileData(userId: string) {
       where: { points: { gt: user?.points ?? 0 } },
     })) + 1;
 
-  return { user, myPrices, myReceipts, topUsers, myRank };
+  return { user, myPrices, myReceipts, topUsers, favorites, myRank };
 }
 
 export default async function ProfilePage() {
@@ -55,7 +62,7 @@ export default async function ProfilePage() {
   }
 
   const data = await getProfileData(authUser.id);
-  const { user, myPrices, myReceipts, topUsers, myRank } = data;
+  const { user, myPrices, myReceipts, topUsers, favorites, myRank } = data;
 
   const display =
     (authUser.user_metadata?.full_name as string | undefined) ??
@@ -75,6 +82,41 @@ export default async function ProfilePage() {
           <Stat label="순위" value={`#${myRank}`} />
         </div>
       </header>
+
+      <section>
+        <h2 className="font-bold mb-3">★ 즐겨찾기 매장 ({favorites.length}개)</h2>
+        {favorites.length === 0 ? (
+          <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-sm text-stone-500">
+            자주 가는 매장을 ★로 등록하면 장바구니/상세에서 그 매장만 비교할 수 있어요.
+            <br />
+            <Link href="/stores" className="text-brand-600 hover:underline mt-1 inline-block">
+              매장 둘러보기 →
+            </Link>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {favorites.map((f) => (
+              <li
+                key={f.id}
+                className="bg-white border border-stone-200 rounded-lg p-3 flex justify-between items-center text-sm"
+              >
+                <Link href={`/stores/${f.storeId}`} className="min-w-0 hover:underline">
+                  <div className="text-xs text-brand-600 font-medium">
+                    {f.store.chain.name}
+                  </div>
+                  <div className="font-medium truncate">{f.store.name}</div>
+                  <div className="text-xs text-stone-500 truncate">
+                    {f.store.address}
+                  </div>
+                </Link>
+                <div className="text-right shrink-0 ml-3 text-xs text-stone-500">
+                  {f.store._count.prices}건
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section>
         <h2 className="font-bold mb-3">📸 내 영수증 ({myReceipts.length}건)</h2>

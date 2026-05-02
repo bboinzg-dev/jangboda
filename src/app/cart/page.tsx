@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import ProductSearchPicker from "@/components/ProductSearchPicker";
+import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 
 type Product = {
   id: string;
@@ -40,10 +41,29 @@ export default function CartPage() {
   const [results, setResults] = useState<Comparison[] | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
+
   useEffect(() => {
     fetch("/api/products?limit=500")
       .then((r) => r.json())
       .then((d) => setProducts(d.products));
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthConfigured()) return;
+    const sb = createClient();
+    sb.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      fetch("/api/favorites")
+        .then((r) => r.json())
+        .then((d) => {
+          const ids = new Set<string>(
+            (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
+          );
+          setFavoriteIds(ids);
+        });
+    });
   }, []);
 
   function updateItem(idx: number, patch: Partial<CartItem>) {
@@ -135,9 +155,25 @@ export default function CartPage() {
 
       {results && (
         <section>
-          <h2 className="font-bold mb-3">비교 결과</h2>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="font-bold">비교 결과</h2>
+            {favoriteIds.size > 0 && (
+              <label className="inline-flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={favoriteOnly}
+                  onChange={(e) => setFavoriteOnly(e.target.checked)}
+                />
+                ★ 즐겨찾기 매장만 ({favoriteIds.size})
+              </label>
+            )}
+          </div>
           <div className="space-y-3">
-            {results.map((r, i) => (
+            {results
+              .filter((r) =>
+                favoriteOnly ? favoriteIds.has(r.storeId) : true
+              )
+              .map((r, i) => (
               <div
                 key={r.storeId}
                 className={`bg-white border rounded-xl p-4 ${

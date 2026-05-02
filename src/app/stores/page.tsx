@@ -8,8 +8,11 @@ import DirectionsButton from "@/components/DirectionsButton";
 import {
   searchMartsNearby,
   searchConveniencesNearby,
+  geocodeAddress,
   type DiscoveredStore,
 } from "@/lib/kakaoLocal";
+import FavoriteToggle from "@/components/FavoriteToggle";
+import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -34,7 +37,7 @@ type StoreItem = StoreMarker & {
   chainCategory?: string;
 };
 
-type FilterCategory = "all" | "mart" | "convenience";
+type FilterCategory = "all" | "mart" | "convenience" | "favorite";
 
 const CATEGORY_ICONS: Record<string, string> = {
   mart: "🛒",
@@ -57,6 +60,28 @@ export default function StoresPage() {
   const [discovering, setDiscovering] = useState(false);
   const [discoverMsg, setDiscoverMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterCategory>("all");
+  const [regionQuery, setRegionQuery] = useState("");
+  const [regionLabel, setRegionLabel] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [authed, setAuthed] = useState(false);
+
+  // 로그인 상태 + 즐겨찾기 목록 가져오기
+  useEffect(() => {
+    if (!isAuthConfigured()) return;
+    const sb = createClient();
+    sb.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      setAuthed(true);
+      fetch("/api/favorites")
+        .then((r) => r.json())
+        .then((d) => {
+          const ids = new Set<string>(
+            (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
+          );
+          setFavoriteIds(ids);
+        });
+    });
+  }, []);
 
   async function load(lat?: number, lng?: number) {
     setLoading(true);
@@ -96,9 +121,44 @@ export default function StoresPage() {
     try {
       const { lat, lng } = await getLocation();
       setLoc({ lat, lng });
+      setRegionLabel("📍 내 위치");
       load(lat, lng);
     } catch (e) {
       alert(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function handleSearchRegion() {
+    if (!regionQuery.trim()) return;
+    if (!HAS_KAKAO) {
+      alert("카카오맵 키가 필요합니다");
+      return;
+    }
+    setLoading(true);
+    setDiscoverMsg("📍 지역 검색 중...");
+    try {
+      // 카카오 SDK services 로드 대기 — 지도가 마운트되면 로드됨
+      if (
+        typeof window !== "undefined" &&
+        !(window.kakao?.maps as unknown as { services?: unknown })?.services
+      ) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      const result = await geocodeAddress(regionQuery.trim());
+      if (!result) {
+        setDiscoverMsg(`❌ "${regionQuery}"에 해당하는 지역을 찾지 못했습니다`);
+        setLoading(false);
+        return;
+      }
+      setLoc({ lat: result.lat, lng: result.lng });
+      setRegionLabel(
+        `📍 ${result.placeName ?? result.roadAddress ?? result.address}`
+      );
+      setDiscoverMsg(null);
+      await load(result.lat, result.lng);
+    } catch (e) {
+      setDiscoverMsg("❌ 지역 검색 실패: " + (e instanceof Error ? e.message : String(e)));
+      setLoading(false);
     }
   }
 
@@ -167,8 +227,9 @@ export default function StoresPage() {
     }
   }
 
-  // 카테고리 필터 적용
+  // 카테고리 + 즐겨찾기 필터 적용
   const filtered = stores.filter((s) => {
+    if (filter === "favorite") return favoriteIds.has(s.id);
     if (filter === "all") return true;
     return s.chainCategory === filter;
   });
@@ -182,21 +243,44 @@ export default function StoresPage() {
             onClick={handleSearchByLocation}
             className="text-sm bg-white border border-stone-300 px-3 py-1.5 rounded-md hover:bg-stone-50"
           >
-            📍 내 위치로 검색
+            📍 내 위치
           </button>
           <button
             onClick={handleDiscoverNearby}
             disabled={discovering}
             className="text-sm bg-brand-600 text-white border border-brand-700 px-3 py-1.5 rounded-md hover:bg-brand-700 disabled:opacity-60"
           >
-            {discovering ? "검색 중..." : "🔍 주변 마트/편의점 자동 추가"}
+            {discovering ? "검색 중..." : "🔍 주변 자동 추가"}
           </button>
         </div>
       </div>
 
-      {loc && (
+      {/* 지역 검색 */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSearchRegion();
+        }}
+        className="flex gap-2"
+      >
+        <input
+          value={regionQuery}
+          onChange={(e) => setRegionQuery(e.target.value)}
+          placeholder="지역 검색 (예: 강남역, 잠실, 서울 송파구)"
+          className="flex-1 px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:border-brand-400"
+          aria-label="지역 검색"
+        />
+        <button
+          type="submit"
+          className="bg-stone-700 hover:bg-stone-800 text-white px-4 py-2 rounded-md text-sm"
+        >
+          검색
+        </button>
+      </form>
+
+      {(loc || regionLabel) && (
         <div className="text-xs text-stone-500">
-          내 위치: {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
+          {regionLabel ?? `${loc?.lat.toFixed(4)}, ${loc?.lng.toFixed(4)}`}
         </div>
       )}
 
@@ -206,25 +290,29 @@ export default function StoresPage() {
         </div>
       )}
 
-      {/* 카테고리 필터 칩 */}
-      <div className="flex gap-2">
-        {(["all", "mart", "convenience"] as FilterCategory[]).map((c) => (
-          <button
-            key={c}
-            onClick={() => setFilter(c)}
-            className={`text-xs px-3 py-1 rounded-full border ${
-              filter === c
-                ? "bg-brand-600 text-white border-brand-700"
-                : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
-            }`}
-          >
-            {c === "all"
-              ? "전체"
-              : c === "mart"
-              ? "🛒 마트"
-              : "🏪 편의점"}
-          </button>
-        ))}
+      {/* 카테고리 + 즐겨찾기 필터 칩 */}
+      <div className="flex flex-wrap gap-2">
+        {(["all", "mart", "convenience", "favorite"] as FilterCategory[])
+          .filter((c) => c !== "favorite" || authed)
+          .map((c) => (
+            <button
+              key={c}
+              onClick={() => setFilter(c)}
+              className={`text-xs px-3 py-1 rounded-full border ${
+                filter === c
+                  ? "bg-brand-600 text-white border-brand-700"
+                  : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+              }`}
+            >
+              {c === "all"
+                ? "전체"
+                : c === "mart"
+                ? "🛒 마트"
+                : c === "convenience"
+                ? "🏪 편의점"
+                : `★ 즐겨찾기 (${favoriteIds.size})`}
+            </button>
+          ))}
       </div>
 
       {/* 지도 */}
@@ -251,7 +339,7 @@ export default function StoresPage() {
                     className="absolute inset-0 z-0"
                     aria-label={`${s.name} 가격 보기`}
                   />
-                  <div className="min-w-0 relative z-10 pointer-events-none">
+                  <div className="min-w-0 relative z-10 pointer-events-none flex-1">
                     <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
                       <span>{icon}</span>
                       <span>{label}</span>
@@ -260,6 +348,9 @@ export default function StoresPage() {
                     </div>
                     <div className="font-semibold">{s.name}</div>
                     <div className="text-xs text-stone-500">{s.address}</div>
+                  </div>
+                  <div className="relative z-10 mr-2 self-center pointer-events-auto">
+                    <FavoriteToggle storeId={s.id} stopPropagation />
                   </div>
                   <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
                     {s.distanceKm !== null && s.distanceKm !== undefined && (

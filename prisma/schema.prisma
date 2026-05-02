@@ -34,6 +34,7 @@ model Store {
   createdAt DateTime @default(now())
   prices    Price[]
   receipts  Receipt[]
+  favorites FavoriteStore[]
 
   @@index([chainId])
   @@index([lat, lng])
@@ -116,6 +117,21 @@ model User {
   receipts      Receipt[]
   priceAlerts   PriceAlert[]
   pushSubs      PushSubscription[]
+  favorites     FavoriteStore[]
+}
+
+// 즐겨찾기 매장 — 사용자가 자주 가는 매장 표시
+model FavoriteStore {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  group     String?  // "집 근처", "회사" 등 (Phase C)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storeId])
+  @@index([userId])
 }
 
 // 가격 신고 — 사용자가 잘못된 가격에 대해 정정 요청
