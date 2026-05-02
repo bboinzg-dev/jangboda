@@ -7,6 +7,8 @@ import PriceAlertButton from "@/components/PriceAlertButton";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
 import PriceListClient, { type PriceRowData } from "@/components/PriceListClient";
 import EmptyState from "@/components/EmptyState";
+import IngredientsPanel from "@/components/IngredientsPanel";
+import NutritionPanel from "@/components/NutritionPanel";
 
 export const revalidate = 30;
 
@@ -138,7 +140,17 @@ export default async function ProductDetailPage({
 
       <header className="bg-white border border-stone-200 rounded-xl p-6">
         <div className="text-xs text-stone-500">{product.category}</div>
-        <h1 className="text-2xl font-bold mt-1">{product.name}</h1>
+        <h1 className="text-2xl font-bold mt-1 flex items-center gap-2 flex-wrap">
+          {product.name}
+          {product.hasHaccp && (
+            <span
+              className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
+              title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
+            >
+              🏅 HACCP
+            </span>
+          )}
+        </h1>
         <div className="text-stone-600 text-sm mt-1">
           {product.brand} · {product.unit}
         </div>
@@ -223,6 +235,14 @@ export default async function ProductDetailPage({
         </h2>
         <PriceHistoryChart history={history} />
       </section>
+
+      {/* 원재료 정보 — 농수산물(KAMIS)은 C002에 데이터 없음 → 스킵 */}
+      {product.category !== "농수산물" && (
+        <IngredientsPanel productId={product.id} />
+      )}
+
+      {/* 영양 정보 — 식품영양성분DB는 가공식품/농수산물 모두 보유 → 모든 카테고리 표시 */}
+      <NutritionPanel productId={product.id} />
 
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
       {offlineRows.length === 0 && onlineRows.length === 0 ? (

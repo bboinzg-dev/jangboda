@@ -18,6 +18,7 @@ type Product = {
   category: string;
   unit: string;
   stats?: { min: number; max: number; avg: number; count: number };
+  hasHaccp?: boolean;
 };
 
 const ALL = "__all__";
@@ -217,7 +218,14 @@ export default function SearchPage() {
                   <div className="text-xs text-stone-500">
                     {p.category} · {p.brand}
                   </div>
-                  <div className="font-semibold truncate">{p.name}</div>
+                  <div className="font-semibold truncate flex items-center gap-1.5">
+                    <span className="truncate">{p.name}</span>
+                    {p.hasHaccp && (
+                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                        🏅 HACCP
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-stone-500">{p.unit}</div>
                 </div>
                 <div className="text-right ml-4 shrink-0">

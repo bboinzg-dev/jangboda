@@ -54,6 +54,8 @@ model Product {
   barcode      String?  @unique  // GS1 바코드 (한국 880XXX...)
   imageUrl     String?
   description  String?  // 자유 메모 (제조국, 유통기한, 영양정보 등)
+  hasHaccp     Boolean  @default(false)         // HACCP 적용업소 여부 (sync 시 갱신)
+  haccpInfo    Json?                            // { licenseNo, appnDate, appnNo, bsshName } 캐시
   createdAt    DateTime @default(now())
   prices       Price[]
   aliases      ProductAlias[]
@@ -61,6 +63,7 @@ model Product {
 
   @@index([category])
   @@index([name])
+  @@index([hasHaccp])
 }
 
 // 상품명 별칭 (영수증 OCR에서 매칭하기 위한 키)
@@ -263,4 +266,60 @@ model BenefitMatch {
 
   @@unique([profileId, benefitId])
   @@index([profileId, status, score])
+}
+
+// ═══════════════════════════════════════════════════
+// 식약처 회수·판매중지 식품 정보 (I0490)
+// 매 6시간 마다 외부 API → DB로 동기화. RTRVLDSUSE_SEQ로 dedup.
+// ═══════════════════════════════════════════════════
+model Recall {
+  id              String   @id @default(cuid())
+  externalSeq     String   @unique  // RTRVLDSUSE_SEQ — 식약처 고유 회수번호 (재실행 dedup용)
+  productName     String                    // PRDTNM
+  manufacturer    String?                   // BSSHNM
+  barcode         String?                   // BRCDNO
+  reason          String                    // RTRVLPRVNS
+  grade           String?                   // RTRVL_GRDCD_NM (1등급/2등급/3등급)
+  productType     String?                   // PRDLST_TYPE
+  foodTypeName    String?                   // PRDLST_CD_NM
+  packageUnit     String?                   // FRMLCUNIT
+  manufacturedAt  String?                   // MNFDT (그대로 string — "데이터없음" 케이스 있음)
+  expiryInfo      String?                   // DISTBTMLMT
+  recallMethod    String?                   // RTRVLPLANDOC_RTRVLMTHD
+  imageUrls       String[]                  // IMG_FILE_PATH 콤마분리 → 배열
+  manufacturerAddress String?               // ADDR
+  manufacturerTel String?                   // TELNO
+  licenseNo       String?                   // LCNS_NO
+  reportNo        String?                   // PRDLST_REPORT_NO
+  registeredAt    DateTime                  // CRET_DTM 파싱
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([barcode])
+  @@index([registeredAt])
+}
+
+// ═══════════════════════════════════════════════════
+// 식약처 HACCP 적용업소 지정 현황 (I0580)
+// 매주 일요일 04시 외부 API → DB로 동기화. LCNS_NO(인허가번호)로 dedup.
+// 38,952건 규모. Product.manufacturer ↔ HaccpFacility.bsshNameNorm로 매칭.
+// ═══════════════════════════════════════════════════
+model HaccpFacility {
+  id              String   @id @default(cuid())
+  licenseNo       String   @unique                 // LCNS_NO
+  bsshName        String                           // BSSH_NM
+  bsshNameNorm    String                           // 정규화 (lowercase, 공백/특수문자 제거) — Product 매칭용
+  industryName    String?                          // INDUTY_CD_NM
+  presidentName   String?                          // PRSDNT_NM
+  address         String?                          // SITE_ADDR
+  appnDate        String?                          // HACCP_APPN_DT (string — 형식 들쭉날쭉)
+  appnNo          String?                          // HACCP_APPN_NO
+  productListName String?                          // PRDLST_NM
+  bizStatus       String?                          // CLSBIZ_DVS_CD_NM
+  bizCloseDate    String?                          // CLSBIZ_DT
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bsshNameNorm])
+  @@index([bizStatus])
 }

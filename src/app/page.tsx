@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import OnboardingCard, {
   type OnboardingStatus,
 } from "@/components/OnboardingCard";
+import RecallBanner from "@/components/RecallBanner";
 
 // ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분 (개인화는 OnboardingCard client 컴포넌트가 fetch)
 export const revalidate = 60;
@@ -55,6 +56,7 @@ async function getHomeData() {
         min,
         max,
         diff,
+        hasHaccp: p.hasHaccp,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -140,6 +142,9 @@ export default async function HomePage() {
         </Link>
       </section>
 
+      {/* 식약처 회수·판매중지 식품 배너 — 최근 7일, 안전 경고 */}
+      <RecallBanner />
+
       {/* KAMIS 실시간 시세 — 매일 갱신, 첫 방문자도 즉시 가치 */}
       {kamisPrices.length > 0 && (
         <section>
@@ -196,6 +201,11 @@ export default async function HomePage() {
                     <div className="text-xs text-stone-500">{c.category}</div>
                     <div className="font-semibold truncate">{c.name}</div>
                     <div className="text-xs text-stone-500">{c.unit}</div>
+                    {c.hasHaccp && (
+                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium mt-1">
+                        🏅 HACCP
+                      </span>
+                    )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <div className="text-xs text-stone-500">최저</div>

@@ -11,6 +11,7 @@ export type SearchableProduct = {
   unit?: string;
   priceCount?: number;
   stats?: { min: number; max: number; avg: number; count: number };
+  hasHaccp?: boolean;
 };
 
 type Props = {
@@ -142,7 +143,14 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate">{p.name}</div>
+                  <div className="font-medium text-sm truncate flex items-center gap-1.5">
+                    <span className="truncate">{p.name}</span>
+                    {p.hasHaccp && (
+                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                        🏅 HACCP
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] text-stone-500 truncate">
                     {p.category}
                     {p.brand ? ` · ${p.brand}` : ""}
