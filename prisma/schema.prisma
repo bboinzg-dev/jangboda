@@ -79,7 +79,8 @@ model Price {
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   price         Int      // 원 단위 (정수)
   isOnSale      Boolean  @default(false)
-  source        String   // "receipt" | "manual" | "seed"
+  source        String   // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv"
+  productUrl    String?  // 온라인 가격일 때 외부 구매 링크 (네이버 쇼핑 link 등)
   contributorId String?
   contributor   User?    @relation(fields: [contributorId], references: [id])
   receiptId     String?
@@ -217,6 +218,9 @@ model Benefit {
   regionCodes  String[] // ["00000"]=전국, ["11000"]=서울, ["11680"]=강남구
   // 자격 조건 (matcher가 해석하는 룰 트리)
   eligibilityRules Json @default("{}")
+  // LLM이 자유텍스트를 정형화한 NormalizedRule (src/lib/benefits/ruleSchema.ts)
+  // 미정형화 상태에서는 NULL — db:normalize:benefits로 일괄 채움
+  normalizedRules Json?
   // 신청 정보
   applyUrl     String?
   detailUrl    String?

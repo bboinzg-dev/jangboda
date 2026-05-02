@@ -1,7 +1,9 @@
 // 정부 혜택 매칭 엔진
 // Benefit.eligibilityRules는 출처(GOV24 등)에서 받아온 자유텍스트 위주.
-// 키워드 룰 기반으로 BenefitProfile과 비교해 점수/사유를 산출.
+// 1순위: Benefit.normalizedRules(LLM 정형화 결과) — 정확도 높음, 큰 가중치
+// 2순위: 키워드 룰 fallback — normalizedRules 없거나 confidence=low일 때
 import type { BenefitProfile } from "./types";
+import { NormalizedRuleSchema, type NormalizedRule } from "./ruleSchema";
 
 // ───────────────────────────────────────────────────
 // 키워드 룰 정의
@@ -726,12 +728,331 @@ function evaluateRegion(
 }
 
 // ───────────────────────────────────────────────────
+// 정형 룰 평가 (NormalizedRule)
+// LLM이 정규화한 룰 1건 → profile과 비교.
+// 매칭당 +30점(weight 큼), 명백 불일치는 hardMismatch로 분리.
+// ───────────────────────────────────────────────────
+const FLAG_WEIGHT = 30;
+
+// AVAILABLE_FLAGS 키 → BenefitProfile에서 해당 boolean 값 추출
+function readFlag(profile: BenefitProfile, flag: string): boolean | undefined {
+  switch (flag) {
+    case "isYouth":
+      return profile.special.isYouth;
+    case "hasBusiness":
+      return profile.business.hasBusiness;
+    case "isSinglePerson":
+      return profile.household.isSinglePerson;
+    case "isNewlywed":
+      return profile.household.isNewlywed;
+    case "isSingleParent":
+      return profile.household.isSingleParent;
+    case "isMultiChild":
+      return profile.household.isMultiChild;
+    case "isMulticultural":
+      return profile.household.isMulticultural;
+    case "isNorthKoreanDefector":
+      return profile.household.isNorthKoreanDefector;
+    case "isPregnant":
+      return profile.health.isPregnant;
+    case "hasChronicCondition":
+      return profile.health.hasChronicCondition;
+    case "isCurrentlyEnrolled":
+      return profile.education.isCurrentlyEnrolled;
+    case "hasStudentLoan":
+      return profile.education.hasStudentLoan;
+    case "isForeigner":
+      return profile.special.isForeigner;
+    case "isFarmer":
+      return profile.special.isFarmer;
+    case "isVeteran":
+      return profile.welfareStatus.isVeteran;
+    case "isHonorRecipient":
+      return profile.welfareStatus.isHonorRecipient;
+    case "isNearPoor":
+      return profile.welfareStatus.isNearPoor;
+    case "hasFourInsurances":
+      return profile.employment.hasFourInsurances;
+    case "isCareerInterrupted":
+      return profile.employment.isCareerInterrupted;
+    case "ownsHome":
+      return profile.incomeAssets.ownsHome;
+    case "ownsCar":
+      return profile.incomeAssets.ownsCar;
+    default:
+      return undefined;
+  }
+}
+
+// 플래그 키 → 사용자에게 보일 한국어 라벨 + 누락 시 입력 가이드 필드 경로
+function flagLabel(flag: string): string {
+  const labels: Record<string, string> = {
+    isYouth: "청년",
+    hasBusiness: "사업자",
+    isSinglePerson: "1인 가구",
+    isNewlywed: "신혼부부",
+    isSingleParent: "한부모가족",
+    isMultiChild: "다자녀",
+    isMulticultural: "다문화가족",
+    isNorthKoreanDefector: "북한이탈주민",
+    isPregnant: "임신",
+    hasChronicCondition: "만성질환",
+    isCurrentlyEnrolled: "재학생",
+    hasStudentLoan: "학자금대출",
+    isForeigner: "외국인",
+    isFarmer: "농업인",
+    isVeteran: "보훈",
+    isHonorRecipient: "보훈대상",
+    isNearPoor: "차상위",
+    hasFourInsurances: "4대보험 가입",
+    isCareerInterrupted: "경력단절",
+    ownsHome: "주택 보유",
+    ownsCar: "차량 보유",
+  };
+  return labels[flag] ?? flag;
+}
+
+type NormalizedEvalResult = {
+  score: number;
+  hardMismatch: number;
+  matchReasons: string[];
+  mismatchReasons: string[];
+  missingFields: string[];
+};
+
+function evaluateNormalized(
+  profile: BenefitProfile,
+  rule: NormalizedRule,
+): NormalizedEvalResult {
+  const matchReasons: string[] = [];
+  const mismatchReasons: string[] = [];
+  const missingFields: string[] = [];
+  let score = 0;
+  let hardMismatch = 0;
+
+  // 연령 범위
+  if (rule.ageRange) {
+    const by = profile.demographics.birthYear;
+    if (!by) {
+      missingFields.push("demographics.birthYear");
+    } else {
+      const age = new Date().getFullYear() - by;
+      const min = rule.ageRange.min ?? 0;
+      const max = rule.ageRange.max ?? 200;
+      if (age >= min && age <= max) {
+        score += FLAG_WEIGHT;
+        matchReasons.push(`연령 만 ${age}세 (요건 ${min}~${max}세)`);
+      } else {
+        hardMismatch++;
+        mismatchReasons.push(`연령 미달/초과 — 요건 만 ${min}~${max}세 (현재 ${age}세)`);
+      }
+    }
+  }
+
+  // 거주 지역 (regionCodes에 "00000" 있으면 전국 OK)
+  if (rule.regions && rule.regions.length > 0) {
+    if (rule.regions.includes("00000")) {
+      // 전국 — 별도 가점 없음 (어차피 region check가 처리)
+    } else {
+      const code = profile.residence.regionCode;
+      if (!code) {
+        missingFields.push("residence.regionCode");
+      } else {
+        const sido = code.slice(0, 2);
+        const matched =
+          rule.regions.includes(code) ||
+          rule.regions.some((r) => r.slice(0, 2) === sido);
+        if (matched) {
+          score += FLAG_WEIGHT;
+          matchReasons.push("거주 지역 일치");
+        } else {
+          hardMismatch++;
+          mismatchReasons.push(
+            `거주 지역 불일치 — 대상 지역: ${rule.regions.join(", ")}`,
+          );
+        }
+      }
+    }
+  }
+
+  // requiredFlags — 모두 true여야 함
+  if (rule.requiredFlags) {
+    for (const flag of rule.requiredFlags) {
+      const v = readFlag(profile, flag);
+      const label = flagLabel(flag);
+      if (v === true) {
+        score += FLAG_WEIGHT;
+        matchReasons.push(`${label} 충족`);
+      } else if (v === false) {
+        hardMismatch++;
+        mismatchReasons.push(`${label} 요건 불충족`);
+      } else {
+        missingFields.push(flag);
+      }
+    }
+  }
+
+  // excludedFlags — true면 자격 박탈
+  if (rule.excludedFlags) {
+    for (const flag of rule.excludedFlags) {
+      const v = readFlag(profile, flag);
+      const label = flagLabel(flag);
+      if (v === true) {
+        hardMismatch++;
+        mismatchReasons.push(`${label} — 제외 대상`);
+      } else if (v === false) {
+        score += Math.round(FLAG_WEIGHT / 2);
+        matchReasons.push(`${label} 아님(제외 대상 아님)`);
+      } else {
+        missingFields.push(flag);
+      }
+    }
+  }
+
+  // 중위소득 비율
+  if (rule.incomeBracketMaxRatio !== undefined) {
+    const r = profile.incomeAssets.incomeBracketRatio;
+    if (r === undefined) {
+      missingFields.push("incomeAssets.incomeBracketRatio");
+    } else if (r <= rule.incomeBracketMaxRatio) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(
+        `중위소득 ${r}% (기준 ${rule.incomeBracketMaxRatio}% 이하)`,
+      );
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `중위소득 ${r}% — 기준 ${rule.incomeBracketMaxRatio}% 초과`,
+      );
+    }
+  }
+
+  // 주거 형태
+  if (rule.housingType && rule.housingType.length > 0) {
+    const t = profile.residence.housingType;
+    if (!t) {
+      missingFields.push("residence.housingType");
+    } else if (rule.housingType.includes(t)) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(`주거 형태 일치 (${t})`);
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `주거 형태 불일치 — 대상: ${rule.housingType.join(",")}`,
+      );
+    }
+  }
+
+  // 기초생활수급 종류
+  if (rule.basicLivelihoodTypes && rule.basicLivelihoodTypes.length > 0) {
+    const t = profile.welfareStatus.basicLivelihoodType;
+    if (t === undefined) {
+      missingFields.push("welfareStatus.basicLivelihoodType");
+    } else if (t === "none") {
+      hardMismatch++;
+      mismatchReasons.push("기초생활수급 대상이 아님");
+    } else if (rule.basicLivelihoodTypes.includes(t)) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(`기초생활수급(${t}) 일치`);
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `수급 종류 불일치 — 대상: ${rule.basicLivelihoodTypes.join(",")}`,
+      );
+    }
+  }
+
+  // 장애 등록
+  if (rule.disabilityRequired === true) {
+    const g = profile.welfareStatus.disabilityGrade;
+    if (g === "severe" || g === "mild") {
+      score += FLAG_WEIGHT;
+      matchReasons.push("장애 등록 충족");
+    } else if (g === "none") {
+      hardMismatch++;
+      mismatchReasons.push("장애 등록 필요 — 대상 아님");
+    } else {
+      missingFields.push("welfareStatus.disabilityGrade");
+    }
+  }
+
+  // 사업자 등록
+  if (rule.hasBusinessRequired === true) {
+    const v = profile.business.hasBusiness;
+    if (v === true) {
+      score += FLAG_WEIGHT;
+      matchReasons.push("사업자 등록 충족");
+    } else if (v === false) {
+      hardMismatch++;
+      mismatchReasons.push("사업자 등록 필요 — 대상 아님");
+    } else {
+      missingFields.push("business.hasBusiness");
+    }
+  }
+
+  // 업종
+  if (rule.industries && rule.industries.length > 0) {
+    const ind = profile.business.industry;
+    if (!ind) {
+      missingFields.push("business.industry");
+    } else if (rule.industries.some((i) => ind.includes(i) || i.includes(ind))) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(`업종 일치 (${ind})`);
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `업종 불일치 — 대상: ${rule.industries.join(",")}`,
+      );
+    }
+  }
+
+  // 연매출 상한
+  if (rule.maxAnnualRevenueKrw !== undefined) {
+    const rev = profile.business.annualRevenueKrw;
+    if (rev === undefined) {
+      missingFields.push("business.annualRevenueKrw");
+    } else if (rev <= rule.maxAnnualRevenueKrw) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(
+        `연매출 ${(rev / 1_0000).toLocaleString()}만원 (상한 충족)`,
+      );
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `연매출 상한 초과 — 한도 ${(rule.maxAnnualRevenueKrw / 1_0000).toLocaleString()}만원`,
+      );
+    }
+  }
+
+  // 성별 한정
+  if (rule.genderOnly) {
+    const g = profile.demographics.gender;
+    if (!g) {
+      missingFields.push("demographics.gender");
+    } else if (g === rule.genderOnly) {
+      score += FLAG_WEIGHT;
+      matchReasons.push(
+        `성별 일치 (${rule.genderOnly === "male" ? "남성" : "여성"} 대상)`,
+      );
+    } else {
+      hardMismatch++;
+      mismatchReasons.push(
+        `${rule.genderOnly === "male" ? "남성" : "여성"} 한정 혜택`,
+      );
+    }
+  }
+
+  return { score, hardMismatch, matchReasons, mismatchReasons, missingFields };
+}
+
+// ───────────────────────────────────────────────────
 // 메인 평가 함수
 // ───────────────────────────────────────────────────
 export function evaluateBenefit(
   profile: BenefitProfile,
   benefit: {
     eligibilityRules: any;
+    normalizedRules?: any;
     targetType: string;
     regionCodes: string[];
     applyEndAt: Date | null;
@@ -772,30 +1093,67 @@ export function evaluateBenefit(
     if (region.missing) missingFields.push("residence.regionCode");
   }
 
-  // 4) eligibilityRules 자유텍스트 합치기
-  const text = collectText(benefit.eligibilityRules);
-
-  // 5) 키워드 룰 평가
+  // 4) 정형 룰(NormalizedRule) 우선 평가 — LLM 정형화 결과가 있으면 사용
   let triggeredRules = 0;
   let totalScore = 0;
   let maxPossible = 0;
   let mismatchHard = 0; // 명백한 자격 미달 횟수
+  let usedNormalized = false;
 
-  for (const rule of RULES) {
-    if (!hasAny(text, rule.keywords)) continue;
-    triggeredRules++;
-    maxPossible += rule.weight;
-    const result = rule.evaluate(profile);
-    if (result.kind === "match") {
-      totalScore += result.score;
-      matchReasons.push(result.reason);
-    } else if (result.kind === "mismatch") {
-      mismatchReasons.push(result.reason);
-      mismatchHard++;
-    } else if (result.kind === "missing") {
-      missingFields.push(result.field);
+  let normalizedRule: NormalizedRule | null = null;
+  if (benefit.normalizedRules && typeof benefit.normalizedRules === "object") {
+    const parsed = NormalizedRuleSchema.safeParse(benefit.normalizedRules);
+    if (parsed.success) normalizedRule = parsed.data;
+  }
+
+  // confidence가 high/medium일 때만 정형 룰 신뢰. low면 키워드 fallback.
+  const useNormalized =
+    normalizedRule !== null &&
+    (normalizedRule.confidence === undefined ||
+      normalizedRule.confidence === "high" ||
+      normalizedRule.confidence === "medium");
+
+  if (useNormalized && normalizedRule) {
+    const r = evaluateNormalized(profile, normalizedRule);
+    totalScore += r.score;
+    // maxPossible은 채워진 규칙 수 × FLAG_WEIGHT 추정 — 실제 평가된 만큼만
+    const evaluated =
+      r.matchReasons.length + r.mismatchReasons.length + r.missingFields.length;
+    if (evaluated > 0) {
+      triggeredRules += evaluated;
+      maxPossible += evaluated * FLAG_WEIGHT;
+      usedNormalized = true;
     }
-    // skip은 무시
+    mismatchHard += r.hardMismatch;
+    for (const m of r.matchReasons) matchReasons.push(`[정형] ${m}`);
+    for (const m of r.mismatchReasons) mismatchReasons.push(`[정형] ${m}`);
+    for (const f of r.missingFields) missingFields.push(f);
+
+    // targetSummary가 있으면 한 줄 표시
+    if (normalizedRule.targetSummary) {
+      matchReasons.push(`대상: ${normalizedRule.targetSummary}`);
+    }
+  }
+
+  // 5) 키워드 룰 평가 — 정형 룰을 못 썼거나 confidence=low일 때 fallback
+  if (!usedNormalized) {
+    const text = collectText(benefit.eligibilityRules);
+    for (const rule of RULES) {
+      if (!hasAny(text, rule.keywords)) continue;
+      triggeredRules++;
+      maxPossible += rule.weight;
+      const result = rule.evaluate(profile);
+      if (result.kind === "match") {
+        totalScore += result.score;
+        matchReasons.push(result.reason);
+      } else if (result.kind === "mismatch") {
+        mismatchReasons.push(result.reason);
+        mismatchHard++;
+      } else if (result.kind === "missing") {
+        missingFields.push(result.field);
+      }
+      // skip은 무시
+    }
   }
 
   // 6) 지역 매칭 보너스

@@ -133,10 +133,10 @@ export async function POST(req: NextRequest) {
     }
     if (usedMock) usedMockCount++;
 
-    // mall 이름을 canonical로 변환 후 다시 mall당 최저가 1건만
+    // mall 이름을 canonical로 변환 후 mall당 최저가 + 그 link 저장
     const byCanonical = new Map<
       string,
-      { canonical: string; isMajor: boolean; price: number }
+      { canonical: string; isMajor: boolean; price: number; productUrl: string }
     >();
     for (const it of items) {
       const { canonical, isMajor } = canonicalMallName(it.mallName);
@@ -146,17 +146,21 @@ export async function POST(req: NextRequest) {
       }
       const cur = byCanonical.get(canonical);
       if (!cur || it.lprice < cur.price) {
-        byCanonical.set(canonical, { canonical, isMajor, price: it.lprice });
+        byCanonical.set(canonical, {
+          canonical,
+          isMajor,
+          price: it.lprice,
+          productUrl: it.link ?? "",
+        });
       }
     }
 
     const malls: string[] = [];
-    for (const { canonical, isMajor, price } of byCanonical.values()) {
+    for (const { canonical, isMajor, price, productUrl } of byCanonical.values()) {
       const { store, created } = await ensureOnlineStore(canonical, isMajor);
       if (created) storesCreated++;
 
-      // 같은 (product, store, source: naver) 의 기존 row 제거 후 새로 INSERT (히스토리는 유지하되 최신만 사용)
-      // — 매일 동기화해도 polluition 안 되도록
+      // 같은 (product, store, source: naver) 의 기존 row 제거 후 새로 INSERT
       await prisma.price.deleteMany({
         where: { productId: product.id, storeId: store.id, source: "naver" },
       });
@@ -166,6 +170,7 @@ export async function POST(req: NextRequest) {
           storeId: store.id,
           price,
           source: "naver",
+          productUrl: productUrl || null,
         },
       });
       inserted++;

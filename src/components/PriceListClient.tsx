@@ -25,6 +25,7 @@ export type PriceRowData = {
   price: number;
   updatedAt: Date | string;
   source: string;
+  productUrl?: string | null; // 온라인 가격일 때 외부 구매 링크
   online: boolean;
   trust?: TrustInfo;
 };
@@ -127,6 +128,20 @@ export default function PriceListClient({
                           lat={p.lat}
                           lng={p.lng}
                         />
+                      </div>
+                    )}
+                    {p.online && p.productUrl && (
+                      <div className="mt-1.5">
+                        <a
+                          href={p.productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
+                        >
+                          <span aria-hidden>🛒</span>
+                          <span>구매하러 가기</span>
+                          <span aria-hidden>↗</span>
+                        </a>
                       </div>
                     )}
                   </div>

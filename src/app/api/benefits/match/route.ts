@@ -34,11 +34,13 @@ export async function POST() {
   const profile = parsed.data;
 
   // active Benefit 전체 가져오기 — 평가는 메모리에서
+  // normalizedRules도 함께 조회 — matcher가 우선적으로 사용
   const benefits = await prisma.benefit.findMany({
     where: { active: true },
     select: {
       id: true,
       eligibilityRules: true,
+      normalizedRules: true,
       targetType: true,
       regionCodes: true,
       applyEndAt: true,
@@ -63,6 +65,7 @@ export async function POST() {
     try {
       const result = evaluateBenefit(profile, {
         eligibilityRules: b.eligibilityRules as Record<string, unknown> | null,
+        normalizedRules: b.normalizedRules as Record<string, unknown> | null,
         targetType: b.targetType,
         regionCodes: b.regionCodes ?? [],
         applyEndAt: b.applyEndAt,

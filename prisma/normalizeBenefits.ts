@@ -1,0 +1,129 @@
+// Benefit.eligibilityRules의 자유텍스트를 LLM으로 정형화하여
+// Benefit.normalizedRules에 저장하는 일괄 스크립트.
+//
+// 실행: npm run db:normalize:benefits
+// 사전 조건: .env에 ANTHROPIC_API_KEY 설정
+//
+// 멱등 — 이미 normalizedRules가 채워진 Benefit은 스킵.
+// 한 건 실패해도 전체는 계속 진행.
+
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// .env를 process.env로 로드 (tsx는 자동 로드 안 함, 외부 dependency 회피)
+function loadEnv() {
+  try {
+    const text = readFileSync(resolve(process.cwd(), ".env"), "utf8");
+    for (const line of text.split("\n")) {
+      const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!m) continue;
+      const [, k, raw] = m;
+      const v = raw.replace(/^["']|["']$/g, "");
+      if (!process.env[k]) process.env[k] = v;
+    }
+  } catch {
+    /* .env 없으면 무시 */
+  }
+}
+loadEnv();
+
+import { PrismaClient, Prisma } from "@prisma/client";
+import { normalizeEligibility } from "../src/lib/benefits/llm";
+
+const prisma = new PrismaClient();
+
+// eligibilityRules(Json)에서 LLM에 보낼 4개 필드 추출.
+// 출처별 필드명이 다양 — 자주 보이는 키들을 모두 시도.
+function extractFreeText(rules: unknown): {
+  지원대상?: string;
+  선정기준?: string;
+  지원내용?: string;
+  신청방법?: string;
+} {
+  if (!rules || typeof rules !== "object") return {};
+  const r = rules as Record<string, unknown>;
+  const pick = (...keys: string[]): string | undefined => {
+    for (const k of keys) {
+      const v = r[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return undefined;
+  };
+  return {
+    지원대상: pick("지원대상", "supportTarget", "trgterIndvdlArray", "target"),
+    선정기준: pick("선정기준", "selectionCriteria", "slctCritrCn", "criteria"),
+    지원내용: pick("지원내용", "supportContent", "sportCn", "content"),
+    신청방법: pick("신청방법", "applicationMethod", "aplyMthdCn", "method"),
+  };
+}
+
+async function main() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[normalize] ANTHROPIC_API_KEY 미설정 — 종료");
+    process.exit(1);
+  }
+
+  // normalizedRules가 NULL인 active Benefit만 조회 (멱등)
+  const targets = await prisma.benefit.findMany({
+    where: {
+      active: true,
+      normalizedRules: { equals: Prisma.DbNull },
+    },
+    select: { id: true, title: true, eligibilityRules: true },
+  });
+
+  console.log(`[normalize] 대상 ${targets.length}건`);
+
+  let success = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < targets.length; i++) {
+    const b = targets[i];
+    const freeText = extractFreeText(b.eligibilityRules);
+
+    // 자유텍스트가 비어있으면 스킵 (LLM 호출 무의미)
+    if (!freeText.지원대상 && !freeText.선정기준 && !freeText.지원내용) {
+      skipped++;
+      continue;
+    }
+
+    try {
+      const normalized = await normalizeEligibility(freeText);
+      await prisma.benefit.update({
+        where: { id: b.id },
+        data: { normalizedRules: normalized as unknown as Prisma.InputJsonValue },
+      });
+      success++;
+    } catch (e) {
+      failed++;
+      console.error(
+        `[normalize] 실패 id=${b.id} title="${b.title.slice(0, 30)}":`,
+        (e as Error).message,
+      );
+    }
+
+    // 진행률 — 10건마다 출력
+    if ((i + 1) % 10 === 0) {
+      console.log(
+        `[normalize] 진행 ${i + 1}/${targets.length} (성공 ${success} / 실패 ${failed} / 스킵 ${skipped})`,
+      );
+    }
+
+    // rate limit 방지 — 5건마다 1초 대기
+    if ((i + 1) % 5 === 0) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+
+  console.log(
+    `[normalize] 완료 — 총 ${targets.length}건 / 성공 ${success} / 실패 ${failed} / 스킵 ${skipped}`,
+  );
+  await prisma.$disconnect();
+}
+
+main().catch(async (e) => {
+  console.error("[normalize] 치명적 오류:", e);
+  await prisma.$disconnect();
+  process.exit(1);
+});

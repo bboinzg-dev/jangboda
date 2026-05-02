@@ -67,6 +67,7 @@ async function getProductDetail(id: string) {
         price: p.price,
         updatedAt: p.createdAt,
         source: p.source,
+        productUrl: p.productUrl,
         online: isOnlineStore({
           lat: p.store?.lat ?? 0,
           lng: p.store?.lng ?? 0,
