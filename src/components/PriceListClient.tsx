@@ -6,7 +6,6 @@ import { unitPriceLabel } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
 import TrustBadge from "@/components/TrustBadge";
 import DirectionsButton from "@/components/DirectionsButton";
-import ReportPriceButton from "@/components/ReportPriceButton";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 
@@ -180,10 +179,6 @@ export default function PriceListClient({
                         +{savingsPct}%
                       </span>
                     )}
-                    <ReportPriceButton
-                      priceId={p.priceId}
-                      currentPrice={p.price}
-                    />
                   </div>
                 </div>
               </li>

@@ -273,15 +273,6 @@ export default async function ProfilePage() {
             </small>
           </Link>
           <Link
-            href="/contribute"
-            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
-          >
-            <div className="text-base font-semibold">✍️ 가격 직접 입력</div>
-            <small className="text-xs text-stone-500">
-              영수증 없이 가격 등록
-            </small>
-          </Link>
-          <Link
             href="/sync"
             className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
           >

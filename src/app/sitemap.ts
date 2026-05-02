@@ -10,7 +10,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/cart`, lastModified: new Date(), priority: 0.8 },
     { url: `${BASE}/stores`, lastModified: new Date(), priority: 0.7 },
     { url: `${BASE}/upload`, lastModified: new Date(), priority: 0.6 },
-    { url: `${BASE}/contribute`, lastModified: new Date(), priority: 0.5 },
   ];
 
   // 상품 상세 페이지 — 너무 많으면 100개만
