@@ -76,6 +76,17 @@ export interface NormalizedRule {
   genderOnly?: "male" | "female";
   // 한 줄 요약 — UI 카드에 표시
   targetSummary?: string;
+  // 신청 시작일 (ISO date "YYYY-MM-DD") — 자유텍스트에서 추출
+  applyStartDate?: string;
+  // 신청 종료일 (ISO date "YYYY-MM-DD") — 자유텍스트에서 추출
+  // Benefit.applyEndAt이 null일 때 정규화 스크립트가 이 값으로 보강
+  applyEndDate?: string;
+  // 상시 모집 여부 ("연중 신청"·"상시"·"수시" 등)
+  isOngoing?: boolean;
+  // 예산 소진 시 종료 (날짜는 있어도 조기 종료 가능)
+  budgetLimited?: boolean;
+  // 원본 신청기간 텍스트 — 위 4개로 표현 못 한 케이스 fallback
+  applyPeriodText?: string;
   // LLM이 평가한 자체 신뢰도
   confidence?: "high" | "medium" | "low";
   // LLM이 남기는 추가 메모 (제약 사항/예외 등)
@@ -109,6 +120,11 @@ export const NormalizedRuleSchema: z.ZodType<NormalizedRule> = z.object({
   industries: z.array(z.string()).optional(),
   maxAnnualRevenueKrw: z.number().int().min(0).optional(),
   genderOnly: z.enum(["male", "female"]).optional(),
+  applyStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  applyEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  isOngoing: z.boolean().optional(),
+  budgetLimited: z.boolean().optional(),
+  applyPeriodText: z.string().max(300).optional(),
   targetSummary: z.string().max(500).optional(),
   confidence: z.enum(["high", "medium", "low"]).optional(),
   notes: z.string().max(1000).optional(),

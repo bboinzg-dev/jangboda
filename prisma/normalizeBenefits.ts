@@ -1,8 +1,10 @@
-// Benefit.eligibilityRules의 자유텍스트를 LLM으로 정형화하여
+// Benefit.eligibilityRules의 자유텍스트를 LLM(Gemini Flash)으로 정형화하여
 // Benefit.normalizedRules에 저장하는 일괄 스크립트.
+// LLM이 applyEndDate/applyStartDate를 추출하면 Benefit.applyEndAt/applyStartAt도
+// null일 때만 자동 보강한다.
 //
 // 실행: npm run db:normalize:benefits
-// 사전 조건: .env에 ANTHROPIC_API_KEY 설정
+// 사전 조건: .env에 GEMINI_API_KEY 설정
 //
 // 멱등 — 이미 normalizedRules가 채워진 Benefit은 스킵.
 // 한 건 실패해도 전체는 계속 진행.
@@ -57,9 +59,16 @@ function extractFreeText(rules: unknown): {
   };
 }
 
+// "YYYY-MM-DD" → Date (잘못된 형식이면 null)
+function parseIsoDate(s: string | undefined): Date | null {
+  if (!s) return null;
+  const d = new Date(`${s}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("[normalize] ANTHROPIC_API_KEY 미설정 — 종료");
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("[normalize] GEMINI_API_KEY 미설정 — 종료");
     process.exit(1);
   }
 
@@ -69,7 +78,13 @@ async function main() {
       active: true,
       normalizedRules: { equals: Prisma.DbNull },
     },
-    select: { id: true, title: true, eligibilityRules: true },
+    select: {
+      id: true,
+      title: true,
+      eligibilityRules: true,
+      applyStartAt: true,
+      applyEndAt: true,
+    },
   });
 
   console.log(`[normalize] 대상 ${targets.length}건`);
@@ -77,6 +92,7 @@ async function main() {
   let success = 0;
   let failed = 0;
   let skipped = 0;
+  let dateBackfilled = 0; // applyEndAt이 LLM 추출로 보강된 건수
 
   for (let i = 0; i < targets.length; i++) {
     const b = targets[i];
@@ -90,9 +106,26 @@ async function main() {
 
     try {
       const normalized = await normalizeEligibility(freeText);
+
+      // applyEndAt/applyStartAt이 null이면 LLM 추출 값으로 보강
+      const updateData: Prisma.BenefitUpdateInput = {
+        normalizedRules: normalized as unknown as Prisma.InputJsonValue,
+      };
+      if (!b.applyEndAt) {
+        const extracted = parseIsoDate(normalized.applyEndDate);
+        if (extracted) {
+          updateData.applyEndAt = extracted;
+          dateBackfilled++;
+        }
+      }
+      if (!b.applyStartAt) {
+        const extracted = parseIsoDate(normalized.applyStartDate);
+        if (extracted) updateData.applyStartAt = extracted;
+      }
+
       await prisma.benefit.update({
         where: { id: b.id },
-        data: { normalizedRules: normalized as unknown as Prisma.InputJsonValue },
+        data: updateData,
       });
       success++;
     } catch (e) {
@@ -103,21 +136,21 @@ async function main() {
       );
     }
 
-    // 진행률 — 10건마다 출력
-    if ((i + 1) % 10 === 0) {
+    // 진행률 — 50건마다 출력
+    if ((i + 1) % 50 === 0) {
       console.log(
-        `[normalize] 진행 ${i + 1}/${targets.length} (성공 ${success} / 실패 ${failed} / 스킵 ${skipped})`,
+        `[normalize] 진행 ${i + 1}/${targets.length} (성공 ${success} / 실패 ${failed} / 스킵 ${skipped} / 마감일보강 ${dateBackfilled})`,
       );
     }
 
-    // rate limit 방지 — 5건마다 1초 대기
+    // rate limit 방지 — 5건마다 1초 대기 (Gemini Flash 분당 1000 RPM 한도 고려)
     if ((i + 1) % 5 === 0) {
       await new Promise((r) => setTimeout(r, 1000));
     }
   }
 
   console.log(
-    `[normalize] 완료 — 총 ${targets.length}건 / 성공 ${success} / 실패 ${failed} / 스킵 ${skipped}`,
+    `[normalize] 완료 — 총 ${targets.length}건 / 성공 ${success} / 실패 ${failed} / 스킵 ${skipped} / 마감일보강 ${dateBackfilled}`,
   );
   await prisma.$disconnect();
 }

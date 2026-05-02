@@ -21,6 +21,13 @@ const SYSTEM_INSTRUCTION = `당신은 한국 정부 지원사업 자격조건을
 - requiredFlags / excludedFlags는 허용 키 목록에서만 선택.
 - regions는 5자리 행정구역코드. 전국이면 ["00000"].
 - targetSummary는 한국어 1문장(60자 이내) — UI 카드에 그대로 표시됨.
+- 신청기간 처리:
+  * "2026-07-03"·"2026.7.3"·"2026년 7월 3일"·"7/3까지" 같은 날짜 → applyEndDate를 "YYYY-MM-DD" 형식으로
+  * 신청 시작일도 명시되어 있으면 applyStartDate에 동일 형식
+  * "상시"·"수시"·"연중"·"상시 모집" → isOngoing: true
+  * "예산 소진 시 종료"·"선착순"·"조기 마감 가능" → budgetLimited: true
+  * 위 어느 것에도 못 들어맞는 신청기간 표현은 applyPeriodText에 원본 그대로 (최대 300자)
+  * 날짜 단서가 전혀 없으면 신청기간 관련 필드 모두 omit
 
 # requiredFlags / excludedFlags 허용 키
 ${AVAILABLE_FLAGS.join(", ")}
@@ -53,10 +60,20 @@ ${AVAILABLE_FLAGS.join(", ")}
   "지원대상": "관내 소상공인 중 외식업·도소매업 영위자",
   "선정기준": "사업자등록증 보유, 연매출 5억 이하, 주택 미보유 우대",
   "지원내용": "경영안정자금 최대 3천만원",
-  "신청방법": "방문 접수"
+  "신청방법": "2026년 5월 1일 ~ 6월 30일 방문 접수, 예산 소진 시 조기 마감"
 }
 출력:
-{"hasBusinessRequired":true,"industries":["외식","도소매"],"maxAnnualRevenueKrw":500000000,"targetSummary":"관내 외식·도소매 소상공인(연매출 5억 이하)","confidence":"medium","notes":"주택 미보유는 우대 사항이므로 requiredFlags에 포함하지 않음"}`;
+{"hasBusinessRequired":true,"industries":["외식","도소매"],"maxAnnualRevenueKrw":500000000,"applyStartDate":"2026-05-01","applyEndDate":"2026-06-30","budgetLimited":true,"targetSummary":"관내 외식·도소매 소상공인(연매출 5억 이하)","confidence":"medium","notes":"주택 미보유는 우대 사항이므로 requiredFlags에 포함하지 않음"}
+
+# 예시 4 (상시 모집)
+입력:
+{
+  "지원대상": "출생일 기준 6개월 이상 양평군 거주 부모",
+  "지원내용": "첫째 500만원, 둘째 500만원, 셋째 1000만원",
+  "신청방법": "주민센터 방문, 연중 상시"
+}
+출력:
+{"isOngoing":true,"targetSummary":"양평군 6개월 이상 거주 부모(자녀 출생)","confidence":"high","notes":"양평군 코드 매핑은 fetcher가 처리"}`;
 
 // ───────────────────────────────────────────────────
 // JSON 응답 스키마 — Gemini가 강제로 이 형식만 반환
@@ -101,6 +118,11 @@ const RESPONSE_SCHEMA = {
     industries: { type: "array", items: { type: "string" } },
     maxAnnualRevenueKrw: { type: "integer" },
     genderOnly: { type: "string", enum: ["male", "female"] },
+    applyStartDate: { type: "string" },
+    applyEndDate: { type: "string" },
+    isOngoing: { type: "boolean" },
+    budgetLimited: { type: "boolean" },
+    applyPeriodText: { type: "string" },
     targetSummary: { type: "string" },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
     notes: { type: "string" },
