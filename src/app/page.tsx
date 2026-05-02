@@ -1,27 +1,35 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
+import { unitPriceLabel } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
 
 async function getHomeData() {
-  const totalProducts = await prisma.product.count();
-  const totalStores = await prisma.store.count();
-  const totalPrices = await prisma.price.count();
-  const totalReceipts = await prisma.receipt.count();
-
-  // 인기 카테고리별 대표 상품
-  const products = await prisma.product.findMany({
+  // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
+  const kamisPrices = await prisma.price.findMany({
+    where: { source: "kamis" },
+    orderBy: { createdAt: "desc" },
     take: 8,
-    include: { prices: true },
+    include: { product: true },
+    distinct: ["productId"],
   });
 
-  const cards = products
+  // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순)
+  const products = await prisma.product.findMany({
+    where: { category: { not: "농수산물" } },
+    take: 30,
+    include: { prices: { take: 50, orderBy: { createdAt: "desc" } } },
+  });
+
+  const priceCards = products
     .map((p) => {
       if (p.prices.length === 0) return null;
       const prices = p.prices.map((x) => x.price);
       const min = Math.min(...prices);
       const max = Math.max(...prices);
+      const diff = max - min;
+      if (diff === 0) return null;
       return {
         id: p.id,
         name: p.name,
@@ -29,87 +37,162 @@ async function getHomeData() {
         unit: p.unit,
         min,
         max,
-        diff: max - min,
-        count: prices.length,
+        diff,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
-    .sort((a, b) => b.diff - a.diff);
+    .sort((a, b) => b.diff - a.diff)
+    .slice(0, 6);
 
-  return { totalProducts, totalStores, totalPrices, totalReceipts, cards };
+  const stats = {
+    products: await prisma.product.count(),
+    stores: await prisma.store.count(),
+    prices: await prisma.price.count(),
+  };
+
+  return { kamisPrices, priceCards, stats };
 }
 
 export default async function HomePage() {
-  const data = await getHomeData();
+  const { kamisPrices, priceCards, stats } = await getHomeData();
 
   return (
     <div className="space-y-8">
-      <section className="bg-gradient-to-br from-brand-50 to-orange-50 rounded-xl p-8 border border-brand-100">
-        <h1 className="text-3xl font-bold text-stone-900 mb-2">
-          우리 동네 마트, 어디가 제일 쌀까?
+      {/* Hero — 앱 의도를 즉시 전달 */}
+      <section className="bg-gradient-to-br from-brand-50 to-orange-50 rounded-2xl p-6 md:p-8 border border-brand-100">
+        <h1 className="text-2xl md:text-3xl font-bold text-stone-900 mb-2">
+          오늘 뭐 사세요?
         </h1>
-        <p className="text-stone-600 mb-6 leading-relaxed">
-          롯데마트, 킴스클럽, 이마트, 홈플러스의 실제 가격을 비교하세요.
+        <p className="text-stone-600 mb-5 leading-relaxed text-sm md:text-base">
+          살 물건들을 모아보면 어느 마트가 가장 싼지 알려드려요.
           <br />
-          영수증 한 장만 올려도 동네 이웃 모두가 절약합니다.
+          영수증 한 장으로 동네 이웃 모두가 절약합니다.
         </p>
-        <div className="flex flex-wrap gap-3">
+
+        {/* 메인 CTA + 보조 액션 */}
+        <div className="space-y-2">
           <Link
-            href="/search"
-            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium"
+            href="/cart"
+            className="block w-full md:inline-flex md:w-auto bg-brand-500 hover:bg-brand-600 text-white text-center px-6 py-3.5 rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-shadow"
           >
-            상품 검색하기
+            🛒 장보기 비교 시작
           </Link>
+          <div className="grid grid-cols-2 gap-2 md:flex md:gap-2">
+            <Link
+              href="/upload"
+              className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+            >
+              📸 영수증 올리기
+            </Link>
+            <Link
+              href="/stores"
+              className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+            >
+              📍 주변 마트
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* KAMIS 실시간 시세 — 매일 갱신, 첫 방문자도 즉시 가치 */}
+      {kamisPrices.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              📊 오늘의 시세
+              <span className="text-xs text-stone-500 font-normal">
+                KAMIS 공식 평균가
+              </span>
+            </h2>
+            <span className="text-[10px] text-stone-400">매일 갱신</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {kamisPrices.slice(0, 8).map((p) => (
+              <Link
+                key={p.id}
+                href={`/products/${p.product.id}`}
+                className="card-clickable relative bg-white border border-stone-200 rounded-lg p-3 pr-6"
+              >
+                <div className="text-xs text-stone-500 truncate">
+                  {p.product.name}
+                </div>
+                <div className="font-bold text-stone-900 mt-0.5">
+                  {formatWon(p.price)}
+                </div>
+                <div className="text-[10px] text-stone-400">
+                  {p.product.unit}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 가격차 큰 상품 — "여기서 사면 N원 절약" */}
+      {priceCards.length > 0 && (
+        <section>
+          <h2 className="text-base font-bold mb-3 flex items-center gap-2">
+            💸 가격차 큰 상품 TOP 6
+            <span className="text-xs text-stone-500 font-normal">
+              마트별 비교 효과 큼
+            </span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {priceCards.map((c) => {
+              const upl = unitPriceLabel(c.min, c.unit);
+              return (
+                <Link
+                  key={c.id}
+                  href={`/products/${c.id}`}
+                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs text-stone-500">{c.category}</div>
+                    <div className="font-semibold truncate">{c.name}</div>
+                    <div className="text-xs text-stone-500">{c.unit}</div>
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <div className="text-xs text-stone-500">최저</div>
+                    <div className="font-bold text-brand-600">
+                      {formatWon(c.min)}
+                    </div>
+                    {upl && (
+                      <div className="text-[10px] text-stone-500">{upl}</div>
+                    )}
+                    <div className="text-xs text-rose-600 mt-0.5">
+                      💰 최대 {formatWon(c.diff)} 절약
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 가치 0건 안내 — 시드만 있을 때 */}
+      {priceCards.length === 0 && kamisPrices.length === 0 && (
+        <section className="bg-white border border-stone-200 rounded-xl p-8 text-center">
+          <div className="text-4xl mb-3">🛒</div>
+          <h2 className="font-bold mb-1">아직 가격 데이터가 부족해요</h2>
+          <p className="text-sm text-stone-500 mb-4">
+            첫 영수증을 올리면 비교가 시작됩니다.
+          </p>
           <Link
             href="/upload"
-            className="bg-white hover:bg-stone-50 border border-stone-200 px-5 py-2.5 rounded-lg font-medium"
+            className="inline-block bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm"
           >
-            영수증 올리고 포인트 받기
+            📸 영수증 올리기
           </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="등록 상품" value={data.totalProducts.toLocaleString()} />
-        <StatCard label="제휴 매장" value={data.totalStores.toLocaleString()} />
-        <StatCard label="가격 데이터" value={data.totalPrices.toLocaleString()} />
-        <StatCard label="누적 영수증" value={data.totalReceipts.toLocaleString()} />
+      {/* 미니 통계 — 신뢰감 */}
+      <section className="text-center text-xs text-stone-400 pt-2">
+        등록 상품 {stats.products.toLocaleString()} · 매장{" "}
+        {stats.stores.toLocaleString()} · 가격 데이터{" "}
+        {stats.prices.toLocaleString()}건
       </section>
-
-      <section>
-        <h2 className="text-xl font-bold mb-4">🔥 마트별 가격차 큰 상품</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {data.cards.map((c) => (
-            <Link
-              key={c.id}
-              href={`/products/${c.id}`}
-              className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between items-center"
-            >
-              <div className="min-w-0">
-                <div className="text-xs text-stone-500">{c.category}</div>
-                <div className="font-semibold truncate">{c.name}</div>
-                <div className="text-xs text-stone-500">{c.unit}</div>
-              </div>
-              <div className="text-right shrink-0 ml-4">
-                <div className="text-xs text-stone-500">최저가</div>
-                <div className="font-bold text-brand-600">{formatWon(c.min)}</div>
-                <div className="text-xs text-rose-600">
-                  최대 {formatWon(c.diff)} 차이
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-white border border-stone-200 rounded-lg p-4">
-      <div className="text-xs text-stone-500">{label}</div>
-      <div className="text-2xl font-bold text-stone-900">{value}</div>
     </div>
   );
 }

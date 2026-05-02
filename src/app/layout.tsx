@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
 
 export const viewport: Viewport = {
@@ -53,7 +54,8 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen">
         <Nav />
-        <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
+        <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+        <BottomNav />
         <InstallPrompt />
         <footer className="border-t border-stone-200 mt-12 py-6 text-center text-xs text-stone-500 px-4">
           🛒 장보다 — 사용자 기여로 만들어지는 마트 가격 비교 플랫폼
