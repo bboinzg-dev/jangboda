@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/sync/kamis",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/sync/naver?limit=20&onlyMajor=true",
+      "schedule": "0 17 * * 1"
+    }
+  ],
+  "functions": {
+    "src/app/api/sync/naver/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/kamis/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/csv/route.ts": { "maxDuration": 60 }
+  }
+}

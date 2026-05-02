@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 type Product = {
   id: string;
   name: string;
@@ -58,7 +60,11 @@ export default function SearchPage() {
         <div className="text-center py-8 text-stone-500">검색 중...</div>
       ) : products.length === 0 ? (
         <div className="text-center py-8 text-stone-500">
-          검색 결과가 없습니다.
+          {q ? "검색어와 일치하는 상품이 없습니다." : "등록된 상품이 없습니다."}
+          <br />
+          <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block">
+            영수증을 올려 첫 상품을 추가해보세요 →
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

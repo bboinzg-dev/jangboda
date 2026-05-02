@@ -9,6 +9,11 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { imageBase64, uploaderId } = body;
 
+  // 입력 크기 제한 — base64는 약 1.33배 부풀림. 8MB까지 허용 (사진 한 장 기준)
+  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 8 * 1024 * 1024) {
+    return NextResponse.json({ error: "이미지 크기 초과 (8MB 제한)" }, { status: 413 });
+  }
+
   const { receipt, usedMock } = await parseReceipt(imageBase64 ?? null);
 
   // 매장 추론

@@ -20,13 +20,20 @@
 → 첫날부터 농수산물 시세는 **자동으로 채워진 상태**로 시작.
 사용자는 0에서 시작하지 않고, 빈 곳만 채우면 됩니다.
 
+## 라이브 사이트
+
+- **프로덕션**: https://jangboda.vercel.app
+- **GitHub**: https://github.com/bboinzg-dev/jangboda
+
 ## 기술 스택
 
 - **Next.js 14** (App Router) — 풀스택 한 프로세스
 - **TypeScript + Tailwind CSS**
-- **Prisma + SQLite** (개발/MVP) → 운영 시 PostgreSQL 권장
-- **CLOVA OCR** (영수증, 미설정 시 mock fallback)
+- **Prisma + PostgreSQL (Supabase)** — Sydney 리전, transaction pooler
+- **Vercel** 배포 + **Cron** (매일 KAMIS 자동 갱신)
+- **CLOVA OCR** (영수증 인식, 미설정 시 mock fallback)
 - **KAMIS Open API** (농수산물 시세, 미설정 시 mock fallback)
+- **네이버 쇼핑 API** (쿠팡/G마켓/SSG 등 온라인 가격)
 
 ## 설치 및 실행
 
@@ -125,11 +132,26 @@ npm run dev
 - KAMIS API는 무료지만 호출 한도 있음 → 매일 1회 cron으로 충분
 - 데이터 10만 건 넘어가면 SQLite → PostgreSQL 마이그레이션 권장
 
+## 보안 노트
+
+- `/api/sync/*` 엔드포인트는 환경변수 `SYNC_TOKEN` 설정 시 인증 필요
+  (헤더 `X-Sync-Token` 또는 `?token=`)
+- Vercel Cron은 `CRON_SECRET` 환경변수로 자동 인증 (Bearer)
+- DB 비밀번호 회전: Supabase Dashboard → Settings → Database → Reset password
+- 비번 회전 후 Vercel 환경변수(`DATABASE_URL`, `DIRECT_URL`)도 같이 업데이트
+
+## 자동화 (Vercel Cron)
+
+`vercel.json`에 정의된 스케줄:
+
+- 매일 16:00 (UTC) — KAMIS 농수산물 시세 자동 갱신
+- 매주 월요일 17:00 (UTC) — 네이버 쇼핑 메이저몰 가격 갱신
+
 ## 다음 단계
 
 - [ ] 카카오맵 SDK로 매장 지도 시각화
-- [ ] 사용자 인증 (소셜 로그인)
-- [ ] 가격 이상치 자동 탐지 (오타 4480 → 44800 차단)
+- [ ] 사용자 인증 (Supabase Auth)
+- [ ] 단위 정규화 (1L vs 1000ml, 100g vs 0.1kg)
 - [ ] PWA 변환 (모바일 홈 추가, 카메라 영수증 즉시 업로드)
 - [ ] 가격 알림 ("우유 3000원 이하 되면 알려줘")
-- [ ] 매주 자동 KAMIS 동기화 (cron / GitHub Actions)
+- [ ] 가격 이상치 자동 탐지 강화

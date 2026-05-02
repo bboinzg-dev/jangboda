@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { fetchNaverShop, pickLowestByMall } from "@/lib/naverShop";
+import { checkSyncAuth } from "@/lib/auth";
+import { canonicalMallName } from "@/lib/onlineMalls";
 
 // Vercel 함수 timeout — 네이버 API 호출 N회로 시간 소요. 60초까지 허용.
 export const maxDuration = 60;
@@ -10,24 +12,28 @@ function extractUnitKeyword(unit: string): string {
   if (!unit) return "";
   const matches = unit.match(/(\d+(?:\.\d+)?\s*(?:개입|구|봉|입|병|캔|팩|kg|L|ml|g))/gi);
   if (!matches) return "";
-  // 마지막 매칭이 보통 묶음 단위 (5개, 30구 등) — 가장 식별력 높음
   return matches[matches.length - 1].replace(/\s/g, "");
 }
 
-// 온라인 가상 매장 보장 — mall마다 1개씩
-async function ensureOnlineStore(mallName: string) {
+// 온라인 가상 매장 보장 — 메이저 몰만 개별 store, 나머지는 "기타 온라인몰" 하나로 묶음
+// race condition 방지: chain.upsert + (chainId, name) UNIQUE를 활용한 안전한 upsert
+async function ensureOnlineStore(canonicalName: string, isMajor: boolean) {
   const chain = await prisma.chain.upsert({
-    where: { name: mallName },
+    where: { name: canonicalName },
     update: {},
-    create: { name: mallName },
+    create: { name: canonicalName },
   });
 
-  const storeName = `${mallName} 온라인몰`;
-  let store = await prisma.store.findFirst({
+  const storeName = isMajor ? `${canonicalName} 온라인몰` : "기타 온라인몰";
+
+  // 동일 chain 안에 store가 이미 있으면 재사용 (race condition 회피)
+  const existing = await prisma.store.findFirst({
     where: { chainId: chain.id, name: storeName },
   });
-  if (!store) {
-    store = await prisma.store.create({
+  if (existing) return { store: existing, created: false };
+
+  try {
+    const store = await prisma.store.create({
       data: {
         chainId: chain.id,
         name: storeName,
@@ -37,15 +43,25 @@ async function ensureOnlineStore(mallName: string) {
         hours: "24시간",
       },
     });
+    return { store, created: true };
+  } catch {
+    // 동시 요청으로 이미 만들어졌을 수 있음 — 다시 조회
+    const retry = await prisma.store.findFirst({
+      where: { chainId: chain.id, name: storeName },
+    });
+    if (!retry) throw new Error("store 생성 실패");
+    return { store: retry, created: false };
   }
-  return store;
 }
 
 // POST /api/sync/naver — 카탈로그 상품을 네이버에서 검색해 온라인몰별 가격 등록
-// 농수산물 카테고리는 제외 (이름이 generic해 매칭 노이즈)
 export async function POST(req: NextRequest) {
+  const authErr = checkSyncAuth(req);
+  if (authErr) return authErr;
+
   const { searchParams } = new URL(req.url);
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+  const onlyMajor = searchParams.get("onlyMajor") === "true";
 
   const products = await prisma.product.findMany({
     where: { category: { not: "농수산물" } },
@@ -82,39 +98,69 @@ export async function POST(req: NextRequest) {
           ? existing.reduce((s, p) => s + p.price, 0) / existing.length
           : null;
 
-      const lowestByMall = pickLowestByMall(items)
-        .filter((it) => avg === null || (it.lprice >= avg * 0.3 && it.lprice <= avg * 3))
-        .slice(0, 5);
+      // outlier 필터
+      // - 기존 샘플이 충분(3+)하면 ±70% 적용
+      // - 부족하면 절대값 범위 (300원~500,000원)로 보수적 처리
+      const lowestByMall = pickLowestByMall(items).filter((it) => {
+        if (it.lprice <= 0) return false;
+        if (existing.length >= 3 && avg !== null) {
+          return it.lprice >= avg * 0.3 && it.lprice <= avg * 3;
+        }
+        return it.lprice >= 300 && it.lprice <= 500_000;
+      });
 
-      return { product, lowestByMall, usedMock };
+      return { product, items: lowestByMall, usedMock };
     })
   );
 
-  // 2단계 (순차): 매장 보장 + 가격 INSERT (race condition 방지)
+  // 2단계: mall 이름 정규화 (메이저몰만 개별 chain으로, 나머지는 묶음)
+  // 같은 product+canonical mall에는 최저가 1건만 등록
   let inserted = 0;
   let storesCreated = 0;
   let usedMockCount = 0;
+  let skippedNonMajor = 0;
   const samples: Array<{ product: string; malls: string[] }> = [];
 
-  for (const { product, lowestByMall, usedMock } of fetched) {
+  for (const { product, items, usedMock } of fetched) {
     if (usedMock) usedMockCount++;
+
+    // mall 이름을 canonical로 변환 후 다시 mall당 최저가 1건만
+    const byCanonical = new Map<
+      string,
+      { canonical: string; isMajor: boolean; price: number }
+    >();
+    for (const it of items) {
+      const { canonical, isMajor } = canonicalMallName(it.mallName);
+      if (onlyMajor && !isMajor) {
+        skippedNonMajor++;
+        continue;
+      }
+      const cur = byCanonical.get(canonical);
+      if (!cur || it.lprice < cur.price) {
+        byCanonical.set(canonical, { canonical, isMajor, price: it.lprice });
+      }
+    }
+
     const malls: string[] = [];
+    for (const { canonical, isMajor, price } of byCanonical.values()) {
+      const { store, created } = await ensureOnlineStore(canonical, isMajor);
+      if (created) storesCreated++;
 
-    for (const item of lowestByMall) {
-      const store = await ensureOnlineStore(item.mallName);
-      const isNew = store.createdAt.getTime() > Date.now() - 5000;
-      if (isNew) storesCreated++;
-
+      // 같은 (product, store, source: naver) 의 기존 row 제거 후 새로 INSERT (히스토리는 유지하되 최신만 사용)
+      // — 매일 동기화해도 polluition 안 되도록
+      await prisma.price.deleteMany({
+        where: { productId: product.id, storeId: store.id, source: "naver" },
+      });
       await prisma.price.create({
         data: {
           productId: product.id,
           storeId: store.id,
-          price: item.lprice,
+          price,
           source: "naver",
         },
       });
       inserted++;
-      malls.push(`${item.mallName}:${item.lprice}`);
+      malls.push(`${canonical}:${price}`);
     }
 
     if (malls.length > 0) {
@@ -128,6 +174,7 @@ export async function POST(req: NextRequest) {
     inserted,
     storesCreated,
     usedMockCount,
+    skippedNonMajor,
     samples: samples.slice(0, 5),
   });
 }

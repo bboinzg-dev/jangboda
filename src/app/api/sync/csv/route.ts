@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { csvToObjects } from "@/lib/csv";
 import { matchProduct, matchStore } from "@/lib/matcher";
+import { checkSyncAuth } from "@/lib/auth";
+
+export const maxDuration = 60;
 
 // POST /api/sync/csv — 보편 CSV 임포트
 // 어떤 출처(소비자원 참가격, 마트 전단지, 자체 조사 등)든
@@ -16,12 +19,19 @@ import { matchProduct, matchStore } from "@/lib/matcher";
 //
 // body: { csv: string, sourceLabel?: string }
 export async function POST(req: NextRequest) {
+  const authErr = checkSyncAuth(req);
+  if (authErr) return authErr;
+
   const body = await req.json().catch(() => ({}));
   const csv: string = body.csv ?? "";
   const sourceLabel: string = body.sourceLabel ?? "csv";
 
   if (!csv.trim()) {
     return NextResponse.json({ error: "csv 본문 비어있음" }, { status: 400 });
+  }
+  // 5MB 입력 제한 (Vercel 함수 메모리 보호)
+  if (csv.length > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "CSV 5MB 초과" }, { status: 413 });
   }
 
   const rows = csvToObjects(csv);

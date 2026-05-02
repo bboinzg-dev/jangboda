@@ -27,22 +27,26 @@ export default function SyncPage() {
 
   async function syncNaver() {
     setBusy(true);
-    setNaverResult(null);
-    const res = await fetch("/api/sync/naver?limit=20", { method: "POST" });
-    const data = await res.json();
-    setBusy(false);
-    if (data.ok) {
-      const sampleStr = (data.samples ?? [])
-        .map((s: { product: string; malls: string[] }) => `${s.product}: ${s.malls.join(", ")}`)
-        .join(" / ");
-      setNaverResult(
-        `✅ ${data.inserted}건 가격 등록, 신규 매장 ${data.storesCreated}개 (mock 사용 ${data.usedMockCount}회)${
-          sampleStr ? ` — ${sampleStr}` : ""
-        }`
-      );
-    } else {
-      setNaverResult(`❌ ${data.error ?? "실패"}`);
+    setNaverResult("⏳ 네이버 검색 중... (약 30초 소요)");
+    try {
+      const res = await fetch("/api/sync/naver?limit=20&onlyMajor=true", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        const sampleStr = (data.samples ?? [])
+          .map((s: { product: string; malls: string[] }) => `${s.product}: ${s.malls.join(", ")}`)
+          .join(" / ");
+        setNaverResult(
+          `✅ ${data.inserted}건 가격 등록, 신규 매장 ${data.storesCreated}개 (mock ${data.usedMockCount}회, 메이저몰 외 제외 ${data.skippedNonMajor ?? 0}건)${
+            sampleStr ? `\n예시 — ${sampleStr}` : ""
+          }`
+        );
+      } else {
+        setNaverResult(`❌ ${data.error ?? "실패"}`);
+      }
+    } catch (e) {
+      setNaverResult(`❌ 오류: ${e instanceof Error ? e.message : String(e)}`);
     }
+    setBusy(false);
   }
 
   async function importCsv() {
@@ -85,7 +89,7 @@ export default function SyncPage() {
         <button
           onClick={syncKamis}
           disabled={busy}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
         >
           KAMIS 가격 가져오기
         </button>
@@ -107,7 +111,7 @@ export default function SyncPage() {
         <button
           onClick={syncNaver}
           disabled={busy}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
         >
           네이버에서 온라인 가격 가져오기
         </button>
@@ -146,7 +150,7 @@ export default function SyncPage() {
         <button
           onClick={importCsv}
           disabled={busy}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
         >
           CSV 임포트
         </button>

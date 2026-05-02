@@ -1,12 +1,38 @@
 // Raw pg 클라이언트로 비번 인증을 직접 테스트
 // — 인코딩 이슈 vs 비번 자체 이슈를 분리하기 위함
+// 환경변수 PG_TEST_* 또는 .env의 DATABASE_URL을 파싱해 사용
 import pg from "pg";
+import { readFileSync, existsSync } from "node:fs";
 
 const { Client } = pg;
 
-const PASSWORD = "Jangboda2026Sec"; // raw, 영숫자만
-const HOST = "aws-1-ap-southeast-2.pooler.supabase.com";
-const USER = "postgres.feaakjoakgoplytmgyzz";
+// .env에서 DATABASE_URL 읽어와서 host/user/password 추출
+function loadFromEnv() {
+  if (!existsSync(".env")) return null;
+  const env = readFileSync(".env", "utf8");
+  const m = env.match(/^DATABASE_URL=["']?([^"'\n]+)/m);
+  if (!m) return null;
+  try {
+    const u = new URL(m[1]);
+    return {
+      host: u.hostname,
+      user: decodeURIComponent(u.username),
+      password: decodeURIComponent(u.password),
+    };
+  } catch {
+    return null;
+  }
+}
+
+const cfg = loadFromEnv();
+if (!cfg) {
+  console.error("❌ .env에 DATABASE_URL이 없거나 파싱 불가");
+  process.exit(1);
+}
+
+const PASSWORD = cfg.password;
+const HOST = cfg.host;
+const USER = cfg.user;
 
 async function tryConnect(port, label) {
   const client = new Client({

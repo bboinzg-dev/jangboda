@@ -82,12 +82,13 @@ export default function CartPage() {
         {cart.map((item, idx) => (
           <div
             key={idx}
-            className="grid grid-cols-12 gap-2 items-center text-sm"
+            className="flex gap-2 items-center text-sm"
           >
             <select
               value={item.productId}
               onChange={(e) => updateItem(idx, { productId: e.target.value })}
-              className="col-span-8 px-3 py-2 border border-stone-300 rounded"
+              className="flex-1 min-w-0 px-3 py-2 border border-stone-300 rounded"
+              aria-label="상품 선택"
             >
               <option value="">상품 선택...</option>
               {products.map((p) => (
@@ -103,11 +104,13 @@ export default function CartPage() {
               onChange={(e) =>
                 updateItem(idx, { quantity: parseInt(e.target.value) || 1 })
               }
-              className="col-span-3 px-3 py-2 border border-stone-300 rounded text-center"
+              className="w-16 px-2 py-2 border border-stone-300 rounded text-center shrink-0"
+              aria-label="수량"
             />
             <button
               onClick={() => removeRow(idx)}
-              className="col-span-1 text-stone-400 hover:text-rose-500"
+              aria-label="이 행 삭제"
+              className="w-8 shrink-0 text-stone-400 hover:text-rose-500"
             >
               ✕
             </button>
@@ -123,8 +126,8 @@ export default function CartPage() {
           </button>
           <button
             onClick={compare}
-            disabled={loading}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50"
+            disabled={loading || cart.filter((c) => c.productId).length === 0}
+            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "계산 중..." : "마트별 비교"}
           </button>

@@ -1,10 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { fetchKamisPrices } from "@/lib/kamis";
+import { checkSyncAuth } from "@/lib/auth";
+
+export const maxDuration = 60;
 
 // POST /api/sync/kamis — KAMIS 농수산물 가격을 가져와 가상 매장 "공공시세(KAMIS)"에 저장
 // 이 매장은 실제 매장이 아니라 "오늘의 평균 시세" 기준점입니다.
-export async function POST() {
+// Vercel Cron 또는 X-Sync-Token 인증 필요 (env SYNC_TOKEN 설정 시)
+export async function POST(req: NextRequest) {
+  const authErr = checkSyncAuth(req);
+  if (authErr) return authErr;
+
   const { prices, usedMock, date, error } = await fetchKamisPrices();
 
   // 1. KAMIS 가상 체인/매장 보장
@@ -54,6 +61,11 @@ export async function POST() {
       });
     }
 
+    // KAMIS는 매일 갱신용 — 같은 (product, store, source: kamis)의 기존 row 제거
+    // 그러면 매일 cron 돌려도 row가 무한 쌓이지 않음
+    await prisma.price.deleteMany({
+      where: { productId: product.id, storeId: store.id, source: "kamis" },
+    });
     await prisma.price.create({
       data: {
         productId: product.id,

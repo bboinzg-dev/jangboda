@@ -137,9 +137,15 @@ export default function UploadPage() {
         <button
           onClick={parse}
           disabled={parsing}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50"
+          className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
         >
-          {parsing ? "OCR 처리 중..." : "OCR 시작"}
+          {parsing && (
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+              <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" />
+            </svg>
+          )}
+          {parsing ? "OCR 처리 중... (5~10초)" : "OCR 시작"}
         </button>
       </section>
 
@@ -183,10 +189,13 @@ export default function UploadPage() {
               {items.map((it, idx) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-12 gap-2 items-center text-sm"
+                  className="bg-stone-50 rounded-md p-2 md:bg-transparent md:p-0 md:grid md:grid-cols-12 md:gap-2 md:items-center text-sm"
                 >
-                  <div className="col-span-4 text-stone-600">{it.rawName}</div>
-                  <div className="col-span-5">
+                  <div className="md:col-span-4 text-stone-600 mb-1 md:mb-0">
+                    <span className="md:hidden text-xs text-stone-400">원본: </span>
+                    {it.rawName}
+                  </div>
+                  <div className="md:col-span-5 mb-1 md:mb-0">
                     <select
                       value={it.productId ?? ""}
                       onChange={(e) => {
@@ -194,6 +203,7 @@ export default function UploadPage() {
                         next[idx] = { ...it, productId: e.target.value || null };
                         setItems(next);
                       }}
+                      aria-label="상품 매칭"
                       className={`w-full px-2 py-1 border rounded ${
                         it.productId
                           ? "border-emerald-300 bg-emerald-50/50"
@@ -208,11 +218,13 @@ export default function UploadPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-span-2 text-right">
-                    {formatWon(it.price)}
-                  </div>
-                  <div className="col-span-1 text-center text-stone-500">
-                    x{it.quantity}
+                  <div className="flex justify-between md:col-span-3 md:contents">
+                    <div className="md:col-span-2 md:text-right font-medium">
+                      {formatWon(it.price)}
+                    </div>
+                    <div className="md:col-span-1 md:text-center text-stone-500">
+                      x{it.quantity}
+                    </div>
                   </div>
                 </div>
               ))}
