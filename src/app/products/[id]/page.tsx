@@ -44,71 +44,64 @@ async function getProductDetail(id: string) {
   });
   if (!product) return null;
 
-  const stores = await prisma.store.findMany({ include: { chain: true } });
-
-  // (productId, storeId) pair별 등록 횟수 + 최신 createdAt 미리 집계
-  const allPricesForProduct = await prisma.price.findMany({
+  // 한 번의 쿼리로 이 productId의 모든 가격 가져오기 (N+1 회피)
+  // store 정보는 join으로 같이
+  const allPrices = await prisma.price.findMany({
     where: { productId: id },
-    select: { storeId: true, createdAt: true },
+    include: { store: { include: { chain: true } } },
+    orderBy: { createdAt: "desc" },
   });
-  const trustMap = new Map<string, TrustInfo>();
-  for (const p of allPricesForProduct) {
-    const cur = trustMap.get(p.storeId);
+
+  // storeId별로 그룹 — 가장 최근 가격 + 등록 횟수 + 최신 날짜
+  type Aggregate = {
+    latestPrice: typeof allPrices[number];
+    count: number;
+    latestDate: Date;
+  };
+  const byStore = new Map<string, Aggregate>();
+  for (const p of allPrices) {
+    const cur = byStore.get(p.storeId);
     if (!cur) {
-      trustMap.set(p.storeId, { count: 1, latestDate: p.createdAt });
+      byStore.set(p.storeId, { latestPrice: p, count: 1, latestDate: p.createdAt });
     } else {
       cur.count += 1;
       if (p.createdAt > cur.latestDate) cur.latestDate = p.createdAt;
     }
   }
 
-  const rows = await Promise.all(
-    stores.map(async (s) => {
-      const latest = await prisma.price.findFirst({
-        where: { productId: id, storeId: s.id },
-        orderBy: { createdAt: "desc" },
-      });
-      if (!latest) return null;
-      const row: PriceRow = {
-        priceId: latest.id,
-        storeId: s.id,
-        storeName: s.name,
-        chainName: s.chain.name,
-        lat: s.lat,
-        lng: s.lng,
-        price: latest.price,
-        updatedAt: latest.createdAt,
-        source: latest.source,
-        online: isOnlineStore({
-          lat: s.lat,
-          lng: s.lng,
-          name: s.name,
-          chainName: s.chain.name,
-        }),
-        trust: trustMap.get(s.id),
-      };
-      return row;
-    })
-  );
+  const valid: PriceRow[] = [];
+  for (const { latestPrice: p, count, latestDate } of byStore.values()) {
+    valid.push({
+      priceId: p.id,
+      storeId: p.storeId,
+      storeName: p.store.name,
+      chainName: p.store.chain.name,
+      lat: p.store.lat,
+      lng: p.store.lng,
+      price: p.price,
+      updatedAt: p.createdAt,
+      source: p.source,
+      online: isOnlineStore({
+        lat: p.store.lat,
+        lng: p.store.lng,
+        name: p.store.name,
+        chainName: p.store.chain.name,
+      }),
+      trust: { count, latestDate },
+    });
+  }
 
-  const valid = rows.filter((x): x is PriceRow => x !== null);
-
-  // 가격 추이용 history — 최근 60일, source != 'naver' 우선 (매장별 가격 변동만)
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-  const historyRaw = await prisma.price.findMany({
-    where: {
-      productId: id,
-      createdAt: { gte: sixtyDaysAgo },
-      source: { not: "naver" },
-    },
-    include: { store: { include: { chain: true } } },
-    orderBy: { createdAt: "asc" },
-  });
-  const history: HistoryPoint[] = historyRaw.map((p) => ({
-    date: p.createdAt,
-    price: p.price,
-    chainName: p.store.chain.name,
-  }));
+  // 가격 추이용 history — 최근 60일, source != 'naver' (매장별 가격 변동만)
+  // 이미 allPrices 가져왔으니 메모리 필터로 — 추가 쿼리 안 함
+  const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+  const history: HistoryPoint[] = allPrices
+    .filter((p) => p.source !== "naver" && p.createdAt.getTime() >= sixtyDaysAgo)
+    .map((p) => ({
+      date: p.createdAt,
+      price: p.price,
+      chainName: p.store.chain.name,
+    }))
+    .reverse(); // 오래된 → 최신 순
 
   return { product, prices: valid, history };
 }

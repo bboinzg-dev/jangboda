@@ -1,0 +1,175 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
+import { unitPriceLabel } from "@/lib/units";
+import SourceBadge from "@/components/SourceBadge";
+import DirectionsButton from "@/components/DirectionsButton";
+
+export const dynamic = "force-dynamic";
+
+const CATEGORY_ICONS: Record<string, string> = {
+  mart: "🛒",
+  convenience: "🏪",
+  online: "📦",
+  public: "📊",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  mart: "마트",
+  convenience: "편의점",
+  online: "온라인",
+  public: "시세",
+};
+
+async function getStoreDetail(id: string) {
+  const store = await prisma.store.findUnique({
+    where: { id },
+    include: { chain: true },
+  });
+  if (!store) return null;
+
+  // 이 매장에 등록된 모든 가격 — 같은 (productId, source)에 대해 최신 1건씩
+  const allPrices = await prisma.price.findMany({
+    where: { storeId: id },
+    include: { product: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // productId 별 최신 1건만 (같은 상품 여러 가격이 쌓여있어도)
+  const latestByProduct = new Map<string, typeof allPrices[number]>();
+  for (const p of allPrices) {
+    if (!latestByProduct.has(p.productId)) {
+      latestByProduct.set(p.productId, p);
+    }
+  }
+
+  // 카테고리별로 그룹
+  const items = Array.from(latestByProduct.values());
+  const byCategory = new Map<string, typeof items>();
+  for (const it of items) {
+    const cat = it.product.category;
+    const arr = byCategory.get(cat) ?? [];
+    arr.push(it);
+    byCategory.set(cat, arr);
+  }
+  const categories = Array.from(byCategory.entries()).map(([cat, list]) => ({
+    category: cat,
+    items: list.sort((a, b) => a.product.name.localeCompare(b.product.name)),
+  }));
+
+  return { store, items, categories };
+}
+
+export default async function StoreDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const data = await getStoreDetail(params.id);
+  if (!data) return notFound();
+  const { store, items, categories } = data;
+
+  const cat = store.chain.category || "mart";
+  const icon = CATEGORY_ICONS[cat] ?? "🛒";
+  const label = CATEGORY_LABELS[cat] ?? "마트";
+  const showDirections = store.lat > 0 && store.lng > 0;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <Link href="/stores" className="text-sm text-stone-500 hover:underline">
+          ← 주변 마트로
+        </Link>
+      </div>
+
+      <header className="bg-white border border-stone-200 rounded-xl p-6">
+        <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
+          <span>{icon}</span>
+          <span>{label}</span>
+          <span className="text-stone-300">·</span>
+          <span>{store.chain.name}</span>
+        </div>
+        <h1 className="text-2xl font-bold mt-1">{store.name}</h1>
+        <div className="text-stone-600 text-sm mt-1">{store.address}</div>
+        {store.hours && (
+          <div className="text-stone-500 text-xs mt-1">영업시간: {store.hours}</div>
+        )}
+
+        <div className="mt-4 flex items-center gap-3">
+          <div>
+            <div className="text-xs text-stone-500">등록 가격</div>
+            <div className="text-2xl font-bold text-brand-600">
+              {items.length}건
+            </div>
+          </div>
+          {showDirections && (
+            <div className="ml-auto">
+              <DirectionsButton name={store.name} lat={store.lat} lng={store.lng} />
+            </div>
+          )}
+        </div>
+      </header>
+
+      {items.length === 0 ? (
+        <div className="bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-500 text-sm">
+          이 매장에 등록된 가격이 아직 없습니다.
+          <br />
+          <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block">
+            영수증을 올려 첫 가격을 등록해보세요 →
+          </Link>
+        </div>
+      ) : (
+        <section className="space-y-6">
+          {categories.map(({ category, items: catItems }) => (
+            <div key={category}>
+              <h2 className="font-bold text-sm text-stone-700 mb-2">
+                {category} <span className="text-stone-400">({catItems.length})</span>
+              </h2>
+              <ul className="space-y-2">
+                {catItems.map((p) => {
+                  const tag = freshnessTag(p.createdAt);
+                  const upl = unitPriceLabel(p.price, p.product.unit);
+                  return (
+                    <li
+                      key={p.id}
+                      className="bg-white border border-stone-200 rounded-lg p-3 flex justify-between items-center"
+                    >
+                      <Link
+                        href={`/products/${p.product.id}`}
+                        className="min-w-0 hover:underline"
+                      >
+                        <div className="font-medium truncate">{p.product.name}</div>
+                        <div className="text-xs text-stone-500">
+                          {p.product.unit}
+                          {p.product.brand ? ` · ${p.product.brand}` : ""}
+                        </div>
+                      </Link>
+                      <div className="text-right shrink-0 ml-3">
+                        <div className="font-semibold">{formatWon(p.price)}</div>
+                        {upl && (
+                          <div className="text-[11px] text-stone-500">{upl}</div>
+                        )}
+                        <div className="flex gap-1 justify-end mt-0.5">
+                          <SourceBadge source={p.source} />
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
+                          >
+                            {tag.label}
+                          </span>
+                          <span className="text-[10px] text-stone-500">
+                            {formatRelativeDate(p.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+    </div>
+  );
+}

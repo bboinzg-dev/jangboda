@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import type { StoreMarker } from "@/components/StoresMap";
 import DirectionsButton from "@/components/DirectionsButton";
@@ -243,9 +244,14 @@ export default function StoresPage() {
               return (
                 <li
                   key={s.id}
-                  className="bg-white border border-stone-200 rounded-lg p-4 flex justify-between"
+                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
                 >
-                  <div className="min-w-0">
+                  <Link
+                    href={`/stores/${s.id}`}
+                    className="absolute inset-0 z-0"
+                    aria-label={`${s.name} 가격 보기`}
+                  />
+                  <div className="min-w-0 relative z-10 pointer-events-none">
                     <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
                       <span>{icon}</span>
                       <span>{label}</span>
@@ -255,13 +261,13 @@ export default function StoresPage() {
                     <div className="font-semibold">{s.name}</div>
                     <div className="text-xs text-stone-500">{s.address}</div>
                   </div>
-                  <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1">
+                  <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
                     {s.distanceKm !== null && s.distanceKm !== undefined && (
-                      <div className="text-sm font-bold">
+                      <div className="text-sm font-bold pointer-events-none">
                         {s.distanceKm.toFixed(1)}km
                       </div>
                     )}
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-stone-500 pointer-events-none">
                       {s.priceCount}건 가격
                     </div>
                     {s.lat > 0 && s.lng > 0 && (
