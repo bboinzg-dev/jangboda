@@ -12,3 +12,11 @@ body {
   color: #1c1917;
   -webkit-font-smoothing: antialiased;
 }
+
+/* 모바일 터치 active state — 카드 클릭 시 시각 피드백 */
+.card-clickable {
+  @apply transition-transform;
+}
+.card-clickable:active {
+  @apply scale-[0.98] bg-stone-50;
+}

@@ -6,19 +6,25 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 시드 데이터 주입 시작...");
 
-  // 1. 마트 체인
+  // 1. 마트 체인 + 편의점 체인
+  const chainData = [
+    { name: "롯데마트", category: "mart" },
+    { name: "킴스클럽", category: "mart" },
+    { name: "이마트", category: "mart" },
+    { name: "홈플러스", category: "mart" },
+    { name: "코스트코", category: "mart" },
+    { name: "GS더프레시", category: "mart" },
+    { name: "CU", category: "convenience" },
+    { name: "GS25", category: "convenience" },
+    { name: "세븐일레븐", category: "convenience" },
+    { name: "이마트24", category: "convenience" },
+    { name: "MINISTOP", category: "convenience" },
+  ];
   const chains = await Promise.all(
-    [
-      { name: "롯데마트" },
-      { name: "킴스클럽" },
-      { name: "이마트" },
-      { name: "홈플러스" },
-      { name: "코스트코" },
-      { name: "GS더프레시" },
-    ].map((c) =>
+    chainData.map((c) =>
       prisma.chain.upsert({
         where: { name: c.name },
-        update: {},
+        update: { category: c.category },
         create: c,
       })
     )

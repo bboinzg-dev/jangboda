@@ -83,7 +83,7 @@ export default async function HomePage() {
             <Link
               key={c.id}
               href={`/products/${c.id}`}
-              className="bg-white border border-stone-200 hover:border-brand-300 hover:shadow-sm rounded-lg p-4 flex justify-between items-center"
+              className="card-clickable bg-white border border-stone-200 hover:border-brand-300 hover:shadow-sm active:bg-stone-50 rounded-lg p-4 flex justify-between items-center"
             >
               <div className="min-w-0">
                 <div className="text-xs text-stone-500">{c.category}</div>

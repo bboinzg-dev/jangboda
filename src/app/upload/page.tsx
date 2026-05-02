@@ -17,6 +17,7 @@ type ParseResult = {
   source: "clova" | "google_vision" | "mock";
   storeId: string | null;
   storeHint?: string;
+  receiptDate?: string;
   totalAmount?: number;
   items: ParsedItem[];
 };
@@ -26,6 +27,8 @@ type Product = { id: string; name: string; brand: string | null };
 
 export default function UploadPage() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  // 미리보기용 data URL (썸네일 표시)
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
@@ -54,6 +57,7 @@ export default function UploadPage() {
     reader.onload = () => {
       const result = reader.result as string;
       setImageBase64(result.split(",")[1] ?? null);
+      setImagePreview(result);
     };
     reader.readAsDataURL(file);
   }
@@ -106,6 +110,8 @@ export default function UploadPage() {
     }
   }
 
+  const matchedCount = items.filter((i) => i.productId).length;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">📸 영수증 올리기</h1>
@@ -154,120 +160,200 @@ export default function UploadPage() {
       </section>
 
       {result && (
-        <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="font-bold">파싱 결과</h2>
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              result.source === "clova" ? "bg-emerald-100 text-emerald-700"
-              : result.source === "google_vision" ? "bg-blue-100 text-blue-700"
-              : "bg-amber-100 text-amber-700"
-            }`}>
-              {result.source === "clova" ? "🟢 CLOVA OCR"
-              : result.source === "google_vision" ? "🔵 Google Vision"
-              : "⚠️ Mock OCR"}
-            </span>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">매장 확인</label>
-            <select
-              value={storeId}
-              onChange={(e) => setStoreId(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md"
-            >
-              <option value="">매장 선택...</option>
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.chainName} - {s.name}
-                </option>
-              ))}
-            </select>
-            {result.storeHint && (
-              <div className="text-xs text-stone-500 mt-1">
-                추측: {result.storeHint}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 왼쪽 — 이미지 미리보기 */}
+          <div className="bg-white border border-stone-200 rounded-xl p-4">
+            <h2 className="font-bold mb-3 text-sm text-stone-700">영수증 이미지</h2>
+            {imagePreview ? (
+              // 단순 img 태그 — Next/Image 안 씀 (data URL이라 외부 도메인 설정 불필요)
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imagePreview}
+                alt="영수증 미리보기"
+                className="w-full rounded-md border border-stone-100 object-contain max-h-[640px]"
+              />
+            ) : (
+              <div className="aspect-[3/4] bg-stone-50 border border-dashed border-stone-200 rounded-md flex items-center justify-center text-sm text-stone-400">
+                이미지 미리보기가 여기 표시됩니다
+                <br />
+                (데모 모드는 이미지 없음)
               </div>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              품목 매칭 ({items.filter((i) => i.productId).length}/{items.length}건 자동 매칭)
-            </label>
-            <div className="space-y-2">
-              {items.map((it, idx) => (
-                <div
-                  key={idx}
-                  className="bg-stone-50 rounded-md p-2 md:bg-transparent md:p-0 md:grid md:grid-cols-12 md:gap-2 md:items-center text-sm"
-                >
-                  <div className="md:col-span-4 text-stone-600 mb-1 md:mb-0">
-                    <span className="md:hidden text-xs text-stone-400">원본: </span>
-                    {it.rawName}
-                  </div>
-                  <div className="md:col-span-5 mb-1 md:mb-0">
-                    <select
-                      value={it.productId ?? ""}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx] = { ...it, productId: e.target.value || null };
-                        setItems(next);
-                      }}
-                      aria-label="상품 매칭"
-                      className={`w-full px-2 py-1 border rounded ${
-                        it.productId
-                          ? "border-emerald-300 bg-emerald-50/50"
-                          : "border-rose-300 bg-rose-50/50"
+          {/* 오른쪽 — OCR 결과 */}
+          <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="font-bold">파싱 결과</h2>
+              <span className={`text-xs px-2 py-0.5 rounded ${
+                result.source === "clova" ? "bg-emerald-100 text-emerald-700"
+                : result.source === "google_vision" ? "bg-blue-100 text-blue-700"
+                : "bg-amber-100 text-amber-700"
+              }`}>
+                {result.source === "clova" ? "🟢 CLOVA OCR"
+                : result.source === "google_vision" ? "🔵 Google Vision"
+                : "⚠️ Mock OCR"}
+              </span>
+            </div>
+
+            {/* 상단 강조 카드 — storeHint, receiptDate, totalAmount */}
+            <div className="grid grid-cols-3 gap-2">
+              <SummaryCard
+                label="매장 추측"
+                value={result.storeHint ?? "—"}
+              />
+              <SummaryCard
+                label="영수증 일자"
+                value={result.receiptDate ?? "—"}
+              />
+              <SummaryCard
+                label="합계"
+                value={result.totalAmount ? formatWon(result.totalAmount) : "—"}
+                highlight
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">매장 확인</label>
+              <select
+                value={storeId}
+                onChange={(e) => setStoreId(e.target.value)}
+                className="w-full px-3 py-2 border border-stone-300 rounded-md"
+              >
+                <option value="">매장 선택...</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.chainName} - {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                품목 매칭 ({matchedCount}/{items.length}건 자동 매칭)
+              </label>
+              <div className="space-y-2">
+                {items.map((it, idx) => {
+                  const ok = !!it.productId;
+                  return (
+                    <div
+                      key={idx}
+                      className={`rounded-md p-2 border text-sm ${
+                        ok
+                          ? "bg-emerald-50/40 border-emerald-200"
+                          : "bg-rose-50/40 border-rose-200"
                       }`}
                     >
-                      <option value="">선택 안 함 (제외)</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex justify-between md:col-span-3 md:contents">
-                    <div className="md:col-span-2 md:text-right font-medium">
-                      {formatWon(it.price)}
+                      <div className="flex items-start gap-2">
+                        <span
+                          className="shrink-0 mt-0.5"
+                          aria-label={ok ? "매칭 성공" : "매칭 실패"}
+                          title={ok ? "자동 매칭됨" : "수동 매칭 필요"}
+                        >
+                          {ok ? (
+                            <span className="text-emerald-600">✓</span>
+                          ) : (
+                            <span className="text-rose-600">⚠️</span>
+                          )}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-stone-600 truncate text-xs mb-1">
+                            <span className="text-stone-400">원본: </span>
+                            {it.rawName}
+                          </div>
+                          <select
+                            value={it.productId ?? ""}
+                            onChange={(e) => {
+                              const next = [...items];
+                              next[idx] = {
+                                ...it,
+                                productId: e.target.value || null,
+                              };
+                              setItems(next);
+                            }}
+                            aria-label="상품 매칭"
+                            className={`w-full px-2 py-1 border rounded text-xs ${
+                              ok
+                                ? "border-emerald-300 bg-white"
+                                : "border-rose-300 bg-white"
+                            }`}
+                          >
+                            <option value="">선택 안 함 (제외)</option>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="flex justify-between items-center mt-1 text-xs">
+                            <span className="text-stone-500">
+                              x{it.quantity}
+                            </span>
+                            <span className="font-medium text-stone-800">
+                              {formatWon(it.price)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="md:col-span-1 md:text-center text-stone-500">
-                      x{it.quantity}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {result.totalAmount && (
-            <div className="text-right text-sm text-stone-600">
-              영수증 합계: <strong>{formatWon(result.totalAmount)}</strong>
-            </div>
-          )}
-
-          <button
-            onClick={submit}
-            disabled={submitting || !storeId}
-            className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
-          >
-            {submitting ? "등록 중..." : "✓ 가격 등록 (포인트 +2/건)"}
-          </button>
-
-          {submitResult && (
-            <div className="text-center text-sm pt-2">
-              {submitResult}
-              <div className="mt-2">
-                <Link
-                  href="/search"
-                  className="text-brand-600 hover:underline"
-                >
-                  다른 상품 가격 보러가기 →
-                </Link>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <button
+              onClick={submit}
+              disabled={submitting || !storeId}
+              className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
+            >
+              {submitting ? "등록 중..." : "✓ 가격 등록 (포인트 +2/건)"}
+            </button>
+
+            {submitResult && (
+              <div className="text-center text-sm pt-2">
+                {submitResult}
+                <div className="mt-2">
+                  <Link
+                    href="/search"
+                    className="text-brand-600 hover:underline"
+                  >
+                    다른 상품 가격 보러가기 →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-md p-2 ${
+        highlight ? "bg-brand-50 border border-brand-200" : "bg-stone-50 border border-stone-200"
+      }`}
+    >
+      <div className="text-[10px] text-stone-500">{label}</div>
+      <div
+        className={`text-sm font-semibold truncate ${
+          highlight ? "text-brand-700" : "text-stone-800"
+        }`}
+        title={value}
+      >
+        {value}
+      </div>
     </div>
   );
 }

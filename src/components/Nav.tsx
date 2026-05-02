@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/cart", label: "장바구니 비교" },
   { href: "/stores", label: "주변 마트" },
   { href: "/profile", label: "내 정보" },
+  { href: "/budget", label: "가계부" },
   { href: "/sync", label: "동기화" },
 ];
 

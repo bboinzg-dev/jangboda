@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     id: s.id,
     name: s.name,
     chainName: s.chain.name,
+    chainCategory: s.chain.category,
     address: s.address,
     lat: s.lat,
     lng: s.lng,

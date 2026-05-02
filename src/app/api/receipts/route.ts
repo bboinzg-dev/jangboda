@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { parseReceipt } from "@/lib/ocr";
 import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { uploadReceiptImage } from "@/lib/storage";
 
 // POST /api/receipts — 영수증 이미지 업로드 + OCR 파싱 + 자동 매칭 시도
 // body: { imageBase64?: string }
@@ -23,10 +24,28 @@ export async function POST(req: NextRequest) {
   // 매장 추론
   const storeId = await matchStore(receipt.storeHint);
 
+  // Supabase Storage 업로드 시도 (실패하면 placeholder fallback)
+  let imageUrl = imageBase64 ? "data:placeholder" : "mock://demo";
+  let storagePath: string | undefined;
+  if (imageBase64) {
+    try {
+      // PNG 시그니처 감지 — 아니면 jpg로 처리
+      const isPng = imageBase64.startsWith("data:image/png") || imageBase64.includes("iVBORw0KGgo");
+      const ext: "jpg" | "png" = isPng ? "png" : "jpg";
+      const uploaded = await uploadReceiptImage(imageBase64, ext);
+      imageUrl = uploaded.publicUrl;
+      storagePath = uploaded.path;
+    } catch (e) {
+      // bucket 미존재/키 미설정/업로드 실패 → placeholder 유지
+      console.warn("[receipts] Storage 업로드 실패, placeholder로 fallback:", (e as Error).message);
+    }
+  }
+
   // 영수증 레코드 저장
   const record = await prisma.receipt.create({
     data: {
-      imageUrl: imageBase64 ? "data:placeholder" : "mock://demo",
+      imageUrl,
+      storagePath,
       storeId: storeId ?? undefined,
       uploaderId: uploaderId ?? undefined,
       rawOcrText: receipt.rawText,

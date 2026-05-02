@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
@@ -18,36 +18,59 @@ type Product = {
   stats?: { min: number; max: number; avg: number; count: number };
 };
 
+const ALL = "__all__";
+
 export default function SearchPage() {
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("min");
+  const [category, setCategory] = useState<string>(ALL);
+  // 카테고리 칩 후보 — 가능한 모든 카테고리(현재 선택과 무관하게 한번 로드해서 유지)
+  const [allCategories, setAllCategories] = useState<string[]>([]);
 
-  async function run(query: string) {
+  async function run(query: string, cat: string) {
     setLoading(true);
-    const res = await fetch(`/api/products?q=${encodeURIComponent(query)}`);
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (cat && cat !== ALL) params.set("category", cat);
+    const res = await fetch(`/api/products?${params.toString()}`);
     const data = await res.json();
     setProducts(data.products);
+    // 카테고리 후보 수집 — 카테고리 필터가 안 걸린 결과로만 채움
+    if (cat === ALL) {
+      const cats = Array.from(
+        new Set((data.products as Product[]).map((p) => p.category).filter(Boolean))
+      );
+      setAllCategories(cats);
+    }
     setLoading(false);
   }
 
   useEffect(() => {
-    run("");
+    run("", ALL);
   }, []);
 
-  const sorted = [...products].sort((a, b) => {
-    if (sortBy === "unit") {
-      const ua = a.stats ? unitPriceValue(a.stats.min, a.unit) : null;
-      const ub = b.stats ? unitPriceValue(b.stats.min, b.unit) : null;
-      // 파싱 안 된 항목은 뒤로
-      if (ua === null && ub === null) return 0;
-      if (ua === null) return 1;
-      if (ub === null) return -1;
-      return ua - ub;
-    }
-    return (a.stats?.min ?? Infinity) - (b.stats?.min ?? Infinity);
-  });
+  // 카테고리 변경 시 즉시 재조회
+  useEffect(() => {
+    run(q, category);
+    // q 변경 시는 form submit이 호출하므로 의존성에 q 안 넣음
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
+
+  const sorted = useMemo(() => {
+    return [...products].sort((a, b) => {
+      if (sortBy === "unit") {
+        const ua = a.stats ? unitPriceValue(a.stats.min, a.unit) : null;
+        const ub = b.stats ? unitPriceValue(b.stats.min, b.unit) : null;
+        if (ua === null && ub === null) return 0;
+        if (ua === null) return 1;
+        if (ub === null) return -1;
+        return ua - ub;
+      }
+      return (a.stats?.min ?? Infinity) - (b.stats?.min ?? Infinity);
+    });
+  }, [products, sortBy]);
 
   return (
     <div className="space-y-4">
@@ -55,7 +78,7 @@ export default function SearchPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          run(q);
+          run(q, category);
         }}
         className="flex gap-2"
       >
@@ -72,6 +95,25 @@ export default function SearchPage() {
           검색
         </button>
       </form>
+
+      {/* 카테고리 칩 */}
+      {allCategories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <CategoryChip
+            label="전체"
+            active={category === ALL}
+            onClick={() => setCategory(ALL)}
+          />
+          {allCategories.map((c) => (
+            <CategoryChip
+              key={c}
+              label={c}
+              active={category === c}
+              onClick={() => setCategory(c)}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 text-xs">
         <span className="text-stone-500">정렬:</span>
@@ -93,7 +135,9 @@ export default function SearchPage() {
         <div className="text-center py-8 text-stone-500">검색 중...</div>
       ) : products.length === 0 ? (
         <div className="text-center py-8 text-stone-500">
-          {q ? "검색어와 일치하는 상품이 없습니다." : "등록된 상품이 없습니다."}
+          {q || category !== ALL
+            ? "조건에 맞는 상품이 없습니다."
+            : "등록된 상품이 없습니다."}
           <br />
           <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block">
             영수증을 올려 첫 상품을 추가해보세요 →
@@ -107,7 +151,7 @@ export default function SearchPage() {
               <Link
                 key={p.id}
                 href={`/products/${p.id}`}
-                className="bg-white border border-stone-200 hover:border-brand-300 rounded-lg p-4 flex justify-between"
+                className="card-clickable bg-white border border-stone-200 hover:border-brand-300 active:bg-stone-50 rounded-lg p-4 flex justify-between"
               >
                 <div className="min-w-0">
                   <div className="text-xs text-stone-500">
@@ -140,5 +184,28 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function CategoryChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+        active
+          ? "bg-brand-500 text-white border-brand-500"
+          : "bg-white text-stone-700 border-stone-200 hover:border-brand-300"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

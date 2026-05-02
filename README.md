@@ -99,6 +99,59 @@ npm run dev
 - `src/lib/ocr.ts`의 `parseClovaResponse` 구현
 - 미설정 시 자동으로 mock OCR 작동 (데모용)
 
+### 5. Supabase Storage (영수증 이미지 보관)
+
+영수증 사진은 Supabase Storage `receipts` bucket에 저장됩니다.
+미설정/실패 시 DB에는 placeholder만 들어가고 OCR/매칭은 정상 동작합니다 (이미지 표시만 안 됨).
+
+#### Bucket 만들기
+
+1. Supabase 대시보드 → **Storage** → **New bucket**
+2. 이름: `receipts`
+3. **Public bucket** 체크 (이미지를 `<img>` 태그로 직접 표시하기 위함)
+4. **File size limit**: `10 MB` (영수증 사진 충분)
+5. Allowed MIME types: `image/jpeg, image/png` (선택)
+
+#### RLS 정책 (Storage → Policies)
+
+`receipts` bucket을 선택한 뒤 다음 정책을 추가합니다.
+
+```sql
+-- 1) 누구나 읽기 (public bucket이지만 명시)
+CREATE POLICY "Public read on receipts"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'receipts');
+
+-- 2) 인증된 사용자만 자기 폴더에 업로드
+CREATE POLICY "Authenticated insert own folder"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'receipts'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- 3) (선택) 비로그인 사용자도 anon/ 폴더에 업로드 허용 — 데모용
+CREATE POLICY "Anon insert into anon folder"
+  ON storage.objects FOR INSERT
+  TO anon
+  WITH CHECK (
+    bucket_id = 'receipts'
+    AND (storage.foldername(name))[1] = 'anon'
+  );
+```
+
+대시보드 GUI에서도 동일한 정책을 만들 수 있습니다 (Policies → New policy → Templates).
+
+#### 업로드 흐름
+
+1. 사용자 `/upload`에서 사진 선택 → base64로 인코딩
+2. `POST /api/receipts` → `uploadReceiptImage(base64)` 호출
+3. Storage 경로: `${user_id_or_anon}/${timestamp}-${random}.jpg`
+4. 성공 시 `Receipt.imageUrl = publicUrl`, `Receipt.storagePath = path`
+5. 실패 시 (bucket 없음/네트워크 등) `imageUrl = "data:placeholder"` fallback
+6. `/profile`의 영수증 목록에서 thumbnail로 표시
+
 ## 가격 출처 라벨 (UI 표시)
 
 가격 옆에 항상 출처 뱃지가 표시되어 사용자가 신뢰도를 판단할 수 있습니다.
@@ -164,8 +217,9 @@ npm run dev
 ## 다음 단계
 
 - [ ] 카카오맵 SDK로 매장 지도 시각화
-- [ ] 사용자 인증 (Supabase Auth)
+- [x] 사용자 인증 (Supabase Auth)
+- [x] 영수증 이미지 보관 (Supabase Storage)
 - [ ] 단위 정규화 (1L vs 1000ml, 100g vs 0.1kg)
 - [ ] PWA 변환 (모바일 홈 추가, 카메라 영수증 즉시 업로드)
-- [ ] 가격 알림 ("우유 3000원 이하 되면 알려줘")
+- [x] 가격 알림 ("우유 3000원 이하 되면 알려줘")
 - [ ] 가격 이상치 자동 탐지 강화

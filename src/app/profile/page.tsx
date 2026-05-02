@@ -88,24 +88,39 @@ export default async function ProfilePage() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {myReceipts.map((r) => (
-              <li
-                key={r.id}
-                className="bg-white border border-stone-200 rounded-lg p-3 flex justify-between text-sm"
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold truncate">
-                    {r.store?.name ?? "(매장 미지정)"}
+            {myReceipts.map((r) => {
+              // imageUrl이 http(s)로 시작하면 Storage URL → thumbnail 표시
+              const showThumb =
+                typeof r.imageUrl === "string" && /^https?:\/\//.test(r.imageUrl);
+              return (
+                <li
+                  key={r.id}
+                  className="bg-white border border-stone-200 rounded-lg p-3 flex justify-between items-center text-sm"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {showThumb && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={r.imageUrl}
+                        alt="영수증"
+                        className="w-12 h-12 object-cover rounded border border-stone-200 shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate">
+                        {r.store?.name ?? "(매장 미지정)"}
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        {r.store?.chain.name} · {r._count.prices}건 등록
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-stone-500">
-                    {r.store?.chain.name} · {r._count.prices}건 등록
+                  <div className="text-right shrink-0 ml-3 text-xs text-stone-500">
+                    {formatRelativeDate(r.createdAt)}
                   </div>
-                </div>
-                <div className="text-right shrink-0 ml-3 text-xs text-stone-500">
-                  {formatRelativeDate(r.createdAt)}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

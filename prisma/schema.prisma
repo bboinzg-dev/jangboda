@@ -13,10 +13,11 @@ datasource db {
 
 // 마트 체인 (롯데마트, 킴스클럽, 이마트 등)
 model Chain {
-  id      String  @id @default(cuid())
-  name    String  @unique // "롯데마트", "킴스클럽"
-  logoUrl String?
-  stores  Store[]
+  id       String  @id @default(cuid())
+  name     String  @unique // "롯데마트", "킴스클럽"
+  category String  @default("mart") // mart | convenience | online | public
+  logoUrl  String?
+  stores   Store[]
 }
 
 // 개별 매장 (롯데마트 잠실점 등)
@@ -82,6 +83,7 @@ model Price {
   contributor   User?    @relation(fields: [contributorId], references: [id])
   receiptId     String?
   receipt       Receipt? @relation(fields: [receiptId], references: [id])
+  reports       PriceReport[]
   createdAt     DateTime @default(now())
 
   @@index([productId, storeId, createdAt])
@@ -91,7 +93,8 @@ model Price {
 // 영수증 (OCR 원본 + 파싱 결과)
 model Receipt {
   id           String   @id @default(cuid())
-  imageUrl     String
+  imageUrl     String   // Supabase Storage 또는 data URL
+  storagePath  String?  // Supabase Storage 객체 경로 (있으면)
   storeId      String?
   store        Store?   @relation(fields: [storeId], references: [id])
   uploaderId   String?
@@ -113,6 +116,20 @@ model User {
   receipts      Receipt[]
   priceAlerts   PriceAlert[]
   pushSubs      PushSubscription[]
+}
+
+// 가격 신고 — 사용자가 잘못된 가격에 대해 정정 요청
+model PriceReport {
+  id          String   @id @default(cuid())
+  priceId     String
+  price       Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
+  reporterId  String?  // 익명 가능
+  reason      String   // "이 가격은 틀림", "더 싼 가격 봤음" 등
+  suggestedPrice Int?  // 제안 가격
+  status      String   @default("pending") // pending | reviewed | resolved
+  createdAt   DateTime @default(now())
+
+  @@index([priceId])
 }
 
 // 가격 알림 — 사용자가 특정 상품의 가격이 임계가 이하로 내려가면 푸시 받기

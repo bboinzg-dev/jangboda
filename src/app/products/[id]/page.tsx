@@ -5,10 +5,20 @@ import { notFound } from "next/navigation";
 import SourceBadge, { isOnlineStore } from "@/components/SourceBadge";
 import { unitPriceLabel } from "@/lib/units";
 import PriceAlertButton from "@/components/PriceAlertButton";
+import PriceHistoryChart from "@/components/PriceHistoryChart";
+import TrustBadge from "@/components/TrustBadge";
+import DirectionsButton from "@/components/DirectionsButton";
+import ReportPriceButton from "@/components/ReportPriceButton";
 
 export const dynamic = "force-dynamic";
 
+type TrustInfo = {
+  count: number;
+  latestDate: Date;
+};
+
 type PriceRow = {
+  priceId: string;
   storeId: string;
   storeName: string;
   chainName: string;
@@ -18,6 +28,13 @@ type PriceRow = {
   updatedAt: Date;
   source: string;
   online: boolean;
+  trust?: TrustInfo;
+};
+
+type HistoryPoint = {
+  date: Date;
+  price: number;
+  chainName: string;
 };
 
 async function getProductDetail(id: string) {
@@ -28,6 +45,23 @@ async function getProductDetail(id: string) {
   if (!product) return null;
 
   const stores = await prisma.store.findMany({ include: { chain: true } });
+
+  // (productId, storeId) pair별 등록 횟수 + 최신 createdAt 미리 집계
+  const allPricesForProduct = await prisma.price.findMany({
+    where: { productId: id },
+    select: { storeId: true, createdAt: true },
+  });
+  const trustMap = new Map<string, TrustInfo>();
+  for (const p of allPricesForProduct) {
+    const cur = trustMap.get(p.storeId);
+    if (!cur) {
+      trustMap.set(p.storeId, { count: 1, latestDate: p.createdAt });
+    } else {
+      cur.count += 1;
+      if (p.createdAt > cur.latestDate) cur.latestDate = p.createdAt;
+    }
+  }
+
   const rows = await Promise.all(
     stores.map(async (s) => {
       const latest = await prisma.price.findFirst({
@@ -36,6 +70,7 @@ async function getProductDetail(id: string) {
       });
       if (!latest) return null;
       const row: PriceRow = {
+        priceId: latest.id,
         storeId: s.id,
         storeName: s.name,
         chainName: s.chain.name,
@@ -50,13 +85,32 @@ async function getProductDetail(id: string) {
           name: s.name,
           chainName: s.chain.name,
         }),
+        trust: trustMap.get(s.id),
       };
       return row;
     })
   );
 
   const valid = rows.filter((x): x is PriceRow => x !== null);
-  return { product, prices: valid };
+
+  // 가격 추이용 history — 최근 60일, source != 'naver' 우선 (매장별 가격 변동만)
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  const historyRaw = await prisma.price.findMany({
+    where: {
+      productId: id,
+      createdAt: { gte: sixtyDaysAgo },
+      source: { not: "naver" },
+    },
+    include: { store: { include: { chain: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  const history: HistoryPoint[] = historyRaw.map((p) => ({
+    date: p.createdAt,
+    price: p.price,
+    chainName: p.store.chain.name,
+  }));
+
+  return { product, prices: valid, history };
 }
 
 function PriceList({
@@ -84,6 +138,7 @@ function PriceList({
         const tag = freshnessTag(p.updatedAt);
         const savingsPct =
           p.price > minPrice ? Math.round(((p.price - minPrice) / minPrice) * 100) : 0;
+        const showDirections = !p.online && p.lat > 0 && p.lng > 0;
         return (
           <li
             key={p.storeId}
@@ -100,6 +155,11 @@ function PriceList({
               <div className="min-w-0">
                 <div className="font-semibold truncate">{p.chainName}</div>
                 <div className="text-xs text-stone-500 truncate">{p.storeName}</div>
+                {showDirections && (
+                  <div className="mt-1.5">
+                    <DirectionsButton name={p.storeName} lat={p.lat} lng={p.lng} />
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-right shrink-0 ml-3">
@@ -114,6 +174,13 @@ function PriceList({
               })()}
               <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">
                 <SourceBadge source={p.source} />
+                {p.trust && (
+                  <TrustBadge
+                    count={p.trust.count}
+                    latestDate={p.trust.latestDate}
+                    source={p.source}
+                  />
+                )}
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}>
                   {tag.label}
                 </span>
@@ -123,6 +190,7 @@ function PriceList({
                 {savingsPct > 0 && (
                   <span className="text-xs text-rose-500">+{savingsPct}%</span>
                 )}
+                <ReportPriceButton priceId={p.priceId} currentPrice={p.price} />
               </div>
             </div>
           </li>
@@ -139,7 +207,7 @@ export default async function ProductDetailPage({
 }) {
   const data = await getProductDetail(params.id);
   if (!data) return notFound();
-  const { product, prices } = data;
+  const { product, prices, history } = data;
 
   const offlineRows = prices.filter((p) => !p.online);
   const onlineRows = prices.filter((p) => p.online);
@@ -193,6 +261,16 @@ export default async function ProductDetailPage({
           />
         </div>
       </header>
+
+      <section>
+        <h2 className="font-bold mb-3 flex items-center gap-2">
+          📈 가격 추이
+          <span className="text-xs text-stone-500 font-normal">
+            (최근 60일, 매장별)
+          </span>
+        </h2>
+        <PriceHistoryChart history={history} />
+      </section>
 
       <section>
         <h2 className="font-bold mb-3 flex items-center gap-2">
