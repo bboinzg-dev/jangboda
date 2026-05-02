@@ -14,7 +14,7 @@ function extractUnitKeyword(unit: string): string {
   return matches[matches.length - 1].replace(/\s/g, "");
 }
 
-// "온라인" 가상 체인 보장 — 모든 온라인 몰들이 이 체인 아래로 들어감
+// 온라인 가상 매장 보장 — mall마다 1개씩
 async function ensureOnlineStore(mallName: string) {
   const chain = await prisma.chain.upsert({
     where: { name: mallName },
@@ -41,60 +41,66 @@ async function ensureOnlineStore(mallName: string) {
   return store;
 }
 
-// POST /api/sync/naver — 카탈로그 모든 상품을 네이버에서 검색해 온라인몰별 가격 등록
-// 사용 한도 절약을 위해 일부 상품만 처리하려면 ?limit=N
+// POST /api/sync/naver — 카탈로그 상품을 네이버에서 검색해 온라인몰별 가격 등록
+// 농수산물 카테고리는 제외 (이름이 generic해 매칭 노이즈)
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
 
-  // 너무 일반적인 키워드(예: "양배추")는 노이즈 많음 → brand 있는 상품 우선
   const products = await prisma.product.findMany({
-    where: { category: { not: "농수산물" } }, // KAMIS 가져온 농수산물은 제외 (이름이 너무 generic)
+    where: { category: { not: "농수산물" } },
     take: limit,
     orderBy: { createdAt: "asc" },
   });
 
+  // 1단계 (병렬): 모든 상품에 대해 네이버 검색 + outlier 계산
+  const fetched = await Promise.all(
+    products.map(async (product) => {
+      const unitKw = extractUnitKeyword(product.unit);
+      const query = [
+        product.brand,
+        product.name.replace(product.brand ?? "", "").trim(),
+        unitKw,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const [{ items, usedMock }, existing] = await Promise.all([
+        fetchNaverShop(query),
+        prisma.price.findMany({
+          where: {
+            productId: product.id,
+            source: { in: ["seed", "manual", "receipt"] },
+          },
+          select: { price: true },
+        }),
+      ]);
+
+      const avg =
+        existing.length > 0
+          ? existing.reduce((s, p) => s + p.price, 0) / existing.length
+          : null;
+
+      const lowestByMall = pickLowestByMall(items)
+        .filter((it) => avg === null || (it.lprice >= avg * 0.3 && it.lprice <= avg * 3))
+        .slice(0, 5);
+
+      return { product, lowestByMall, usedMock };
+    })
+  );
+
+  // 2단계 (순차): 매장 보장 + 가격 INSERT (race condition 방지)
   let inserted = 0;
   let storesCreated = 0;
   let usedMockCount = 0;
   const samples: Array<{ product: string; malls: string[] }> = [];
 
-  for (const product of products) {
-    // 검색어: 브랜드 + 상품명 + 묶음 단위 (정확도 ↑)
-    // 예: "농심 신라면 멀티팩 5개입" — 단품 1봉지가 섞이지 않게
-    const unitKw = extractUnitKeyword(product.unit);
-    const query = [
-      product.brand,
-      product.name.replace(product.brand ?? "", "").trim(),
-      unitKw,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const { items, usedMock } = await fetchNaverShop(query);
+  for (const { product, lowestByMall, usedMock } of fetched) {
     if (usedMock) usedMockCount++;
-
-    // 가격 outlier 필터: 기존 카탈로그 가격(seed/receipt/manual)의 평균 ±70%만 허용
-    const existing = await prisma.price.findMany({
-      where: {
-        productId: product.id,
-        source: { in: ["seed", "manual", "receipt"] },
-      },
-      select: { price: true },
-    });
-    const avg =
-      existing.length > 0
-        ? existing.reduce((s, p) => s + p.price, 0) / existing.length
-        : null;
-
-    const lowestByMall = pickLowestByMall(items).filter((it) => {
-      if (avg === null) return true;
-      return it.lprice >= avg * 0.3 && it.lprice <= avg * 3;
-    });
-
     const malls: string[] = [];
-    for (const item of lowestByMall.slice(0, 5)) {
+
+    for (const item of lowestByMall) {
       const store = await ensureOnlineStore(item.mallName);
       const isNew = store.createdAt.getTime() > Date.now() - 5000;
       if (isNew) storesCreated++;
