@@ -34,6 +34,9 @@ export async function POST(req: NextRequest) {
   const maxPagesParam = parseInt(url.searchParams.get("pages") ?? "0", 10);
   const maxPages =
     Number.isFinite(maxPagesParam) && maxPagesParam > 0 ? maxPagesParam : Infinity;
+  // 기본은 createMany(skipDuplicates) only — 빠름. 기존 레코드 변경은 거의 없음.
+  // ?updates=true 면 Phase 1 update 수행 (느림, 정확).
+  const enableUpdates = url.searchParams.get("updates") === "true";
 
   let startIdx = startFrom;
   let pageCount = 0;
@@ -103,27 +106,29 @@ export async function POST(req: NextRequest) {
         inserted += toCreate.length;
       }
 
-      // 2) 기존은 50개씩 병렬 update
-      const toUpdate = dedup.filter((r) => existingSet.has(r.histTraceRegNo));
-      const CHUNK = 50;
-      for (let i = 0; i < toUpdate.length; i += CHUNK) {
-        const slice = toUpdate.slice(i, i + CHUNK);
-        await Promise.all(
-          slice.map((r) =>
-            prisma.agriTrace.update({
-              where: { histTraceRegNo: r.histTraceRegNo },
-              data: {
-                regInstName: r.regInstName ?? null,
-                rprsntPrdltName: r.rprsntPrdltName,
-                presidentName: r.presidentName ?? null,
-                orgnName: r.orgnName ?? null,
-                validBeginDate: r.validBeginDate ?? null,
-                validEndDate: r.validEndDate ?? null,
-              },
-            })
-          )
-        );
-        updated += slice.length;
+      // 2) 기존은 50개씩 병렬 update — enableUpdates=true 일 때만 (60s budget 내 처리 위해 기본 비활성)
+      if (enableUpdates) {
+        const toUpdate = dedup.filter((r) => existingSet.has(r.histTraceRegNo));
+        const CHUNK = 50;
+        for (let i = 0; i < toUpdate.length; i += CHUNK) {
+          const slice = toUpdate.slice(i, i + CHUNK);
+          await Promise.all(
+            slice.map((r) =>
+              prisma.agriTrace.update({
+                where: { histTraceRegNo: r.histTraceRegNo },
+                data: {
+                  regInstName: r.regInstName ?? null,
+                  rprsntPrdltName: r.rprsntPrdltName,
+                  presidentName: r.presidentName ?? null,
+                  orgnName: r.orgnName ?? null,
+                  validBeginDate: r.validBeginDate ?? null,
+                  validEndDate: r.validEndDate ?? null,
+                },
+              })
+            )
+          );
+          updated += slice.length;
+        }
       }
     } catch (e) {
       lastError = `upsert 트랜잭션 실패: ${e instanceof Error ? e.message : String(e)}`;

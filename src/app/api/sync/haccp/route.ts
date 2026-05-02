@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
   const startFrom = Number.isFinite(fromParam) && fromParam > 0 ? fromParam : 1;
   const maxPagesParam = parseInt(url.searchParams.get("pages") ?? "0", 10);
   const maxPages = Number.isFinite(maxPagesParam) && maxPagesParam > 0 ? maxPagesParam : Infinity;
+  // 기본은 createMany(skipDuplicates) only — 빠름. 기존 facility 정보 변경은 거의 없음.
+  // ?updates=true 면 변경분 update 수행 (느림, 정확).
+  const enableUpdates = url.searchParams.get("updates") === "true";
 
   let startIdx = startFrom;
   let pageCount = 0;
@@ -102,7 +105,8 @@ export async function POST(req: NextRequest) {
 
     // 2) skipDuplicates된 건들 (이미 존재 = 업데이트 대상)에 대해 변경분 update
     //    insertedThisPage < dedup.length 이면 차이만큼 update 시도.
-    if (insertedThisPage < dedup.length) {
+    //    enableUpdates=true 일 때만 수행 — 60초 budget 내 38k 처리 위해 기본 비활성.
+    if (enableUpdates && insertedThisPage < dedup.length) {
       // 어떤 게 신규였는지 알 수 없으니, 전체에 대해 update.
       // 50개씩 병렬화하여 round-trip 최소화.
       try {
