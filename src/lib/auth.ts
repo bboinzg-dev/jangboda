@@ -9,25 +9,36 @@ export function checkSyncAuth(req: NextRequest): NextResponse | null {
   const expected = process.env.SYNC_TOKEN;
   if (!expected) return null; // 미설정 시 통과 (개발 모드)
 
-  const provided =
-    req.headers.get("x-sync-token") ??
-    new URL(req.url).searchParams.get("token") ??
-    "";
-
-  // Vercel Cron이 자동으로 추가하는 헤더 — vercel.json의 cron이 호출할 때
-  // Authorization: Bearer ${CRON_SECRET} 형태로 옴
+  // 1. Vercel Cron 인증 (Authorization: Bearer ${CRON_SECRET})
   const cronAuth = req.headers.get("authorization");
   if (cronAuth?.startsWith("Bearer ") && process.env.CRON_SECRET) {
     if (cronAuth.slice(7) === process.env.CRON_SECRET) return null;
   }
 
-  if (provided !== expected) {
-    return NextResponse.json(
-      { error: "권한 없음 — X-Sync-Token 헤더 필요" },
-      { status: 401 }
-    );
+  // 2. X-Sync-Token 헤더 또는 ?token= (외부 자동화)
+  const provided =
+    req.headers.get("x-sync-token") ??
+    new URL(req.url).searchParams.get("token") ??
+    "";
+  if (provided === expected) return null;
+
+  // 3. 우리 사이트 UI에서 직접 호출 (같은 origin) — 통과
+  // 외부 봇/스크레이퍼는 origin 안 보내거나 다른 origin이라 차단됨
+  const origin = req.headers.get("origin") ?? "";
+  const referer = req.headers.get("referer") ?? "";
+  const allowedHosts = [
+    "jangboda.vercel.app",
+    "localhost:3000",
+    "127.0.0.1:3000",
+  ];
+  if (allowedHosts.some((h) => origin.includes(h) || referer.includes(h))) {
+    return null;
   }
-  return null;
+
+  return NextResponse.json(
+    { error: "권한 없음 — X-Sync-Token 헤더 필요 또는 사이트 내부 호출" },
+    { status: 401 }
+  );
 }
 
 // 사용자 기여 엔드포인트 보호 — Rate limit 대신 간단한 honeypot/origin 체크
