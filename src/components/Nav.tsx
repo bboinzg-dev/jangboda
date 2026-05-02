@@ -17,6 +17,7 @@ const NAV_ITEMS = [
 // /sync는 자동 갱신 중이라 사용자 메뉴에서 제거 — 필요 시 /profile 도구에서 접근
 const SECONDARY_ITEMS = [
   { href: "/budget", label: "가계부" },
+  { href: "/idphoto", label: "AI 증명사진 🔒" },
 ];
 
 export default function Nav() {
