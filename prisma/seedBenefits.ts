@@ -26,13 +26,48 @@ function loadEnv() {
 loadEnv();
 
 import { PrismaClient, Prisma } from "@prisma/client";
-import type { BenefitRaw } from "../src/lib/benefits/types";
+import { SOURCE_CODES, type BenefitRaw } from "../src/lib/benefits/types";
 import { fetchGov24 } from "../src/lib/benefits/sources/gov24";
 import { fetchMssBiz } from "../src/lib/benefits/sources/mssBiz";
 import { fetchMssSupport } from "../src/lib/benefits/sources/mssSupport";
 import { fetchBizinfo } from "../src/lib/benefits/sources/bizinfo";
 
 const prisma = new PrismaClient();
+
+// ───────────────────────────────────────────────────
+// 수동 등록 항목 — 보조금24에 등록 지연되는 시급 사업
+// 정부 발표 직후~행안부 카탈로그 등록까지 시차가 있어 직접 추가
+// ───────────────────────────────────────────────────
+const MANUAL_ITEMS: BenefitRaw[] = [
+  {
+    sourceCode: SOURCE_CODES.MANUAL,
+    sourceId: "high-oil-price-relief-2026",
+    title: "고유가 피해지원금 (2026년)",
+    summary:
+      "중동전쟁 극복 추경 사업. 1차(4/27~5/8) 기초수급/차상위/한부모, 2차(5/18~7/3) 소득 하위 70% 일반 국민. 1인당 10만~60만원.",
+    agency: "행정안전부",
+    category: "민생지원",
+    targetType: "individual",
+    regionCodes: ["00000"],
+    eligibilityRules: {
+      지원대상:
+        "1차: 기초생활수급자, 차상위계층, 한부모가족. 2차: 소득 하위 70% 일반 국민.",
+      선정기준:
+        "1차는 취약계층 직접 신청. 2차는 건강보험료 등 소득 기준. 인구감소지역 +5만원.",
+      지원내용:
+        "기초수급 1인당 55만원, 차상위/한부모 45만원, 인구감소지역 +5만원(최대 60만원).",
+      신청방법:
+        "신용/체크카드, 지역사랑상품권, 선불카드 중 선택. 매출 30억 이하 소상공인 매장 또는 지역사랑상품권 가맹점에서 사용. 사용기한 2026-08-31.",
+      지원유형: "현금성 민생지원",
+    },
+    applyStartAt: new Date("2026-04-27"),
+    applyEndAt: new Date("2026-07-03"),
+    detailUrl:
+      "https://www.mois.go.kr/frt/sub/a06/b07/highOilPriceSupport/screen.do",
+    applyUrl:
+      "https://www.mois.go.kr/frt/sub/a06/b07/highOilPriceSupport/screen.do",
+  },
+];
 
 async function upsertMany(items: BenefitRaw[]): Promise<number> {
   let n = 0;
@@ -72,29 +107,56 @@ async function upsertMany(items: BenefitRaw[]): Promise<number> {
   return n;
 }
 
+// 페이지네이션 시드 — 빈 페이지 또는 perPage 미만 도달 시 종료
 async function runOne(
   label: string,
-  fn: () => Promise<BenefitRaw[]>,
+  fetchFn: (opts: { page: number; perPage: number }) => Promise<BenefitRaw[]>,
+  opts: { perPage: number; maxPages: number } = { perPage: 100, maxPages: 30 },
 ): Promise<void> {
-  process.stdout.write(`[${label}] fetching... `);
-  try {
-    const items = await fn();
-    const n = await upsertMany(items);
-    console.log(`받음 ${items.length}건, 저장 ${n}건`);
-  } catch (e) {
-    console.log(`실패 — ${e instanceof Error ? e.message : String(e)}`);
+  console.log(`\n[${label}] 시작 (perPage=${opts.perPage}, maxPages=${opts.maxPages})`);
+  let page = 1;
+  let totalFetched = 0;
+  let totalSaved = 0;
+  while (page <= opts.maxPages) {
+    try {
+      const items = await fetchFn({ page, perPage: opts.perPage });
+      if (items.length === 0) {
+        console.log(`[${label}] page ${page} 빈 결과 — 종료`);
+        break;
+      }
+      const n = await upsertMany(items);
+      totalFetched += items.length;
+      totalSaved += n;
+      console.log(`[${label}] page ${page}: 받음 ${items.length}, 저장 ${n}`);
+      if (items.length < opts.perPage) {
+        console.log(`[${label}] 마지막 페이지 도달`);
+        break;
+      }
+      page++;
+      // rate limit 회피
+      await new Promise((r) => setTimeout(r, 250));
+    } catch (e) {
+      console.log(`[${label}] page ${page} 실패: ${e instanceof Error ? e.message : String(e)}`);
+      break;
+    }
   }
+  console.log(`[${label}] 누계: 받음 ${totalFetched}, 저장 ${totalSaved}`);
 }
 
 async function main() {
-  console.log("정부 혜택 시드 시작\n");
+  console.log("정부 혜택 시드 시작 (페이지네이션 모드)\n");
 
-  await runOne("gov24", () => fetchGov24({ page: 1, perPage: 100 }));
-  await runOne("mssBiz", () => fetchMssBiz({ page: 1, perPage: 50 }));
-  await runOne("mssSupport", () =>
-    fetchMssSupport({ page: 1, perPage: 50 }),
-  );
-  await runOne("bizinfo", () => fetchBizinfo({ page: 1, perPage: 50 }));
+  // 수동 항목 먼저 — 보조금24에 늦게 등록되는 시급 사업
+  console.log(`[MANUAL] 수동 항목 ${MANUAL_ITEMS.length}건 처리`);
+  const manualSaved = await upsertMany(MANUAL_ITEMS);
+  console.log(`[MANUAL] 저장 ${manualSaved}건`);
+
+  // gov24는 가장 풍부 — maxPages 30 (3000건)
+  await runOne("gov24", (o) => fetchGov24(o), { perPage: 100, maxPages: 30 });
+  // 중기부/기업마당은 보통 수백~천 건 — maxPages 10
+  await runOne("mssBiz", (o) => fetchMssBiz(o), { perPage: 100, maxPages: 10 });
+  await runOne("mssSupport", (o) => fetchMssSupport(o), { perPage: 100, maxPages: 10 });
+  await runOne("bizinfo", (o) => fetchBizinfo(o), { perPage: 100, maxPages: 10 });
 
   const total = await prisma.benefit.count();
   console.log(`\n총 ${total}건이 DB에 저장되어 있습니다.`);
