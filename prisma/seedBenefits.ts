@@ -25,7 +25,7 @@ function loadEnv() {
 }
 loadEnv();
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import type { BenefitRaw } from "../src/lib/benefits/types";
 import { fetchGov24 } from "../src/lib/benefits/sources/gov24";
 import { fetchMssBiz } from "../src/lib/benefits/sources/mssBiz";
@@ -38,6 +38,7 @@ async function upsertMany(items: BenefitRaw[]): Promise<number> {
   let n = 0;
   for (const item of items) {
     if (!item.sourceId || !item.title) continue;
+    // Prisma JSON 필드는 InputJsonValue 타입 — Record<string, unknown> 캐스팅
     const common = {
       title: item.title,
       summary: item.summary ?? null,
@@ -45,12 +46,12 @@ async function upsertMany(items: BenefitRaw[]): Promise<number> {
       category: item.category ?? null,
       targetType: item.targetType ?? "individual",
       regionCodes: item.regionCodes ?? ["00000"],
-      eligibilityRules: item.eligibilityRules ?? {},
+      eligibilityRules: (item.eligibilityRules ?? {}) as Prisma.InputJsonValue,
       applyUrl: item.applyUrl ?? null,
       detailUrl: item.detailUrl ?? null,
       applyStartAt: item.applyStartAt ?? null,
       applyEndAt: item.applyEndAt ?? null,
-      rawData: item.rawData ?? {},
+      rawData: (item.rawData ?? {}) as Prisma.InputJsonValue,
     };
     await prisma.benefit.upsert({
       where: {
