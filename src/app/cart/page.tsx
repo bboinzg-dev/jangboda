@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
-import ProductSearchPicker from "@/components/ProductSearchPicker";
+import CartProductSearch, {
+  type SearchableProduct,
+} from "@/components/CartProductSearch";
 import { createClient, isAuthConfigured } from "@/lib/supabase/client";
 
-type Product = {
-  id: string;
-  name: string;
-  brand: string | null;
-  category?: string;
-  unit?: string;
-};
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
   productId: string;
@@ -34,20 +29,19 @@ type Comparison = {
 };
 
 export default function CartPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([
-    { productId: "", quantity: 1 },
-  ]);
+  const [products, setProducts] = useState<SearchableProduct[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [results, setResults] = useState<Comparison[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favoriteOnly, setFavoriteOnly] = useState(false);
 
+  // 인기 정렬로 fetch — priceCount 많은 순
   useEffect(() => {
-    fetch("/api/products?limit=500")
+    fetch("/api/products?limit=500&sort=popular")
       .then((r) => r.json())
-      .then((d) => setProducts(d.products));
+      .then((d) => setProducts(d.products ?? []));
   }, []);
 
   useEffect(() => {
@@ -66,94 +60,209 @@ export default function CartPage() {
     });
   }, []);
 
-  function updateItem(idx: number, patch: Partial<CartItem>) {
-    const next = [...cart];
-    next[idx] = { ...next[idx], ...patch };
-    setCart(next);
+  // 장바구니 productId 빠른 조회
+  const cartIds = useMemo(
+    () => new Set(cart.map((c) => c.productId)),
+    [cart]
+  );
+
+  // 상품 → 메타 lookup
+  const productMap = useMemo(() => {
+    const m = new Map<string, SearchableProduct>();
+    for (const p of products) m.set(p.id, p);
+    return m;
+  }, [products]);
+
+  function addToCart(productId: string) {
+    setCart((prev) => {
+      const idx = prev.findIndex((c) => c.productId === productId);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [...prev, { productId, quantity: 1 }];
+    });
+    // 장바구니 변경 → 이전 비교 결과 무효화
+    setResults(null);
   }
 
-  function addRow() {
-    setCart([...cart, { productId: "", quantity: 1 }]);
+  function setQuantity(productId: string, q: number) {
+    setCart((prev) =>
+      prev.map((c) =>
+        c.productId === productId
+          ? { ...c, quantity: Math.max(1, q) }
+          : c
+      )
+    );
+    setResults(null);
   }
 
-  function removeRow(idx: number) {
-    setCart(cart.filter((_, i) => i !== idx));
+  function removeItem(productId: string) {
+    setCart((prev) => prev.filter((c) => c.productId !== productId));
+    setResults(null);
+  }
+
+  function clearCart() {
+    setCart([]);
+    setResults(null);
   }
 
   async function compare() {
-    const valid = cart.filter((c) => c.productId);
-    if (valid.length === 0) return alert("장바구니에 상품을 추가해주세요");
-
+    if (cart.length === 0) return;
     setLoading(true);
     const res = await fetch("/api/cart/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: valid }),
+      body: JSON.stringify({ items: cart }),
     });
     const data = await res.json();
     setResults(data.comparisons);
     setLoading(false);
   }
 
+  // 비교 결과 통계
+  const filteredResults = useMemo(() => {
+    if (!results) return null;
+    return favoriteOnly
+      ? results.filter((r) => favoriteIds.has(r.storeId))
+      : results;
+  }, [results, favoriteOnly, favoriteIds]);
+
+  const savings = useMemo(() => {
+    if (!results || results.length < 2) return null;
+    const completes = results.filter((r) => r.complete);
+    if (completes.length < 2) return null;
+    const cheapest = completes[0];
+    const mostExpensive = completes[completes.length - 1];
+    return {
+      diff: mostExpensive.total - cheapest.total,
+      cheapestName: cheapest.chainName,
+    };
+  }, [results]);
+
+  // 즐겨찾기 매장 중 최저가
+  const favoriteSavings = useMemo(() => {
+    if (!results || favoriteIds.size === 0) return null;
+    const favComplete = results.filter(
+      (r) => favoriteIds.has(r.storeId) && r.complete
+    );
+    const allComplete = results.filter((r) => r.complete);
+    if (favComplete.length === 0 || allComplete.length === 0) return null;
+    const favBest = favComplete[0];
+    const overallWorst = allComplete[allComplete.length - 1];
+    if (overallWorst.total <= favBest.total) return null;
+    return {
+      diff: overallWorst.total - favBest.total,
+      name: favBest.chainName,
+    };
+  }, [results, favoriteIds]);
+
+  const cartCount = cart.reduce((n, c) => n + c.quantity, 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 pb-24 md:pb-6">
       <div>
-        <h1 className="text-2xl font-bold">🛒 장바구니 가격 비교</h1>
+        <h1 className="text-2xl font-bold">장보기 비교</h1>
         <p className="text-stone-600 text-sm mt-1">
-          살 물건들을 모두 추가하면 마트별 합계를 비교해드려요.
+          살 물건을 담으면 어느 마트가 가장 싼지 알려드려요.
         </p>
       </div>
 
-      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-3">
-        <h2 className="font-bold">장바구니</h2>
-        {cart.map((item, idx) => (
-          <div
-            key={idx}
-            className="flex gap-2 items-start text-sm"
-          >
-            <ProductSearchPicker
-              products={products}
-              selectedId={item.productId}
-              onSelect={(id) => updateItem(idx, { productId: id })}
-            />
-            <input
-              type="number"
-              min={1}
-              value={item.quantity}
-              onChange={(e) =>
-                updateItem(idx, { quantity: parseInt(e.target.value) || 1 })
-              }
-              className="w-16 px-2 py-2 border border-stone-300 rounded text-center shrink-0 mt-0"
-              aria-label="수량"
-            />
-            <button
-              onClick={() => removeRow(idx)}
-              aria-label="이 행 삭제"
-              className="w-8 shrink-0 text-stone-400 hover:text-rose-500"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* ── 왼쪽: 검색 + 결과 ── */}
+        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+          <h2 className="font-bold mb-3">상품 찾기</h2>
+          <CartProductSearch
+            products={products}
+            onAdd={addToCart}
+            cartIds={cartIds}
+          />
+        </section>
 
-        <div className="flex justify-between pt-2">
-          <button
-            onClick={addRow}
-            className="text-sm text-brand-600 hover:underline"
-          >
-            + 상품 추가
-          </button>
+        {/* ── 오른쪽: 누적 장바구니 ── */}
+        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold">
+              장바구니{" "}
+              {cart.length > 0 && (
+                <span className="text-xs text-stone-500 font-normal">
+                  ({cart.length}종 · 총 {cartCount}개)
+                </span>
+              )}
+            </h2>
+            {cart.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="text-xs text-stone-400 hover:text-rose-500"
+              >
+                전체 비우기
+              </button>
+            )}
+          </div>
+
+          {cart.length === 0 ? (
+            <div className="text-sm text-stone-500 text-center py-10 border border-dashed border-stone-300 rounded-lg">
+              왼쪽에서 상품을 검색해서 추가하세요
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {cart.map((item) => {
+                const p = productMap.get(item.productId);
+                return (
+                  <li
+                    key={item.productId}
+                    className="flex items-center gap-2 p-2 border border-stone-200 rounded-lg"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">
+                        {p?.name ?? "(미확인)"}
+                      </div>
+                      {p?.unit && (
+                        <div className="text-[11px] text-stone-500 truncate">
+                          {p.unit}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        setQuantity(
+                          item.productId,
+                          parseInt(e.target.value) || 1
+                        )
+                      }
+                      className="w-14 px-2 py-1.5 border border-stone-300 rounded text-center text-sm shrink-0"
+                      aria-label="수량"
+                    />
+                    <button
+                      onClick={() => removeItem(item.productId)}
+                      aria-label="삭제"
+                      className="w-7 h-7 shrink-0 text-stone-400 hover:text-rose-500"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* 데스크톱에서만 인라인 비교 버튼 */}
           <button
             onClick={compare}
-            disabled={loading || cart.filter((c) => c.productId).length === 0}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || cart.length === 0}
+            className="hidden md:block mt-4 w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "계산 중..." : "마트별 비교"}
           </button>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {results && (
+      {/* ── 비교 결과 ── */}
+      {filteredResults && filteredResults.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h2 className="font-bold">비교 결과</h2>
@@ -168,12 +277,33 @@ export default function CartPage() {
               </label>
             )}
           </div>
+
+          {/* 절약 하이라이트 */}
+          {savings && savings.diff > 0 && (
+            <div className="bg-brand-50 border border-brand-200 rounded-lg px-4 py-3 mb-3 text-sm">
+              <span className="font-semibold text-brand-700">
+                {savings.cheapestName}
+              </span>
+              에서 사면 최대{" "}
+              <span className="font-bold text-brand-700">
+                {formatWon(savings.diff)}
+              </span>{" "}
+              절약 가능
+            </div>
+          )}
+          {favoriteSavings && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-3 text-sm">
+              ★ 즐겨찾기 매장{" "}
+              <span className="font-semibold">{favoriteSavings.name}</span>에서{" "}
+              <span className="font-bold text-amber-700">
+                {formatWon(favoriteSavings.diff)}
+              </span>{" "}
+              절약 가능
+            </div>
+          )}
+
           <div className="space-y-3">
-            {results
-              .filter((r) =>
-                favoriteOnly ? favoriteIds.has(r.storeId) : true
-              )
-              .map((r, i) => (
+            {filteredResults.map((r, i) => (
               <div
                 key={r.storeId}
                 className={`bg-white border rounded-xl p-4 ${
@@ -184,11 +314,14 @@ export default function CartPage() {
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {i === 0 && r.complete && (
                         <span className="bg-brand-500 text-white text-xs px-2 py-0.5 rounded-full">
                           최저가
                         </span>
+                      )}
+                      {favoriteIds.has(r.storeId) && (
+                        <span className="text-amber-500 text-xs">★</span>
                       )}
                       <span className="font-bold">{r.chainName}</span>
                       <span className="text-xs text-stone-500">
@@ -222,7 +355,9 @@ export default function CartPage() {
                           {l.productName} × {l.quantity}
                         </span>
                         <span className={l.available ? "" : "text-rose-500"}>
-                          {l.available ? formatWon(l.lineTotal!) : "취급 안 함"}
+                          {l.available
+                            ? formatWon(l.lineTotal!)
+                            : "취급 안 함"}
                         </span>
                       </li>
                     ))}
@@ -234,8 +369,14 @@ export default function CartPage() {
         </section>
       )}
 
+      {filteredResults && filteredResults.length === 0 && (
+        <div className="text-sm text-stone-500 text-center py-6">
+          조건에 맞는 매장이 없습니다.
+        </div>
+      )}
+
       {!results && (
-        <div className="text-xs text-stone-500 text-center pt-4">
+        <div className="text-xs text-stone-500 text-center pt-2">
           가격이 부족하다면{" "}
           <Link href="/upload" className="text-brand-600 hover:underline">
             영수증을 올려주세요
@@ -243,6 +384,21 @@ export default function CartPage() {
           .
         </div>
       )}
+
+      {/* 모바일 하단 고정 비교 버튼 */}
+      <div className="md:hidden fixed bottom-16 left-0 right-0 px-4 z-30 pointer-events-none">
+        <button
+          onClick={compare}
+          disabled={loading || cart.length === 0}
+          className="pointer-events-auto w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-xl font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading
+            ? "계산 중..."
+            : cart.length === 0
+            ? "장바구니가 비어있어요"
+            : `마트별 비교 (${cart.length}종)`}
+        </button>
+      </div>
     </div>
   );
 }

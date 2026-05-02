@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/format";
+import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -170,18 +171,25 @@ export default async function BudgetPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">가계부</h1>
-        <div className="bg-white border border-stone-200 rounded-xl p-10 text-center">
-          <div className="text-5xl mb-3">🧾</div>
-          <p className="text-stone-600 mb-4">
-            영수증을 올리면 가계부가 시작됩니다.
-          </p>
-          <Link
-            href="/upload"
-            className="inline-block bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
-            영수증 올리기 →
-          </Link>
-        </div>
+        <EmptyState
+          icon="🧾"
+          title="지금 영수증 한 장 올리면 가계부가 시작됩니다"
+          description={
+            <>
+              자동으로 분석해드려요:
+              <ul className="mt-3 space-y-1 text-left inline-block text-stone-600">
+                <li>• 📅 월별 소비 추이 그래프</li>
+                <li>• 🥕 카테고리별 지출 비중</li>
+                <li>• 🏪 매장별 누적 소비 Top 5</li>
+                <li>• 💸 평균보다 비싸게 산 상품 알림</li>
+              </ul>
+            </>
+          }
+          actions={[
+            { href: "/upload", label: "📸 영수증 올리기", primary: true },
+            { href: "/stores", label: "주변 마트 먼저 보기" },
+          ]}
+        />
       </div>
     );
   }

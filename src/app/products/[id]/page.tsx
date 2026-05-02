@@ -6,6 +6,7 @@ import { isOnlineStore } from "@/components/SourceBadge";
 import PriceAlertButton from "@/components/PriceAlertButton";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
 import PriceListClient, { type PriceRowData } from "@/components/PriceListClient";
+import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -175,56 +176,77 @@ export default async function ProductDetailPage({
         <PriceHistoryChart history={history} />
       </section>
 
-      <section>
-        <h2 className="font-bold mb-3 flex items-center gap-2">
-          🛒 오프라인 매장
-          <span className="text-xs text-stone-500 font-normal">
-            ({offlineRows.length}개 매장, 낮은 순)
-          </span>
-        </h2>
-        <PriceListClient
-          unit={product.unit}
-          rows={offlineRows}
-          emptyHint={
+      {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
+      {offlineRows.length === 0 && onlineRows.length === 0 ? (
+        <EmptyState
+          icon="🏷️"
+          title="이 상품은 아직 매장에 등록되지 않았습니다"
+          description={
             <>
-              아직 등록된 오프라인 가격이 없습니다.
+              영수증을 올리거나 직접 입력해서 첫 가격을 등록해보세요.
               <br />
-              <Link
-                href="/upload"
-                className="text-brand-600 hover:underline font-medium"
-              >
-                영수증 올리고 첫 가격 등록하기 →
-              </Link>
+              온라인 쇼핑몰 가격은 네이버 쇼핑 동기화로 한 번에 가져올 수 있어요.
             </>
           }
+          actions={[
+            { href: "/upload", label: "📸 영수증 올리기", primary: true },
+            { href: "/sync", label: "🔄 네이버 쇼핑 동기화" },
+          ]}
         />
-      </section>
+      ) : (
+        <>
+          <section>
+            <h2 className="font-bold mb-3 flex items-center gap-2">
+              🛒 오프라인 매장
+              <span className="text-xs text-stone-500 font-normal">
+                ({offlineRows.length}개 매장, 낮은 순)
+              </span>
+            </h2>
+            <PriceListClient
+              unit={product.unit}
+              rows={offlineRows}
+              emptyHint={
+                <>
+                  아직 등록된 오프라인 가격이 없습니다.
+                  <br />
+                  <Link
+                    href="/upload"
+                    className="text-brand-600 hover:underline font-medium"
+                  >
+                    영수증 올리고 첫 가격 등록하기 →
+                  </Link>
+                </>
+              }
+            />
+          </section>
 
-      <section>
-        <h2 className="font-bold mb-3 flex items-center gap-2">
-          📦 온라인 쇼핑몰
-          <span className="text-xs text-stone-500 font-normal">
-            ({onlineRows.length}개 몰, 낮은 순)
-          </span>
-        </h2>
-        <PriceListClient
-          showFavoriteFilter={false}
-          unit={product.unit}
-          rows={onlineRows}
-          emptyHint={
-            <>
-              아직 등록된 온라인 가격이 없습니다.
-              <br />
-              <Link
-                href="/sync"
-                className="text-brand-600 hover:underline font-medium"
-              >
-                네이버 쇼핑 동기화로 한 번에 가져오기 →
-              </Link>
-            </>
-          }
-        />
-      </section>
+          <section>
+            <h2 className="font-bold mb-3 flex items-center gap-2">
+              📦 온라인 쇼핑몰
+              <span className="text-xs text-stone-500 font-normal">
+                ({onlineRows.length}개 몰, 낮은 순)
+              </span>
+            </h2>
+            <PriceListClient
+              showFavoriteFilter={false}
+              unit={product.unit}
+              rows={onlineRows}
+              emptyHint={
+                <>
+                  아직 등록된 온라인 가격이 없습니다.
+                  <br />
+                  <Link
+                    href="/sync"
+                    className="text-brand-600 hover:underline font-medium"
+                  >
+                    네이버 쇼핑 동기화로 한 번에 가져오기 →
+                  </Link>
+                </>
+              }
+            />
+          </section>
+        </>
+      )}
     </div>
   );
 }

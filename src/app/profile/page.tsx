@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon, formatRelativeDate } from "@/lib/format";
 import SourceBadge from "@/components/SourceBadge";
+import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -86,13 +87,20 @@ export default async function ProfilePage() {
       <section>
         <h2 className="font-bold mb-3">★ 즐겨찾기 매장 ({favorites.length}개)</h2>
         {favorites.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-sm text-stone-500">
-            자주 가는 매장을 ★로 등록하면 장바구니/상세에서 그 매장만 비교할 수 있어요.
-            <br />
-            <Link href="/stores" className="text-brand-600 hover:underline mt-1 inline-block">
-              매장 둘러보기 →
-            </Link>
-          </div>
+          <EmptyState
+            icon="★"
+            title="자주 가는 마트를 등록해보세요"
+            description={
+              <>
+                주변 마트 페이지에서 ★를 누르면 이 곳에 모입니다.
+                <br />
+                장바구니/상품 상세에서 즐겨찾기 매장만 골라 비교할 수 있어요.
+              </>
+            }
+            actions={[
+              { href: "/stores", label: "📍 주변 마트 둘러보기", primary: true },
+            ]}
+          />
         ) : (
           <ul className="space-y-2">
             {favorites.map((f) => (
@@ -121,13 +129,20 @@ export default async function ProfilePage() {
       <section>
         <h2 className="font-bold mb-3">📸 내 영수증 ({myReceipts.length}건)</h2>
         {myReceipts.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-sm text-stone-500">
-            아직 올린 영수증이 없습니다.
-            <br />
-            <Link href="/upload" className="text-brand-600 hover:underline">
-              첫 영수증 올리기 →
-            </Link>
-          </div>
+          <EmptyState
+            icon="📸"
+            title="아직 올린 영수증이 없어요"
+            description={
+              <>
+                영수증 한 장이면 가격이 자동 등록되고, 가계부도 시작됩니다.
+                <br />
+                포인트도 적립돼요 (+2점/건).
+              </>
+            }
+            actions={[
+              { href: "/upload", label: "첫 영수증 올리기", primary: true },
+            ]}
+          />
         ) : (
           <ul className="space-y-2">
             {myReceipts.map((r) => {
@@ -170,9 +185,22 @@ export default async function ProfilePage() {
       <section>
         <h2 className="font-bold mb-3">💰 내가 등록한 가격 ({myPrices.length}건)</h2>
         {myPrices.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-sm text-stone-500">
-            아직 등록한 가격이 없습니다.
-          </div>
+          <EmptyState
+            icon="💰"
+            title="아직 등록한 가격이 없어요"
+            description={
+              <>
+                상품 상세 페이지에서 직접 입력하거나, 영수증을 올리면 자동으로
+                등록됩니다.
+                <br />
+                수동 등록 +5점 / 영수증 +2점이 적립돼요.
+              </>
+            }
+            actions={[
+              { href: "/upload", label: "📸 영수증 올리기", primary: true },
+              { href: "/search", label: "상품 찾아 입력하기" },
+            ]}
+          />
         ) : (
           <ul className="space-y-1">
             {myPrices.map((p) => (
@@ -229,6 +257,40 @@ export default async function ProfilePage() {
             </li>
           )}
         </ul>
+      </section>
+
+      {/* 🔧 도구 — 모바일 사용자 접근성 (데스크톱 더보기 메뉴 대체) */}
+      <section>
+        <h2 className="font-bold mb-3">🔧 도구</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <Link
+            href="/budget"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-base font-semibold">📊 가계부</div>
+            <small className="text-xs text-stone-500">
+              월별/카테고리별 소비 통계
+            </small>
+          </Link>
+          <Link
+            href="/contribute"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-base font-semibold">✍️ 가격 직접 입력</div>
+            <small className="text-xs text-stone-500">
+              영수증 없이 가격 등록
+            </small>
+          </Link>
+          <Link
+            href="/sync"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-base font-semibold">🔄 데이터 동기화</div>
+            <small className="text-xs text-stone-500">
+              최신 가격 정보 갱신
+            </small>
+          </Link>
+        </div>
       </section>
     </div>
   );

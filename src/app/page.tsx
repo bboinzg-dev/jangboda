@@ -2,8 +2,24 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel } from "@/lib/units";
+import { getCurrentUser } from "@/lib/supabase/server";
+import OnboardingCard, {
+  type OnboardingStatus,
+} from "@/components/OnboardingCard";
 
 export const dynamic = "force-dynamic";
+
+// 온보딩 진행 상태 — 로그인 사용자의 favorites/receipts/prices 카운트
+async function getOnboardingStatus(
+  userId: string
+): Promise<OnboardingStatus> {
+  const [favorites, receipts, prices] = await Promise.all([
+    prisma.favoriteStore.count({ where: { userId } }),
+    prisma.receipt.count({ where: { uploaderId: userId } }),
+    prisma.price.count({ where: { contributorId: userId } }),
+  ]);
+  return { favorites, receipts, prices };
+}
 
 async function getHomeData() {
   // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
@@ -55,6 +71,8 @@ async function getHomeData() {
 
 export default async function HomePage() {
   const { kamisPrices, priceCards, stats } = await getHomeData();
+  const user = await getCurrentUser();
+  const onboardingStatus = user ? await getOnboardingStatus(user.id) : undefined;
 
   return (
     <div className="space-y-8">
@@ -93,6 +111,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
+      <OnboardingCard authed={!!user} status={onboardingStatus} />
 
       {/* KAMIS 실시간 시세 — 매일 갱신, 첫 방문자도 즉시 가치 */}
       {kamisPrices.length > 0 && (

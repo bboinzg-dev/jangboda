@@ -121,6 +121,17 @@ export default function UploadPage() {
 
   const matchedCount = items.filter((i) => i.productId).length;
 
+  // 진행 단계 — 0: 사진 업로드, 1: OCR, 2: 매칭, 3: 등록 완료
+  const currentStep = submitResult?.startsWith("✅")
+    ? 3
+    : result
+      ? 2
+      : parsing
+        ? 1
+        : imagePreview
+          ? 1
+          : 0;
+
   return (
     <div className="space-y-6">
       {cameraOpen && (
@@ -129,7 +140,21 @@ export default function UploadPage() {
           onCancel={() => setCameraOpen(false)}
         />
       )}
+
+      {/* breadcrumb */}
+      <nav className="text-xs text-stone-500" aria-label="breadcrumb">
+        <Link href="/" className="hover:text-brand-600">
+          홈
+        </Link>
+        <span className="mx-1.5">/</span>
+        <span className="text-stone-700">영수증 올리기</span>
+      </nav>
+
       <h1 className="text-2xl font-bold">📸 영수증 올리기</h1>
+
+      {/* 진행 단계 인디케이터 */}
+      <StepIndicator current={currentStep} />
+
       <p className="text-stone-600">
         영수증 사진을 올리면 자동으로 품목을 인식해 가격을 등록합니다.
         <br />
@@ -371,6 +396,63 @@ export default function UploadPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function StepIndicator({ current }: { current: number }) {
+  const steps = [
+    { label: "사진 업로드", icon: "📷" },
+    { label: "OCR 인식", icon: "🔍" },
+    { label: "품목 매칭", icon: "🔗" },
+    { label: "등록 완료", icon: "✅" },
+  ];
+  return (
+    <ol
+      className="flex items-center gap-1 md:gap-2 text-[11px] md:text-xs"
+      aria-label="진행 단계"
+    >
+      {steps.map((s, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <li key={s.label} className="flex items-center gap-1 md:gap-2 flex-1">
+            <div
+              className={`flex flex-col items-center gap-0.5 flex-1 min-w-0 ${
+                done
+                  ? "text-emerald-700"
+                  : active
+                    ? "text-brand-700"
+                    : "text-stone-400"
+              }`}
+            >
+              <span
+                className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center border ${
+                  done
+                    ? "bg-emerald-50 border-emerald-300"
+                    : active
+                      ? "bg-brand-50 border-brand-400"
+                      : "bg-stone-50 border-stone-200"
+                }`}
+                aria-hidden
+              >
+                {done ? "✓" : s.icon}
+              </span>
+              <span className="text-center truncate w-full font-medium">
+                {s.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <span
+                className={`shrink-0 w-2 md:w-4 h-px ${
+                  done ? "bg-emerald-300" : "bg-stone-200"
+                }`}
+                aria-hidden
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

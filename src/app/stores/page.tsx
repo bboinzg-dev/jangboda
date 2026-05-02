@@ -13,6 +13,7 @@ import {
 } from "@/lib/kakaoLocal";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import { createClient, isAuthConfigured } from "@/lib/supabase/client";
+import EmptyState from "@/components/EmptyState";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -321,6 +322,65 @@ export default function StoresPage() {
       {/* 리스트 */}
       {loading ? (
         <div className="text-center py-8 text-stone-500">로딩 중...</div>
+      ) : stores.length === 0 ? (
+        // 매장 데이터 자체가 0건 — 첫 방문/자동 발견 미수행
+        <EmptyState
+          icon="📍"
+          title="아직 등록된 매장이 없어요"
+          description={
+            <>
+              내 위치를 잡고 <strong>주변 자동 추가</strong> 버튼을 누르면,
+              <br />
+              근처 마트와 편의점이 한 번에 등록됩니다.
+            </>
+          }
+          actions={
+            HAS_KAKAO
+              ? [
+                  // 자동 추가는 내부 함수라 액션 버튼 대신 안내 문구 + 별도 트리거
+                ]
+              : []
+          }
+        >
+          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-1">
+            <button
+              onClick={handleDiscoverNearby}
+              disabled={discovering}
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg font-medium text-sm shadow-sm"
+            >
+              🔍 주변 매장 자동 추가
+            </button>
+            <button
+              onClick={handleSearchByLocation}
+              className="bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-5 py-2.5 rounded-lg font-medium text-sm"
+            >
+              📍 내 위치로 검색
+            </button>
+          </div>
+        </EmptyState>
+      ) : filtered.length === 0 ? (
+        // 데이터는 있는데 필터로 0건
+        <EmptyState
+          icon="🔍"
+          title={
+            filter === "favorite"
+              ? "즐겨찾기한 매장이 없어요"
+              : "이 카테고리에는 매장이 없어요"
+          }
+          description={
+            filter === "favorite"
+              ? "매장 카드의 ★를 눌러 즐겨찾기에 추가해보세요."
+              : "다른 카테고리를 선택하거나 주변 자동 추가로 매장을 늘려보세요."
+          }
+          actions={[]}
+        >
+          <button
+            onClick={() => setFilter("all")}
+            className="text-xs text-brand-600 hover:underline"
+          >
+            ← 전체 보기
+          </button>
+        </EmptyState>
       ) : (
         <ul className="space-y-2">
           {filtered

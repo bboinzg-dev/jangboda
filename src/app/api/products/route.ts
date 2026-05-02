@@ -6,7 +6,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category") ?? undefined;
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "30"), 100);
+  const sort = searchParams.get("sort") ?? undefined; // "popular" | undefined
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "30"), 500);
 
   const products = await prisma.product.findMany({
     where: {
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       },
       _count: { select: { prices: true } },
     },
+    orderBy: sort === "popular" ? { prices: { _count: "desc" } } : undefined,
     take: limit,
   });
 
@@ -61,6 +63,7 @@ export async function GET(req: NextRequest) {
       brand: p.brand,
       category: p.category,
       unit: p.unit,
+      priceCount: p._count.prices,
       stats: stats.get(p.id),
     })),
   });

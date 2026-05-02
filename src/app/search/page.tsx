@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
+import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -96,9 +97,9 @@ export default function SearchPage() {
         </button>
       </form>
 
-      {/* 카테고리 칩 */}
+      {/* 카테고리 칩 — 모바일은 가로 스크롤, 데스크톱은 자유 줄바꿈 */}
       {allCategories.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex md:flex-wrap flex-nowrap gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 scrollbar-thin">
           <CategoryChip
             label="전체"
             active={category === ALL}
@@ -134,15 +135,73 @@ export default function SearchPage() {
       {loading ? (
         <div className="text-center py-8 text-stone-500">검색 중...</div>
       ) : products.length === 0 ? (
-        <div className="text-center py-8 text-stone-500">
-          {q || category !== ALL
-            ? "조건에 맞는 상품이 없습니다."
-            : "등록된 상품이 없습니다."}
-          <br />
-          <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block">
-            영수증을 올려 첫 상품을 추가해보세요 →
-          </Link>
-        </div>
+        q ? (
+          // 검색어가 있는데 결과 0건
+          <EmptyState
+            icon="🔍"
+            title={`"${q}" 검색 결과가 없어요`}
+            description={
+              category !== ALL ? (
+                <>
+                  카테고리 필터를 풀거나 다른 키워드로 검색해보세요.
+                  <br />
+                  새 영수증을 올리면 카탈로그가 늘어납니다.
+                </>
+              ) : (
+                <>
+                  다른 키워드로 검색해보세요.
+                  <br />
+                  영수증을 올리면 카탈로그가 자동으로 늘어납니다.
+                </>
+              )
+            }
+            actions={[
+              { href: "/upload", label: "📸 영수증 올리기", primary: true },
+              { href: "/search", label: "전체 카테고리 보기" },
+            ]}
+          >
+            {category !== ALL && (
+              <div className="mb-4">
+                <button
+                  onClick={() => setCategory(ALL)}
+                  className="text-xs text-brand-600 hover:underline"
+                >
+                  ← 다른 카테고리 보기 (필터 해제)
+                </button>
+              </div>
+            )}
+          </EmptyState>
+        ) : category !== ALL ? (
+          // 검색어 없이 카테고리만 — 빈 카테고리
+          <EmptyState
+            icon="📂"
+            title={`"${category}" 카테고리에 등록된 상품이 없어요`}
+            description="다른 카테고리를 보거나, 영수증을 올려 직접 카탈로그를 채워보세요."
+            actions={[
+              { href: "/upload", label: "📸 영수증 올리기", primary: true },
+            ]}
+          >
+            <div className="mb-4">
+              <button
+                onClick={() => setCategory(ALL)}
+                className="text-xs text-brand-600 hover:underline"
+              >
+                ← 다른 카테고리 보기
+              </button>
+            </div>
+          </EmptyState>
+        ) : (
+          // 초기/완전 빈 상태
+          <EmptyState
+            icon="🛒"
+            title="아직 등록된 상품이 없어요"
+            description="첫 영수증을 올리면 카탈로그가 자동으로 만들어지고, 다른 사용자도 함께 절약합니다."
+            actions={[
+              { href: "/upload", label: "📸 영수증 올리기", primary: true },
+              { href: "/cart", label: "장바구니 시작" },
+            ]}
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sorted.map((p) => {
@@ -199,7 +258,7 @@ function CategoryChip({
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+      className={`shrink-0 whitespace-nowrap text-[11px] md:text-xs px-3 py-1.5 rounded-full border transition-colors ${
         active
           ? "bg-brand-500 text-white border-brand-500"
           : "bg-white text-stone-700 border-stone-200 hover:border-brand-300"

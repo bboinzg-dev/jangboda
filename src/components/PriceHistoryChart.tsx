@@ -1,10 +1,14 @@
+import type { CSSProperties } from "react";
 import { formatWon } from "@/lib/format";
 
 type Point = { date: Date | string; price: number; chainName: string };
 
 type Props = {
   history: Point[];
+  /** 데스크톱(md+) 기준 차트 높이 (기본 240) */
   height?: number;
+  /** 모바일(<md) 차트 높이 (기본 180) */
+  mobileHeight?: number;
 };
 
 // 매장별 색상 팔레트 (탭/홀썸한 색)
@@ -29,13 +33,22 @@ function formatShortDate(d: Date): string {
   return `${m}/${day}`;
 }
 
-export default function PriceHistoryChart({ history, height = 240 }: Props) {
-  // 데이터 1건 이하면 안내
+export default function PriceHistoryChart({
+  history,
+  height = 240,
+  mobileHeight = 180,
+}: Props) {
+  // 데이터 1건 이하면 안내 — 모바일에선 mobileHeight 사용
   if (!history || history.length <= 1) {
     return (
       <div
-        className="bg-white border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500"
-        style={{ height }}
+        className="bg-white border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 h-[var(--ch-m)] md:h-[var(--ch-d)]"
+        style={
+          {
+            ["--ch-m" as string]: `${mobileHeight}px`,
+            ["--ch-d" as string]: `${height}px`,
+          } as CSSProperties
+        }
       >
         추이 데이터 부족
       </div>
@@ -55,8 +68,13 @@ export default function PriceHistoryChart({ history, height = 240 }: Props) {
   if (points.length <= 1) {
     return (
       <div
-        className="bg-white border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500"
-        style={{ height }}
+        className="bg-white border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 h-[var(--ch-m)] md:h-[var(--ch-d)]"
+        style={
+          {
+            ["--ch-m" as string]: `${mobileHeight}px`,
+            ["--ch-d" as string]: `${height}px`,
+          } as CSSProperties
+        }
       >
         추이 데이터 부족
       </div>
@@ -121,10 +139,16 @@ export default function PriceHistoryChart({ history, height = 240 }: Props) {
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
-        height={H}
         preserveAspectRatio="none"
         role="img"
         aria-label="가격 추이 그래프"
+        className="h-[var(--ch-m)] md:h-[var(--ch-d)] block"
+        style={
+          {
+            ["--ch-m" as string]: `${mobileHeight}px`,
+            ["--ch-d" as string]: `${H}px`,
+          } as CSSProperties
+        }
       >
         {/* y축 눈금선 + 라벨 */}
         {yTicks.map((tv, i) => {
