@@ -122,9 +122,15 @@ export async function POST(req: NextRequest) {
   let storesCreated = 0;
   let usedMockCount = 0;
   let skippedNonMajor = 0;
+  let abortedEarly = false;
   const samples: Array<{ product: string; malls: string[] }> = [];
 
   for (const { product, items, usedMock } of fetched) {
+    // 시간 초과 직전이면 중단하고 partial 결과 반환 (504 회피)
+    if (Date.now() - startedAt > TIMEOUT_BUDGET_MS) {
+      abortedEarly = true;
+      break;
+    }
     if (usedMock) usedMockCount++;
 
     // mall 이름을 canonical로 변환 후 다시 mall당 최저가 1건만
