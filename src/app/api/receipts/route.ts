@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   const uploaderId = user?.id;
 
-  const { receipt, usedMock } = await parseReceipt(imageBase64 ?? null);
+  const { receipt, usedMock, source } = await parseReceipt(imageBase64 ?? null);
 
   // 매장 추론
   const storeId = await matchStore(receipt.storeHint);
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     receiptId: record.id,
     usedMock,
+    source,
     storeId,
     storeHint: receipt.storeHint,
     receiptDate: receipt.receiptDate,

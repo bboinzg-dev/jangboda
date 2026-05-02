@@ -1,6 +1,7 @@
-// 영수증 OCR 모듈
-// - 환경변수 CLOVA_OCR_URL/SECRET이 설정되면 실제 CLOVA OCR 호출
-// - 없으면 mock 데이터 반환 (개발/데모용)
+// 영수증 OCR 모듈 — 우선순위 chain
+// 1. CLOVA Receipt OCR (있으면 — 한국 영수증 정확도 최고, 자동 구조화 응답)
+// 2. Google Cloud Vision OCR (있으면 — 자체 휴리스틱 파서로 품목/가격 추출)
+// 3. Mock 데이터 (둘 다 없으면)
 
 export type ParsedReceiptItem = {
   rawName: string;   // OCR이 읽은 원본 텍스트
@@ -109,6 +110,153 @@ function parseClovaResponse(json: unknown): ParsedReceipt {
   };
 }
 
+// Google Cloud Vision OCR — 일반 텍스트 추출 후 휴리스틱 파서로 품목/가격 매핑
+async function callGoogleVision(imageBase64: string): Promise<ParsedReceipt> {
+  const apiKey = process.env.GOOGLE_VISION_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_VISION_API_KEY 미설정");
+
+  const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+  const body = {
+    requests: [
+      {
+        image: { content: imageBase64 },
+        features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+        imageContext: { languageHints: ["ko", "en"] },
+      },
+    ],
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Google Vision ${res.status}: ${txt.slice(0, 200)}`);
+  }
+
+  const json = (await res.json()) as {
+    responses?: Array<{
+      fullTextAnnotation?: { text?: string };
+      error?: { message?: string };
+    }>;
+  };
+
+  const r = json.responses?.[0];
+  if (r?.error) throw new Error(`Vision: ${r.error.message}`);
+  const fullText = r?.fullTextAnnotation?.text ?? "";
+  if (!fullText.trim()) {
+    return { items: [], rawText: "[Vision] 빈 응답" };
+  }
+  return parseReceiptText(fullText);
+}
+
+// 영수증 텍스트 → 구조화된 ParsedReceipt 휴리스틱 파서
+// 한국 영수증의 일반적 형태:
+//   매장명 (보통 첫 줄 또는 큰 글씨)
+//   날짜
+//   "품목명     수량 가격" 또는 "품목명\n수량 가격"
+//   "합계", "총", "TOTAL" 줄에 합계
+function parseReceiptText(text: string): ParsedReceipt {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  // 가격 패턴 — 1,000원 / 1000 / 12,800원 / 12,800
+  // 영수증에서 의미있는 가격은 보통 100원 이상
+  const PRICE_RE = /([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*원?/g;
+
+  // 첫 줄(또는 처음 5줄 안)에서 마트 이름 찾기
+  const STORE_KEYWORDS = [
+    "롯데마트", "이마트", "홈플러스", "킴스클럽", "코스트코",
+    "GS더프레시", "GS25", "CU", "세븐일레븐", "마트", "백화점",
+  ];
+  let storeHint: string | undefined;
+  for (const l of lines.slice(0, 8)) {
+    if (STORE_KEYWORDS.some((k) => l.includes(k))) {
+      storeHint = l;
+      break;
+    }
+  }
+  if (!storeHint) {
+    // 첫 줄이 짧고 한글 위주면 매장명 추정
+    const first = lines[0];
+    if (first && first.length <= 20 && /[가-힣]/.test(first)) storeHint = first;
+  }
+
+  // 날짜 찾기 — YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
+  let receiptDate: string | undefined;
+  for (const l of lines) {
+    const m = l.match(/(\d{4})[-./]\s*(\d{1,2})[-./]\s*(\d{1,2})/);
+    if (m) {
+      const y = m[1];
+      const mm = m[2].padStart(2, "0");
+      const dd = m[3].padStart(2, "0");
+      receiptDate = `${y}-${mm}-${dd}`;
+      break;
+    }
+  }
+
+  // 합계 찾기
+  let totalAmount: number | undefined;
+  const TOTAL_KEYWORDS = ["합계", "총", "TOTAL", "Total", "결제금액", "구매금액"];
+  for (const l of lines) {
+    if (TOTAL_KEYWORDS.some((k) => l.includes(k))) {
+      const matches = [...l.matchAll(PRICE_RE)];
+      if (matches.length > 0) {
+        const last = matches[matches.length - 1][1];
+        const n = parseInt(last.replace(/,/g, ""), 10);
+        if (n > 0) {
+          totalAmount = n;
+          break;
+        }
+      }
+    }
+  }
+
+  // 품목 줄 추출
+  // 휴리스틱: 한 줄에 한국어/영문 텍스트 + 가격 패턴이 함께 있고, "합계"/"총" 키워드 없으면 품목으로 간주
+  const items: ParsedReceiptItem[] = [];
+  for (const l of lines) {
+    if (TOTAL_KEYWORDS.some((k) => l.includes(k))) continue;
+    if (storeHint && l === storeHint) continue;
+    if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) continue;
+
+    // 가격 매칭
+    const matches = [...l.matchAll(PRICE_RE)];
+    if (matches.length === 0) continue;
+
+    // 줄 끝 가격 (가장 오른쪽) 우선
+    const lastMatch = matches[matches.length - 1];
+    const priceStr = lastMatch[1];
+    const price = parseInt(priceStr.replace(/,/g, ""), 10);
+    if (!price || price < 100 || price > 10_000_000) continue;
+
+    // 품목명: 줄에서 가격 부분 제거 + 좌우 trim
+    let name = l.replace(lastMatch[0], "").trim();
+    // 흔히 있는 잡음 제거
+    name = name.replace(/^\d+\s+/, ""); // 앞쪽 일련번호
+    name = name.replace(/\s+x?\s*\d+$/i, ""); // "x 1" 같은 수량 제거
+    name = name.replace(/[*#]+$/, "").trim();
+    if (name.length < 2) continue;
+    if (/^\d+$/.test(name)) continue; // 숫자만은 패스
+    // 너무 짧고 가격만 있는 줄 (예: "포인트 100") 같은 잡음 필터
+    if (name.length < 3 && !/[가-힣]/.test(name)) continue;
+
+    items.push({ rawName: name, price, quantity: 1 });
+  }
+
+  return {
+    storeHint,
+    receiptDate,
+    totalAmount,
+    items,
+    rawText: text.slice(0, 1500),
+  };
+}
+
 // Mock OCR: 데모용으로 가짜 영수증을 그럴듯하게 반환
 function mockOcr(): ParsedReceipt {
   const samples: ParsedReceipt[] = [
@@ -151,17 +299,39 @@ function mockOcr(): ParsedReceipt {
   return samples[Math.floor(Math.random() * samples.length)];
 }
 
+export type OcrSource = "clova" | "google_vision" | "mock";
+
 export async function parseReceipt(
   imageBase64: string | null
-): Promise<{ receipt: ParsedReceipt; usedMock: boolean }> {
-  const hasReal = !!process.env.CLOVA_OCR_URL && !!process.env.CLOVA_OCR_SECRET;
-  if (hasReal && imageBase64) {
+): Promise<{ receipt: ParsedReceipt; usedMock: boolean; source: OcrSource }> {
+  // 1순위: CLOVA Receipt OCR
+  const hasClova = !!process.env.CLOVA_OCR_URL && !!process.env.CLOVA_OCR_SECRET;
+  if (hasClova && imageBase64) {
     try {
       const receipt = await callClovaOcr(imageBase64);
-      return { receipt, usedMock: false };
+      if (receipt.items.length > 0 || receipt.storeHint) {
+        return { receipt, usedMock: false, source: "clova" };
+      }
     } catch (e) {
-      console.warn("[OCR] CLOVA 호출 실패, mock으로 fallback:", e);
+      console.warn("[OCR] CLOVA 실패, 다음 fallback:", e);
     }
   }
-  return { receipt: mockOcr(), usedMock: true };
+
+  // 2순위: Google Vision
+  const hasVision = !!process.env.GOOGLE_VISION_API_KEY;
+  if (hasVision && imageBase64) {
+    try {
+      const receipt = await callGoogleVision(imageBase64);
+      // Vision 휴리스틱이 아무것도 못 뽑은 경우 → mock으로 fallback (사용자에게 noise 안 주기)
+      if (receipt.items.length > 0 || receipt.storeHint) {
+        return { receipt, usedMock: false, source: "google_vision" };
+      }
+      console.warn("[OCR] Vision 응답에서 품목 추출 실패, mock으로 fallback");
+    } catch (e) {
+      console.warn("[OCR] Vision 실패, mock으로 fallback:", e);
+    }
+  }
+
+  // 3순위: Mock
+  return { receipt: mockOcr(), usedMock: true, source: "mock" };
 }

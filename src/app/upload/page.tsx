@@ -14,6 +14,7 @@ type ParsedItem = {
 type ParseResult = {
   receiptId: string;
   usedMock: boolean;
+  source: "clova" | "google_vision" | "mock";
   storeId: string | null;
   storeHint?: string;
   totalAmount?: number;
@@ -156,11 +157,15 @@ export default function UploadPage() {
         <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-bold">파싱 결과</h2>
-            {result.usedMock && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
-                Mock OCR
-              </span>
-            )}
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              result.source === "clova" ? "bg-emerald-100 text-emerald-700"
+              : result.source === "google_vision" ? "bg-blue-100 text-blue-700"
+              : "bg-amber-100 text-amber-700"
+            }`}>
+              {result.source === "clova" ? "🟢 CLOVA OCR"
+              : result.source === "google_vision" ? "🔵 Google Vision"
+              : "⚠️ Mock OCR"}
+            </span>
           </div>
 
           <div>
