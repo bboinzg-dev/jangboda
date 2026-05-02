@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
-import { unitPriceLabel } from "@/lib/units";
+import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
 import TrustBadge from "@/components/TrustBadge";
 import DirectionsButton from "@/components/DirectionsButton";
@@ -50,12 +50,47 @@ export default function PriceListClient({
   const filtered = favoriteOnly
     ? rows.filter((r) => favoriteIds.has(r.storeId))
     : rows;
-  const sorted = [...filtered].sort((a, b) => {
+  const sortedAll = [...filtered].sort((a, b) => {
     const aFav = favoriteIds.has(a.storeId) ? 1 : 0;
     const bFav = favoriteIds.has(b.storeId) ? 1 : 0;
     if (aFav !== bFav) return bFav - aFav; // 즐겨찾기 우선
     return a.price - b.price;
   });
+
+  // 단가 outlier 분리 — 같은 SKU여도 매장별 패키지가 다른 경우(예: 코스트코 대용량)
+  // 비교 정확도 위해 본 리스트에서 빼고 별도 섹션으로 표시.
+  // 기준: 단가가 중앙값 × 0.5 ~ × 1.7 범위 밖. row 4개 이상일 때만 적용.
+  const withUnitPrice = sortedAll.map((r) => ({
+    row: r,
+    unitPrice: unitPriceValue(r.price, unit),
+  }));
+  const validUnitPrices = withUnitPrice
+    .map((x) => x.unitPrice)
+    .filter((v): v is number => v !== null && v > 0)
+    .sort((a, b) => a - b);
+  const median =
+    validUnitPrices.length >= 4
+      ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
+      : null;
+  const lowBound = median !== null ? median * 0.5 : null;
+  const highBound = median !== null ? median * 1.7 : null;
+
+  const sorted = withUnitPrice
+    .filter(
+      (x) =>
+        median === null ||
+        x.unitPrice === null ||
+        (x.unitPrice >= (lowBound as number) && x.unitPrice <= (highBound as number))
+    )
+    .map((x) => x.row);
+  const outliers = withUnitPrice
+    .filter(
+      (x) =>
+        median !== null &&
+        x.unitPrice !== null &&
+        (x.unitPrice < (lowBound as number) || x.unitPrice > (highBound as number))
+    )
+    .map((x) => x.row);
 
   const minPrice = sorted[0]?.price ?? 0;
 
@@ -185,6 +220,43 @@ export default function PriceListClient({
             );
           })}
         </ul>
+      )}
+
+      {outliers.length > 0 && (
+        <details className="mt-3 border border-amber-200 bg-amber-50/50 rounded-lg">
+          <summary className="cursor-pointer p-3 text-xs text-amber-900 font-medium select-none">
+            ⚠️ 패키지가 다를 가능성이 있는 가격 {outliers.length}건 (펼쳐 보기)
+          </summary>
+          <div className="px-3 pb-3 text-[11px] text-amber-800/80 mb-1">
+            같은 상품으로 등록됐지만 단가가 다른 매장과 크게 다릅니다.
+            대용량/소포장 등 포장 단위 차이일 수 있어 비교 목록에서 분리했습니다.
+          </div>
+          <ul className="space-y-1.5 px-3 pb-3 opacity-75">
+            {outliers.map((p) => {
+              const tag = freshnessTag(p.updatedAt);
+              return (
+                <li
+                  key={p.priceId}
+                  className="flex items-center justify-between gap-2 bg-white border border-amber-100 rounded p-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-stone-700 truncate">
+                      {p.chainName} · {p.storeName}
+                    </div>
+                    <div className="text-[10px] text-stone-500 mt-0.5">
+                      {unitPriceLabel(p.price, unit) ?? "단가 계산 불가"}
+                      {" · "}
+                      {tag.label} · {formatRelativeDate(p.updatedAt)}
+                    </div>
+                  </div>
+                  <div className="text-base font-bold text-stone-700 shrink-0">
+                    {formatWon(p.price)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
       )}
     </div>
   );
