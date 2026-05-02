@@ -203,6 +203,35 @@ export default function IdPhotoStudio({ specs }: { specs: SpecPublic[] }) {
 
   return (
     <div className="space-y-6">
+      <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <div className="font-semibold text-sm text-amber-900 mb-2">
+          💡 잘 나오게 찍는 팁 — AI는 입력 사진을 기준으로 만들어요
+        </div>
+        <ul className="text-xs text-amber-900/80 leading-relaxed space-y-1 list-disc pl-5">
+          <li>
+            <b>정면 응시</b> · 고개·턱을 똑바로, 눈은 카메라 렌즈 정면을 바라보기
+          </li>
+          <li>
+            <b>무표정 또는 입을 다문 살짝의 미소</b> — 치아가 보이는 큰 웃음은 피하기
+          </li>
+          <li>
+            <b>머리부터 어깨</b>까지 프레임에 들어오게, 양쪽 귀가 보이면 더 좋음
+          </li>
+          <li>
+            <b>밝은 곳</b>에서 · 양쪽 얼굴에 그림자가 지지 않는 균일한 빛
+          </li>
+          <li>
+            <b>배경은 단색</b>(흰 벽/밝은 색)일수록 좋음 — 정리되지 않은 배경은 결과 품질에 영향
+          </li>
+          <li>
+            <b>모자·선글라스·마스크 금지</b>, 안경은 빛 반사·렌즈 글레어 없게
+          </li>
+          <li>
+            머리카락이 눈썹·눈을 가리지 않도록, 옷은 단색 상의 권장
+          </li>
+        </ul>
+      </section>
+
       <section className="bg-white border border-stone-200 rounded-2xl p-5">
         <h2 className="font-semibold mb-3">1. 사진 선택</h2>
         <div className="grid grid-cols-2 gap-2">

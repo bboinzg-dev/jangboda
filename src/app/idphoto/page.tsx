@@ -29,6 +29,10 @@ export default function IdPhotoPage() {
           <br />
           한국 사진관 스타일의 자연스러운 보정이 적용됩니다.
         </p>
+        <p className="text-xs text-amber-800 bg-white/70 border border-amber-200 rounded-lg px-3 py-2 mt-3 leading-relaxed">
+          ✅ <b>입력 사진이 곧 결과 품질입니다</b> — 정면 응시·무표정·밝은 조명·단색 배경에서 찍은
+          사진일수록 결과물이 자연스럽고 깔끔하게 나와요.
+        </p>
       </header>
 
       <IdPhotoClient unlocked={unlocked} specs={PHOTO_SPECS_PUBLIC} />
