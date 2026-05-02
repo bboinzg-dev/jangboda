@@ -38,72 +38,89 @@ type HistoryPoint = {
 };
 
 async function getProductDetail(id: string) {
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: { aliases: true },
-  });
-  if (!product) return null;
-
-  // 한 번의 쿼리로 이 productId의 모든 가격 가져오기 (N+1 회피)
-  // store 정보는 join으로 같이
-  const allPrices = await prisma.price.findMany({
-    where: { productId: id },
-    include: { store: { include: { chain: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
-  // storeId별로 그룹 — 가장 최근 가격 + 등록 횟수 + 최신 날짜
-  type Aggregate = {
-    latestPrice: typeof allPrices[number];
-    count: number;
-    latestDate: Date;
-  };
-  const byStore = new Map<string, Aggregate>();
-  for (const p of allPrices) {
-    const cur = byStore.get(p.storeId);
-    if (!cur) {
-      byStore.set(p.storeId, { latestPrice: p, count: 1, latestDate: p.createdAt });
-    } else {
-      cur.count += 1;
-      if (p.createdAt > cur.latestDate) cur.latestDate = p.createdAt;
-    }
-  }
-
-  const valid: PriceRow[] = [];
-  for (const { latestPrice: p, count, latestDate } of byStore.values()) {
-    valid.push({
-      priceId: p.id,
-      storeId: p.storeId,
-      storeName: p.store.name,
-      chainName: p.store.chain.name,
-      lat: p.store.lat,
-      lng: p.store.lng,
-      price: p.price,
-      updatedAt: p.createdAt,
-      source: p.source,
-      online: isOnlineStore({
-        lat: p.store.lat,
-        lng: p.store.lng,
-        name: p.store.name,
-        chainName: p.store.chain.name,
-      }),
-      trust: { count, latestDate },
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { aliases: true },
     });
+    if (!product) return null;
+
+    // 한 번의 쿼리로 이 productId의 모든 가격 가져오기 (N+1 회피)
+    // store 정보는 join으로 같이. take 5000 제한 (메모리 보호)
+    const allPrices = await prisma.price.findMany({
+      where: { productId: id },
+      include: { store: { include: { chain: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 5000,
+    });
+
+    // storeId별로 그룹 — 가장 최근 가격 + 등록 횟수 + 최신 날짜
+    type Aggregate = {
+      latestPrice: (typeof allPrices)[number];
+      count: number;
+      latestDate: Date;
+    };
+    const byStore = new Map<string, Aggregate>();
+    for (const p of allPrices) {
+      // store 또는 chain이 어떤 이유로든 null이면 skip (방어)
+      if (!p.store || !p.store.chain) continue;
+      const cur = byStore.get(p.storeId);
+      if (!cur) {
+        byStore.set(p.storeId, { latestPrice: p, count: 1, latestDate: p.createdAt });
+      } else {
+        cur.count += 1;
+        if (p.createdAt > cur.latestDate) cur.latestDate = p.createdAt;
+      }
+    }
+
+    const valid: PriceRow[] = [];
+    for (const { latestPrice: p, count, latestDate } of byStore.values()) {
+      const chainName = p.store?.chain?.name ?? "(미상)";
+      valid.push({
+        priceId: p.id,
+        storeId: p.storeId,
+        storeName: p.store?.name ?? "(미상)",
+        chainName,
+        lat: p.store?.lat ?? 0,
+        lng: p.store?.lng ?? 0,
+        price: p.price,
+        updatedAt: p.createdAt,
+        source: p.source,
+        online: isOnlineStore({
+          lat: p.store?.lat ?? 0,
+          lng: p.store?.lng ?? 0,
+          name: p.store?.name ?? "",
+          chainName,
+        }),
+        trust: { count, latestDate },
+      });
+    }
+
+    // 가격 추이용 history — 최근 60일, source != 'naver'
+    const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    const history: HistoryPoint[] = allPrices
+      .filter(
+        (p) =>
+          p.store?.chain &&
+          p.source !== "naver" &&
+          p.createdAt.getTime() >= sixtyDaysAgo
+      )
+      .slice(-200) // 그래프 점 200개 limit (렌더 보호)
+      .map((p) => ({
+        date: p.createdAt,
+        price: p.price,
+        chainName: p.store?.chain?.name ?? "(미상)",
+      }))
+      .reverse();
+
+    return { product, prices: valid, history };
+  } catch (e) {
+    console.error("[products/[id]] getProductDetail error:", {
+      productId: id,
+      error: e instanceof Error ? { message: e.message, stack: e.stack } : e,
+    });
+    throw e; // 에러 가시화 위해 다시 throw — error.tsx가 잡음
   }
-
-  // 가격 추이용 history — 최근 60일, source != 'naver' (매장별 가격 변동만)
-  // 이미 allPrices 가져왔으니 메모리 필터로 — 추가 쿼리 안 함
-  const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
-  const history: HistoryPoint[] = allPrices
-    .filter((p) => p.source !== "naver" && p.createdAt.getTime() >= sixtyDaysAgo)
-    .map((p) => ({
-      date: p.createdAt,
-      price: p.price,
-      chainName: p.store.chain.name,
-    }))
-    .reverse(); // 오래된 → 최신 순
-
-  return { product, prices: valid, history };
 }
 
 function PriceList({
