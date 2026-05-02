@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+
+// GET /api/products?q=신라면&category=라면
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q")?.trim() ?? "";
+  const category = searchParams.get("category") ?? undefined;
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "30"), 100);
+
+  const products = await prisma.product.findMany({
+    where: {
+      ...(category ? { category } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q } },
+              { brand: { contains: q } },
+              { aliases: { some: { alias: { contains: q } } } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      prices: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+      _count: { select: { prices: true } },
+    },
+    take: limit,
+  });
+
+  // 각 상품의 최저가/평균가 계산을 위해 가격 한 번 더 집계
+  const productIds = products.map((p) => p.id);
+  const allPrices = await prisma.price.findMany({
+    where: { productId: { in: productIds } },
+    select: { productId: true, price: true },
+  });
+
+  const stats = new Map<string, { min: number; max: number; avg: number; count: number }>();
+  for (const id of productIds) {
+    const list = allPrices.filter((p) => p.productId === id).map((p) => p.price);
+    if (list.length === 0) {
+      stats.set(id, { min: 0, max: 0, avg: 0, count: 0 });
+    } else {
+      const sum = list.reduce((a, b) => a + b, 0);
+      stats.set(id, {
+        min: Math.min(...list),
+        max: Math.max(...list),
+        avg: Math.round(sum / list.length),
+        count: list.length,
+      });
+    }
+  }
+
+  return NextResponse.json({
+    products: products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      category: p.category,
+      unit: p.unit,
+      stats: stats.get(p.id),
+    })),
+  });
+}

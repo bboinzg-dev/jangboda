@@ -1,0 +1,113 @@
+// Prisma 스키마 — jangboda
+// 마트 가격비교 크라우드소싱 플랫폼
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 마트 체인 (롯데마트, 킴스클럽, 이마트 등)
+model Chain {
+  id      String  @id @default(cuid())
+  name    String  @unique // "롯데마트", "킴스클럽"
+  logoUrl String?
+  stores  Store[]
+}
+
+// 개별 매장 (롯데마트 잠실점 등)
+model Store {
+  id        String   @id @default(cuid())
+  chainId   String
+  chain     Chain    @relation(fields: [chainId], references: [id])
+  name      String   // "롯데마트 잠실점"
+  address   String
+  lat       Float
+  lng       Float
+  phone     String?
+  hours     String?  // "10:00~24:00"
+  createdAt DateTime @default(now())
+  prices    Price[]
+  receipts  Receipt[]
+
+  @@index([chainId])
+  @@index([lat, lng])
+}
+
+// 상품 (정규화된 SKU 단위)
+model Product {
+  id        String   @id @default(cuid())
+  name      String   // "농심 신라면 멀티팩"
+  brand     String?  // "농심"
+  category  String   // "라면/면류"
+  unit      String   // "120g x 5개"
+  barcode   String?  @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  prices    Price[]
+  aliases   ProductAlias[]
+
+  @@index([category])
+  @@index([name])
+}
+
+// 상품명 별칭 (영수증 OCR에서 매칭하기 위한 키)
+// 예: "신라면5입", "신라면 멀티" 같은 다양한 표기를 같은 Product에 매핑
+model ProductAlias {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  alias     String
+
+  @@unique([alias])
+  @@index([productId])
+}
+
+// 가격 기록 (한 상품 × 한 매장 × 시점)
+model Price {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  price         Int      // 원 단위 (정수)
+  isOnSale      Boolean  @default(false)
+  source        String   // "receipt" | "manual" | "seed"
+  contributorId String?
+  contributor   User?    @relation(fields: [contributorId], references: [id])
+  receiptId     String?
+  receipt       Receipt? @relation(fields: [receiptId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@index([productId, storeId, createdAt])
+  @@index([storeId])
+}
+
+// 영수증 (OCR 원본 + 파싱 결과)
+model Receipt {
+  id           String   @id @default(cuid())
+  imageUrl     String
+  storeId      String?
+  store        Store?   @relation(fields: [storeId], references: [id])
+  uploaderId   String?
+  uploader     User?    @relation(fields: [uploaderId], references: [id])
+  rawOcrText   String?
+  parsedJson   String?  // 파싱된 품목 리스트 JSON
+  status       String   @default("pending") // pending|parsed|verified
+  createdAt    DateTime @default(now())
+  prices       Price[]
+}
+
+// 사용자 (간단 닉네임 + 포인트)
+model User {
+  id        String   @id @default(cuid())
+  nickname  String   @unique
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  prices    Price[]
+  receipts  Receipt[]
+}
