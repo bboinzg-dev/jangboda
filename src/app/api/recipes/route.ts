@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import {
+  buildIngredientIndex,
+  normalizeIngredient,
+  uniqueCategories,
+} from "@/lib/foodIngredientCategories";
 
 // GET /api/recipes — 조리식품 레시피 검색/추천 API (인증 불필요)
 //
@@ -23,50 +28,72 @@ export async function GET(req: NextRequest) {
     100
   );
 
-  // 다중 재료 모드 — matchCount 기준 정렬
+  // 다중 재료 모드 — 정규 카테고리 기반 매칭
   if (ingredientsParam) {
-    const ingredients = ingredientsParam
+    const inputs = ingredientsParam
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
 
-    if (ingredients.length === 0) {
+    if (inputs.length === 0) {
       return jsonOk({ recipes: [] });
     }
 
-    // 후보 1차 필터: 어느 한 재료라도 포함 (Postgres String[] hasSome)
-    const where: Prisma.RecipeWhereInput = {
-      ingredientsList: { hasSome: ingredients },
-    };
+    // 사용자 보유 재료를 정규 카테고리로 통일 (예: "매일우유 저지방"→"우유")
+    const userCategories = uniqueCategories(inputs);
+    if (userCategories.length === 0) {
+      return jsonOk({ recipes: [], query: { inputs, userCategories: [] } });
+    }
+
+    // 후보 검색: 정규 카테고리에 해당하는 raw 키워드를 모아 hasSome OR contains 후보 추출
+    // hasSome은 정확 일치만이므로 ingredientsRaw contains로 폭넓게 잡음
+    const orConditions: Prisma.RecipeWhereInput[] = userCategories.map(
+      (cat) => ({ ingredientsRaw: { contains: cat } })
+    );
+    const where: Prisma.RecipeWhereInput = { OR: orConditions };
     if (category) where.category = category;
 
     const candidates = await prisma.recipe.findMany({
       where,
-      take: 500, // 후보군 충분히 가져온 뒤 매칭 점수 계산
+      take: 500,
     });
 
-    // 각 후보의 matchCount/totalIngredients 계산
+    // 각 후보를 정규 카테고리 기준으로 점수 계산
+    const userCatSet = new Set(userCategories);
     const scored = candidates.map((r) => {
-      const have = new Set(r.ingredientsList);
-      const matched = ingredients.filter((ing) => {
-        if (have.has(ing)) return true;
-        // 부분 일치 보조 — "돼지고기"가 "돼지고기앞다리살"과 매칭되도록
-        for (const tok of r.ingredientsList) {
-          if (tok.includes(ing) || ing.includes(tok)) return true;
+      const { categories: recipeCats } = buildIngredientIndex(r.ingredientsList);
+      // ingredientsRaw에서 추가 카테고리 추출 (ingredientsList 파싱이 빠뜨린 항목 보강)
+      if (r.ingredientsRaw) {
+        for (const cat of userCategories) {
+          if (r.ingredientsRaw.includes(cat)) recipeCats.add(cat);
         }
-        return false;
-      });
+        // 사용자 카테고리 외에도 raw에서 토큰 추출 시도 (총 재료 수 정확도)
+        const rawTokens = r.ingredientsRaw
+          .split(/[,、\n·]/)
+          .map((s) => s.trim())
+          .filter((s) => s.length >= 2);
+        for (const t of rawTokens) {
+          const c = normalizeIngredient(t);
+          if (c) recipeCats.add(c);
+        }
+      }
+      const matched = [...recipeCats].filter((c) => userCatSet.has(c));
       return {
         recipe: r,
         matchCount: matched.length,
-        totalIngredients: r.ingredientsList.length,
+        totalIngredients: recipeCats.size,
         matchedIngredients: matched,
       };
     });
 
+    // 정렬: 매칭 비율(matched/total) 우선, 동률시 절대 매칭수
     scored.sort((a, b) => {
+      const ratioA =
+        a.totalIngredients > 0 ? a.matchCount / a.totalIngredients : 0;
+      const ratioB =
+        b.totalIngredients > 0 ? b.matchCount / b.totalIngredients : 0;
+      if (Math.abs(ratioB - ratioA) > 0.01) return ratioB - ratioA;
       if (b.matchCount !== a.matchCount) return b.matchCount - a.matchCount;
-      // 동률이면 totalIngredients 적은 것 우선 — "재료 적게 들어가는 요리"
       return a.totalIngredients - b.totalIngredients;
     });
 
@@ -87,7 +114,10 @@ export async function GET(req: NextRequest) {
         matchedIngredients: s.matchedIngredients,
       }));
 
-    return jsonOk({ recipes: top, query: { ingredients } });
+    return jsonOk({
+      recipes: top,
+      query: { inputs, userCategories },
+    });
   }
 
   // 일반 검색 모드

@@ -38,26 +38,8 @@ export default function RecipeRecommendations({ productNames }: Props) {
       return;
     }
 
-    // 상품명에서 핵심 재료 키워드 추출 — 첫 한국어 단어
-    // "농심 신라면 멀티팩" → "농심" 보다는 식재료가 들어있는 매칭에 의존
-    // 서버 API가 부분 일치를 처리하므로 상품명 그대로 + 단어 단위 분해
-    const tokens = new Set<string>();
-    for (const name of cleaned) {
-      tokens.add(name);
-      // 공백/특수문자로 토큰화
-      const parts = name.split(/[\s,()/x×]+/).map((s) => s.trim()).filter(Boolean);
-      for (const p of parts) {
-        if (p.length >= 2 && /^[가-힣A-Za-z]+$/.test(p)) {
-          tokens.add(p);
-        }
-      }
-    }
-
-    const ingredients = [...tokens].slice(0, 30); // 너무 많으면 잘라냄
-    if (ingredients.length === 0) {
-      setRecipes([]);
-      return;
-    }
+    // 서버가 정규 카테고리(우유/계란/...)로 매핑하므로 상품명 그대로 전달
+    const ingredients = cleaned.slice(0, 30);
 
     setLoading(true);
     const url = `/api/recipes?ingredients=${encodeURIComponent(
@@ -134,7 +116,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
                       </span>
                     )}
                     <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
-                      재료 {r.totalIngredients}개 중 {r.matchCount}개 보유
+                      주재료 {r.totalIngredients}종 중 {r.matchCount}종 보유
                     </span>
                   </div>
                   <div className="font-semibold text-sm text-stone-900 truncate mt-0.5">
