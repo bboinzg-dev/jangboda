@@ -19,7 +19,20 @@ export async function GET(req: NextRequest) {
         { status: 404 }
       );
     }
-    return NextResponse.json({ found: true, item });
+    // C005에서 같은 바코드의 여러 row(공장별 보고)를 가져왔을 수 있음 — best 1건
+    return NextResponse.json({
+      found: true,
+      item,
+      // UI에서 보기 좋게 정리된 필드
+      summary: {
+        name: item.productName,
+        manufacturer: item.manufacturer,
+        type: item.foodType,
+        shelfLife: item.shelfLife,
+        address: item.manufacturerAddress,
+        category: item.category,
+      },
+    });
   }
 
   if (q) {

@@ -1,20 +1,40 @@
-// 식품안전나라 OpenAPI 어댑터 — 가공식품 53,242건 DB
-// 서비스: I2570 (가공식품 바코드 정보)
-// 응답 필드: BRCD_NO, PRDT_NM, CMPNY_NM, HTRK_PRDLST_NM(대), HRNK_PRDLST_NM(중), PRDLST_NM(소)
+// 식품안전나라 OpenAPI 어댑터
+// 사용 서비스 (사용자 신청 완료):
+//   - C005: 바코드연계제품정보 (47번) — 소비기한/제조사 주소/식품유형까지 (메인)
+//   - I2570: 가공식품 바코드정보 (136번) — 53,242건, 카테고리 대/중/소 분류 (검색용)
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
-const SERVICE = "I2570";
 
 export type FoodSafetyItem = {
   barcode: string;
   productName: string;
   manufacturer: string;
-  category: { major: string; mid: string; minor: string };
+  foodType?: string;          // 식품유형 (PRDLST_DCNM): "유탕면", "캔디류" 등
+  category?: { major?: string; mid?: string; minor?: string }; // I2570에서만
+  shelfLife?: string;         // 소비기한 (POG_DAYCNT)
+  manufacturerAddress?: string; // 제조사 주소
   reportNo?: string;
-  updatedAt?: string;
+  reportDate?: string;
+  endDate?: string;
+  industry?: string;
+  closedDate?: string;
 };
 
-type ApiRow = {
+type C005Row = {
+  BAR_CD?: string;
+  PRDLST_NM?: string;
+  BSSH_NM?: string;
+  PRDLST_DCNM?: string;
+  POG_DAYCNT?: string;
+  SITE_ADDR?: string;
+  PRDLST_REPORT_NO?: string;
+  PRMS_DT?: string;
+  END_DT?: string;
+  INDUTY_NM?: string;
+  CLSBIZ_DT?: string;
+};
+
+type I2570Row = {
   BRCD_NO?: string;
   PRDT_NM?: string;
   CMPNY_NM?: string;
@@ -22,109 +42,150 @@ type ApiRow = {
   HRNK_PRDLST_NM?: string;
   PRDLST_NM?: string;
   PRDLST_REPORT_NO?: string;
-  LAST_UPDT_DTM?: string;
 };
 
-type ApiResponse = {
-  I2570?: {
-    total_count?: string;
-    row?: ApiRow[];
-    RESULT?: { CODE?: string; MSG?: string };
+function rowC005(r: C005Row): FoodSafetyItem {
+  return {
+    barcode: r.BAR_CD ?? "",
+    productName: r.PRDLST_NM ?? "",
+    manufacturer: r.BSSH_NM ?? "",
+    foodType: r.PRDLST_DCNM,
+    shelfLife: r.POG_DAYCNT,
+    manufacturerAddress: r.SITE_ADDR,
+    reportNo: r.PRDLST_REPORT_NO,
+    reportDate: r.PRMS_DT,
+    endDate: r.END_DT || undefined,
+    industry: r.INDUTY_NM,
+    closedDate: r.CLSBIZ_DT || undefined,
   };
-};
+}
 
-function rowToItem(r: ApiRow): FoodSafetyItem {
+function rowI2570(r: I2570Row): FoodSafetyItem {
   return {
     barcode: r.BRCD_NO ?? "",
     productName: r.PRDT_NM ?? "",
     manufacturer: r.CMPNY_NM ?? "",
+    foodType: r.PRDLST_NM,
     category: {
-      major: r.HTRK_PRDLST_NM ?? "",
-      mid: r.HRNK_PRDLST_NM ?? "",
-      minor: r.PRDLST_NM ?? "",
+      major: r.HTRK_PRDLST_NM,
+      mid: r.HRNK_PRDLST_NM,
+      minor: r.PRDLST_NM,
     },
     reportNo: r.PRDLST_REPORT_NO,
-    updatedAt: r.LAST_UPDT_DTM,
   };
 }
 
-// 바코드(GTIN)로 제품 1건 lookup — 가장 정확
-export async function lookupByBarcode(barcode: string): Promise<FoodSafetyItem | null> {
-  const key = process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY;
-  if (!key) return null;
-  const url = `${BASE}/${key}/${SERVICE}/json/1/1/BRCD_NO=${encodeURIComponent(barcode)}`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    const json = (await res.json()) as ApiResponse;
-    const rows = json.I2570?.row;
-    if (!rows || rows.length === 0) return null;
-    return rowToItem(rows[0]);
-  } catch (e) {
-    console.warn("[foodsafety] lookupByBarcode 실패:", e);
-    return null;
-  }
+function getKey(): string | null {
+  return process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY ?? null;
 }
 
-// 제품명으로 검색 — 여러 결과 반환 (사용자 선택용)
-export async function searchByName(query: string, limit = 10): Promise<FoodSafetyItem[]> {
-  const key = process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY;
-  if (!key || !query.trim()) return [];
-  const url = `${BASE}/${key}/${SERVICE}/json/1/${Math.min(limit, 50)}/PRDT_NM=${encodeURIComponent(query.trim())}`;
+// 바코드 → 정확한 1건 lookup. C005 메인 + I2570로 카테고리 보강
+export async function lookupByBarcode(barcode: string): Promise<FoodSafetyItem | null> {
+  const key = getKey();
+  if (!key) return null;
+
   try {
+    const url = `${BASE}/${key}/C005/json/1/1/BAR_CD=${encodeURIComponent(barcode)}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.ok) {
+      const json = (await res.json()) as { C005?: { row?: C005Row[] } };
+      const row = json.C005?.row?.[0];
+      if (row) {
+        const item = rowC005(row);
+        // I2570에서 카테고리 정보 보강 (best-effort)
+        try {
+          const url2 = `${BASE}/${key}/I2570/json/1/1/BRCD_NO=${encodeURIComponent(barcode)}`;
+          const res2 = await fetch(url2, { cache: "no-store" });
+          if (res2.ok) {
+            const j2 = (await res2.json()) as { I2570?: { row?: I2570Row[] } };
+            const r2 = j2.I2570?.row?.[0];
+            if (r2) {
+              item.category = {
+                major: r2.HTRK_PRDLST_NM,
+                mid: r2.HRNK_PRDLST_NM,
+                minor: r2.PRDLST_NM,
+              };
+            }
+          }
+        } catch {
+          // ignore
+        }
+        return item;
+      }
+    }
+  } catch (e) {
+    console.warn("[foodsafety] C005 lookup 실패:", e);
+  }
+
+  // C005 못 찾으면 I2570 fallback
+  try {
+    const url = `${BASE}/${key}/I2570/json/1/1/BRCD_NO=${encodeURIComponent(barcode)}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.ok) {
+      const json = (await res.json()) as { I2570?: { row?: I2570Row[] } };
+      const row = json.I2570?.row?.[0];
+      if (row) return rowI2570(row);
+    }
+  } catch (e) {
+    console.warn("[foodsafety] I2570 fallback 실패:", e);
+  }
+
+  return null;
+}
+
+// 제품명으로 검색 — I2570 (53,242건)
+export async function searchByName(query: string, limit = 10): Promise<FoodSafetyItem[]> {
+  const key = getKey();
+  if (!key || !query.trim()) return [];
+  try {
+    const url = `${BASE}/${key}/I2570/json/1/${Math.min(limit, 50)}/PRDT_NM=${encodeURIComponent(query.trim())}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
-    const json = (await res.json()) as ApiResponse;
-    const rows = json.I2570?.row ?? [];
-    return rows.map(rowToItem);
+    const json = (await res.json()) as { I2570?: { row?: I2570Row[] } };
+    return (json.I2570?.row ?? []).map(rowI2570);
   } catch (e) {
     console.warn("[foodsafety] searchByName 실패:", e);
     return [];
   }
 }
 
-// 우리 카탈로그 상품에 대한 best match — brand + name 결합 검색
+// best match — brand + name 점수 매칭 (보수적, 임계값 ↑)
 export async function findBestMatchForProduct(
   productName: string,
   brand?: string | null
 ): Promise<FoodSafetyItem | null> {
-  // 1. 브랜드 + 핵심 키워드로 검색
-  const candidates = await searchByName(productName, 15);
-  if (candidates.length === 0 && brand) {
-    // 2. 브랜드만으로 fallback
-    const byBrand = await searchByName(brand, 5);
-    if (byBrand.length > 0) return byBrand[0];
-    return null;
-  }
-  if (candidates.length === 0) return null;
+  const tokens = (brand ? productName.replace(brand, "") : productName)
+    .replace(/[()]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2);
 
-  // 정규화 후 brand 매칭 우선
+  const candidates = [tokens[0], tokens.slice(0, 2).join(" "), productName].filter(Boolean);
+  let rows: FoodSafetyItem[] = [];
+  for (const q of candidates) {
+    rows = await searchByName(q, 15);
+    if (rows.length > 0) break;
+  }
+  if (rows.length === 0) return null;
+
   const normalize = (s: string) =>
     s.toLowerCase().replace(/\s+/g, "").replace(/[^가-힣a-z0-9]/g, "");
   const targetN = normalize(productName);
   const brandN = brand ? normalize(brand) : "";
 
-  // 점수: brand 일치(+3) + 정규화된 name 일치도(0~3)
   let best: { item: FoodSafetyItem; score: number } | null = null;
-  for (const c of candidates) {
-    const cName = normalize(c.productName);
-    const cMfr = normalize(c.manufacturer);
+  for (const r of rows) {
+    const cName = normalize(r.productName);
+    const cMfr = normalize(r.manufacturer);
     let score = 0;
-    if (brandN && (cMfr.includes(brandN) || cName.includes(brandN))) score += 3;
-    // name 부분 매칭 (긴 substring 일치)
-    const minLen = Math.min(targetN.length, cName.length);
-    if (minLen >= 4) {
-      if (cName.includes(targetN) || targetN.includes(cName)) score += 3;
-      else if (
-        targetN
-          .split(/(?<=.{2})/)
-          .some((chunk) => chunk.length >= 3 && cName.includes(chunk))
-      )
-        score += 1;
+    if (brandN && (cMfr.includes(brandN) || cName.includes(brandN))) score += 2;
+    if (cName.length >= 3 && targetN.length >= 3) {
+      if (cName === targetN) score += 5;
+      else if (cName.includes(targetN) || targetN.includes(cName)) score += 2;
     }
-    if (!best || score > best.score) best = { item: c, score };
+    if (!best || score > best.score) best = { item: r, score };
   }
-  // 점수 낮으면 신뢰 안 함
-  if (!best || best.score < 3) return null;
+  // 신뢰 임계값 ↑ — brand만으론 매칭 거부
+  if (!best || best.score < 5) return null;
   return best.item;
 }
