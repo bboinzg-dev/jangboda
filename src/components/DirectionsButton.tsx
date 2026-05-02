@@ -1,3 +1,5 @@
+"use client";
+
 type Props = {
   name: string;
   lat: number;
@@ -5,6 +7,7 @@ type Props = {
 };
 
 // 카카오맵 길찾기 deep link — 모바일에서 카카오맵 앱이 있으면 앱이 열리고 없으면 웹
+// onClick(stopPropagation)을 위해 client component
 export default function DirectionsButton({ name, lat, lng }: Props) {
   const url = `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`;
   return (
