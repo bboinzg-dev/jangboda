@@ -152,13 +152,17 @@ export async function searchByName(query: string, limit = 10): Promise<FoodSafet
 // best match — brand + name 점수 매칭 (보수적, 임계값 ↑)
 export async function findBestMatchForProduct(
   productName: string,
-  brand?: string | null
+  brand?: string | null,
+  options?: { minScore?: number }
 ): Promise<FoodSafetyItem | null> {
-  const tokens = (brand ? productName.replace(brand, "") : productName)
-    .replace(/[()]/g, "")
-    .trim()
-    .split(/\s+/)
-    .filter((t) => t.length >= 2);
+  // ParsaProduct(brand 없음, "팔도 왕뚜껑(110g)" 형태)는 minScore=3으로 호출 권장
+  const minScore = options?.minScore ?? 5;
+  const cleaned = (brand ? productName.replace(brand, "") : productName)
+    .replace(/[()]/g, " ")
+    .trim();
+  const tokens = cleaned.split(/\s+/).filter((t) => t.length >= 2);
+  // brand가 없으면 첫 단어를 brand 추정 (점수 부여용 — 매칭에는 영향 없음)
+  const guessedBrand = brand ?? tokens[0];
 
   const candidates = [tokens[0], tokens.slice(0, 2).join(" "), productName].filter(Boolean);
   let rows: FoodSafetyItem[] = [];
@@ -171,7 +175,7 @@ export async function findBestMatchForProduct(
   const normalize = (s: string) =>
     s.toLowerCase().replace(/\s+/g, "").replace(/[^가-힣a-z0-9]/g, "");
   const targetN = normalize(productName);
-  const brandN = brand ? normalize(brand) : "";
+  const brandN = guessedBrand ? normalize(guessedBrand) : "";
 
   let best: { item: FoodSafetyItem; score: number } | null = null;
   for (const r of rows) {
@@ -185,7 +189,6 @@ export async function findBestMatchForProduct(
     }
     if (!best || score > best.score) best = { item: r, score };
   }
-  // 신뢰 임계값 ↑ — brand만으론 매칭 거부
-  if (!best || best.score < 5) return null;
+  if (!best || best.score < minScore) return null;
   return best.item;
 }

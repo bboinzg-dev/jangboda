@@ -77,7 +77,9 @@ export async function POST(req: NextRequest) {
     // 1) 식약처 enrich — barcode/manufacturer 비어있을 때만
     if (doFoodsafety && (!p.barcode || !p.manufacturer)) {
       try {
-        const fs = await findBestMatchForProduct(p.name, p.brand);
+        // ParsaProduct는 brand 비어있고 goodName이 "팔도 왕뚜껑(110g)" 형태라
+        // 기본 minScore=5로는 매칭 어려움. 3으로 낮춰 token 매칭만으로도 OK.
+        const fs = await findBestMatchForProduct(p.name, p.brand, { minScore: 3 });
         if (fs) {
           if (!p.barcode && fs.barcode) updates.barcode = fs.barcode;
           if (!p.manufacturer && fs.manufacturer) updates.manufacturer = fs.manufacturer;
