@@ -63,6 +63,13 @@ async function syncStores(
   let updated = 0;
   let error: string | undefined = r.error;
 
+  // 좌표 문자열 → Float 변환 헬퍼 (parse 실패 시 null)
+  const toFloat = (v: string | null): number | null => {
+    if (!v) return null;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
   // 1) createMany(skipDuplicates) — 신규만 빠르게 삽입
   const createData = dedup.map((s) => ({
     entpId: s.entpId,
@@ -75,6 +82,8 @@ async function syncStores(
     addrBasic: s.addrBasic,
     addrDetail: s.addrDetail,
     roadAddrBasic: s.roadAddrBasic,
+    lat: toFloat(s.xMapCoord),
+    lng: toFloat(s.yMapCoord),
   }));
 
   let insertedThisPage = 0;
@@ -109,6 +118,8 @@ async function syncStores(
                 addrBasic: s.addrBasic,
                 addrDetail: s.addrDetail,
                 roadAddrBasic: s.roadAddrBasic,
+                lat: toFloat(s.xMapCoord),
+                lng: toFloat(s.yMapCoord),
               },
             })
           )

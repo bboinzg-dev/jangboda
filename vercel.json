@@ -35,6 +35,10 @@
       "schedule": "0 19 * * *"
     },
     {
+      "path": "/api/cron/stale-benefits",
+      "schedule": "0 20 * * *"
+    },
+    {
       "path": "/api/sync/agritrace",
       "schedule": "0 5 * * 0"
     },
@@ -49,6 +53,14 @@
     {
       "path": "/api/sync/parsa",
       "schedule": "0 18 * * 6"
+    },
+    {
+      "path": "/api/sync/parsa?type=standard",
+      "schedule": "0 19 * * 6"
+    },
+    {
+      "path": "/api/sync/parsa?type=prices",
+      "schedule": "0 20 * * 6"
     }
   ],
   "functions": {
@@ -64,6 +76,7 @@
     "src/app/api/alerts/check/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 },
-    "src/app/api/cron/normalize-benefits/route.ts": { "maxDuration": 60 }
+    "src/app/api/cron/normalize-benefits/route.ts": { "maxDuration": 60 },
+    "src/app/api/cron/stale-benefits/route.ts": { "maxDuration": 60 }
   }
 }

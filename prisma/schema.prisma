@@ -31,6 +31,9 @@ model Store {
   lng       Float
   phone     String?
   hours     String?  // "10:00~24:00"
+  // 외부 출처 식별자 (예: "parsa:786" = 한국소비자원 entpId 786)
+  // 같은 출처 매장 재동기화 시 멱등 upsert 키로 사용
+  externalId String? @unique
   createdAt DateTime @default(now())
   prices    Price[]
   receipts  Receipt[]
@@ -414,6 +417,9 @@ model ParsaStore {
   addrBasic       String?                            // plmkAddrBasic (지번)
   addrDetail      String?
   roadAddrBasic   String?                            // 도로명 주소 (있을 수 있음)
+  // 좌표 (xMapCoord=위도, yMapCoord=경도) — 응답에서 문자열로 오므로 Float? 로 파싱 후 저장
+  lat             Float?                             // xMapCoord
+  lng             Float?                             // yMapCoord
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
