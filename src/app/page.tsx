@@ -2,26 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel } from "@/lib/units";
-import { getCurrentUser } from "@/lib/supabase/server";
-import OnboardingCard, {
-  type OnboardingStatus,
-} from "@/components/OnboardingCard";
+import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
 
-// ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분 (개인화는 OnboardingCard client 컴포넌트가 fetch)
+// ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분.
+// 개인화 데이터는 OnboardingCard가 자체 client-side fetch (페이지 ISR 유지를 위해)
 export const revalidate = 60;
-
-// 온보딩 진행 상태 — 로그인 사용자의 favorites/receipts/prices 카운트
-async function getOnboardingStatus(
-  userId: string
-): Promise<OnboardingStatus> {
-  const [favorites, receipts, prices] = await Promise.all([
-    prisma.favoriteStore.count({ where: { userId } }),
-    prisma.receipt.count({ where: { uploaderId: userId } }),
-    prisma.price.count({ where: { contributorId: userId } }),
-  ]);
-  return { favorites, receipts, prices };
-}
 
 async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
@@ -75,10 +61,7 @@ async function getHomeData() {
 }
 
 export default async function HomePage() {
-  // getHomeData (5개 쿼리 병렬) + getCurrentUser 동시 진행
-  const [data, user] = await Promise.all([getHomeData(), getCurrentUser()]);
-  const { kamisPrices, priceCards, stats } = data;
-  const onboardingStatus = user ? await getOnboardingStatus(user.id) : undefined;
+  const { kamisPrices, priceCards, stats } = await getHomeData();
 
   return (
     <div className="space-y-8">
@@ -119,7 +102,7 @@ export default async function HomePage() {
       </section>
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
-      <OnboardingCard authed={!!user} status={onboardingStatus} />
+      <OnboardingCard />
 
       {/* 정부 혜택 추천 — 별도 모듈 진입점 (모바일 BottomNav가 꽉 차서 홈에 카드로 노출) */}
       <section>

@@ -20,14 +20,37 @@ export type OnboardingStatus = {
 
 const DISMISS_KEY = "jb.onboarding.dismissed";
 
+// 옵셔널 props — 호출자가 SSR에서 데이터를 미리 넘길 수 있지만,
+// 안 넘기면 client에서 /api/onboarding fetch (페이지 ISR 유지를 위해 권장)
 export default function OnboardingCard({
-  authed = false,
-  status,
+  authed: authedProp,
+  status: statusProp,
 }: {
   authed?: boolean;
   status?: OnboardingStatus;
-}) {
+} = {}) {
   const [dismissed, setDismissed] = useState<boolean | null>(null);
+  const [fetchedAuthed, setFetchedAuthed] = useState<boolean | undefined>(
+    authedProp
+  );
+  const [fetchedStatus, setFetchedStatus] = useState<OnboardingStatus | undefined>(
+    statusProp
+  );
+
+  // SSR props가 없으면 client에서 fetch
+  useEffect(() => {
+    if (authedProp !== undefined) return;
+    fetch("/api/onboarding")
+      .then((r) => r.json())
+      .then((d: { authed: boolean; status?: OnboardingStatus }) => {
+        setFetchedAuthed(d.authed);
+        setFetchedStatus(d.status);
+      })
+      .catch(() => setFetchedAuthed(false));
+  }, [authedProp]);
+
+  const authed = fetchedAuthed ?? false;
+  const status = fetchedStatus;
 
   // localStorage 초기 상태 로드 (SSR 회피)
   useEffect(() => {
