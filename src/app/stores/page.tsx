@@ -14,6 +14,7 @@ import {
 import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 import EmptyState from "@/components/EmptyState";
+import CollapsibleList from "@/components/CollapsibleList";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -370,53 +371,74 @@ export default function StoresPage() {
           </button>
         </EmptyState>
       ) : (
-        <ul className="space-y-2">
-          {filtered
-            .filter((s) => s.lat !== 0 || s.lng !== 0)
-            .map((s) => {
-              const cat = s.chainCategory || "mart";
-              const icon = CATEGORY_ICONS[cat] || "🛒";
-              const label = CATEGORY_LABELS[cat] || "마트";
-              return (
-                <li
-                  key={s.id}
-                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
-                >
-                  <Link
-                    href={`/stores/${s.id}`}
-                    className="absolute inset-0 z-0"
-                    aria-label={`${s.name} 가격 보기`}
-                  />
-                  <div className="min-w-0 relative z-10 pointer-events-none flex-1">
-                    <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
-                      <span>{icon}</span>
-                      <span>{label}</span>
-                      <span className="text-stone-300">·</span>
-                      <span>{s.chainName}</span>
-                    </div>
-                    <div className="font-semibold">{s.name}</div>
-                    <div className="text-xs text-stone-500">{s.address}</div>
-                  </div>
-                  <div className="relative z-10 mr-2 self-center pointer-events-auto">
-                    <FavoriteToggle storeId={s.id} stopPropagation />
-                  </div>
-                  <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
-                    {s.distanceKm !== null && s.distanceKm !== undefined && (
-                      <div className="text-sm font-bold pointer-events-none">
-                        {s.distanceKm.toFixed(1)}km
+        (() => {
+          // 매장 좌표 0/0 제외하고 정렬된 리스트만 표시
+          const visibleStores = filtered.filter(
+            (s) => s.lat !== 0 || s.lng !== 0
+          );
+          return (
+            <div>
+              <div className="text-xs text-stone-500 mb-2">
+                총 {visibleStores.length}개 매장
+              </div>
+              <CollapsibleList
+                as="ul"
+                initialCount={10}
+                innerClassName="space-y-2"
+                expandLabel="매장 더 보기"
+                collapseLabel="매장 접기"
+              >
+                {visibleStores.map((s) => {
+                  const cat = s.chainCategory || "mart";
+                  const icon = CATEGORY_ICONS[cat] || "🛒";
+                  const label = CATEGORY_LABELS[cat] || "마트";
+                  return (
+                    <li
+                      key={s.id}
+                      className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
+                    >
+                      <Link
+                        href={`/stores/${s.id}`}
+                        className="absolute inset-0 z-0"
+                        aria-label={`${s.name} 가격 보기`}
+                      />
+                      <div className="min-w-0 relative z-10 pointer-events-none flex-1">
+                        <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
+                          <span>{icon}</span>
+                          <span>{label}</span>
+                          <span className="text-stone-300">·</span>
+                          <span>{s.chainName}</span>
+                        </div>
+                        <div className="font-semibold">{s.name}</div>
+                        <div className="text-xs text-stone-500">{s.address}</div>
                       </div>
-                    )}
-                    <div className="text-xs text-stone-500 pointer-events-none">
-                      {s.priceCount}건 가격
-                    </div>
-                    {s.lat > 0 && s.lng > 0 && (
-                      <DirectionsButton name={s.name} lat={s.lat} lng={s.lng} />
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-        </ul>
+                      <div className="relative z-10 mr-2 self-center pointer-events-auto">
+                        <FavoriteToggle storeId={s.id} stopPropagation />
+                      </div>
+                      <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
+                        {s.distanceKm !== null && s.distanceKm !== undefined && (
+                          <div className="text-sm font-bold pointer-events-none">
+                            {s.distanceKm.toFixed(1)}km
+                          </div>
+                        )}
+                        <div className="text-xs text-stone-500 pointer-events-none">
+                          {s.priceCount}건 가격
+                        </div>
+                        {s.lat > 0 && s.lng > 0 && (
+                          <DirectionsButton
+                            name={s.name}
+                            lat={s.lat}
+                            lng={s.lng}
+                          />
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </CollapsibleList>
+            </div>
+          );
+        })()
       )}
     </div>
   );

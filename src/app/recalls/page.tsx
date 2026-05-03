@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import Pagination from "@/components/Pagination";
 
 export const revalidate = 300;
 
@@ -12,6 +13,8 @@ const RANGE_LABEL: Record<RangeKey, string> = {
   "1m": "1개월",
   all: "전체",
 };
+
+const PAGE_SIZE = 20;
 
 function rangeStart(range: RangeKey): Date | null {
   const now = Date.now();
@@ -42,7 +45,7 @@ function formatDate(d: Date): string {
 export default async function RecallsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const rangeParam = (sp.range ?? "7d") as RangeKey;
@@ -50,17 +53,42 @@ export default async function RecallsPage({
     rangeParam === "7d" || rangeParam === "1m" || rangeParam === "all"
       ? rangeParam
       : "7d";
+  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
 
   const start = rangeStart(range);
   const where: Prisma.RecallWhereInput = start
     ? { registeredAt: { gte: start } }
     : {};
 
-  const recalls = await prisma.recall.findMany({
-    where,
-    orderBy: { registeredAt: "desc" },
-    take: 200,
-  });
+  const [total, recalls] = await Promise.all([
+    prisma.recall.count({ where }),
+    prisma.recall.findMany({
+      where,
+      orderBy: { registeredAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ]);
+
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const safePage = Math.min(page, totalPages);
+
+  // 페이지 링크 빌더 — 현재 range 필터 보존
+  const buildHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (range !== "7d") params.set("range", range);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/recalls?${qs}` : "/recalls";
+  };
+
+  // 필터 변경 시 page=1로 reset
+  const filterHref = (k: RangeKey) => {
+    const params = new URLSearchParams();
+    if (k !== "7d") params.set("range", k);
+    const qs = params.toString();
+    return qs ? `/recalls?${qs}` : "/recalls";
+  };
 
   return (
     <div className="space-y-6">
@@ -74,14 +102,14 @@ export default async function RecallsPage({
         </p>
       </header>
 
-      {/* 기간 필터 탭 */}
+      {/* 기간 필터 탭 — 변경 시 page=1로 reset */}
       <nav className="flex gap-2">
         {(Object.keys(RANGE_LABEL) as RangeKey[]).map((k) => {
           const active = k === range;
           return (
             <Link
               key={k}
-              href={`/recalls?range=${k}`}
+              href={filterHref(k)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
                 active
                   ? "bg-rose-600 text-white border-rose-600"
@@ -93,6 +121,10 @@ export default async function RecallsPage({
           );
         })}
       </nav>
+
+      <div className="text-xs text-stone-500">
+        총 {total.toLocaleString()}건
+      </div>
 
       {recalls.length === 0 ? (
         <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
@@ -163,9 +195,14 @@ export default async function RecallsPage({
         </div>
       )}
 
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        buildHref={buildHref}
+      />
+
       <footer className="text-[11px] text-stone-400 pt-2">
-        출처: 식품의약품안전처 식품안전나라 (회수·판매중지 정보 I0490). 최대
-        200건 표시.
+        출처: 식품의약품안전처 식품안전나라 (회수·판매중지 정보 I0490).
       </footer>
     </div>
   );

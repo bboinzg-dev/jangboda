@@ -14,10 +14,11 @@ async function getHomeData() {
   const [kamisPrices, products, productsCount, storesCount, pricesCount] =
     await Promise.all([
       // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
+      // distinct로 product당 1개씩, take 16으로 늘림 (KAMIS_TARGETS 12개 품목 모두 노출)
       prisma.price.findMany({
         where: { source: "kamis" },
         orderBy: { createdAt: "desc" },
-        take: 8,
+        take: 16,
         include: { product: true },
         distinct: ["productId"],
       }),
@@ -141,7 +142,7 @@ export default async function HomePage() {
             <span className="text-[10px] text-stone-400">매일 갱신</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {kamisPrices.slice(0, 8).map((p) => (
+            {kamisPrices.slice(0, 16).map((p) => (
               <Link
                 key={p.id}
                 href={`/products/${p.product.id}`}

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import Pagination from "@/components/Pagination";
 
 export const revalidate = 3600;
 
 // /agritrace — 농산물이력추적 검색/탐색 페이지
-// ?q=품목명, ?orgn=농가명. 미지정 시 최근 등록 20건.
+// ?q=품목명, ?orgn=농가명, ?page=N. 미지정 시 최근 등록 PAGE_SIZE 건.
 
 type SearchParams = {
   q?: string;
   orgn?: string;
+  page?: string;
 };
 
 type Partner = {
@@ -17,31 +19,55 @@ type Partner = {
   telno?: string;
 };
 
+const PAGE_SIZE = 20;
+
 export default async function AgriTracePage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const q = searchParams.q?.trim() ?? "";
-  const orgn = searchParams.orgn?.trim() ?? "";
+  const sp = await searchParams;
+  const q = sp.q?.trim() ?? "";
+  const orgn = sp.orgn?.trim() ?? "";
+  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
 
   const where: Record<string, unknown> = {};
   if (q) where.rprsntPrdltName = { contains: q };
   if (orgn) where.orgnName = { contains: orgn };
 
   let items: Awaited<ReturnType<typeof prisma.agriTrace.findMany>> = [];
+  let total = 0;
   let dbError: string | null = null;
   try {
-    items = await prisma.agriTrace.findMany({
-      where: Object.keys(where).length > 0 ? where : undefined,
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    const whereInput = Object.keys(where).length > 0 ? where : undefined;
+    [items, total] = await Promise.all([
+      prisma.agriTrace.findMany({
+        where: whereInput,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+      }),
+      prisma.agriTrace.count({
+        where: whereInput,
+      }),
+    ]);
   } catch (e) {
     dbError = e instanceof Error ? e.message : String(e);
   }
 
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const safePage = Math.min(page, totalPages);
   const hasFilter = q.length > 0 || orgn.length > 0;
+
+  // 페이지 링크 빌더 — 검색 query (q, orgn) 보존
+  const buildHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (orgn) params.set("orgn", orgn);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/agritrace?${qs}` : "/agritrace";
+  };
 
   return (
     <div className="space-y-4">
@@ -97,7 +123,7 @@ export default async function AgriTracePage({
         <h2 className="font-bold mb-3 flex items-center gap-2">
           {hasFilter ? "🔍 검색 결과" : "🆕 최근 등록"}
           <span className="text-xs text-stone-500 font-normal">
-            ({items.length}건)
+            (총 {total.toLocaleString()}건)
           </span>
         </h2>
 
@@ -170,6 +196,12 @@ export default async function AgriTracePage({
             );
           })}
         </ul>
+
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          buildHref={buildHref}
+        />
       </section>
     </div>
   );

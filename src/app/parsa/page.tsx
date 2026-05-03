@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import Pagination from "@/components/Pagination";
 
 // 한국소비자원 참가격(parsa) 브라우즈/검색 페이지
 // 1시간 ISR — 매주 금요일 갱신되는 공공 데이터 특성상 1시간 캐시면 충분.
@@ -21,15 +22,18 @@ const TYPE_LABEL: Record<TypeKey, string> = {
 // 코드로 직접 비교한다.
 const TYPE_CODES: TypeKey[] = ["ALL", "LM", "SM", "CS", "DP"];
 
+const PAGE_SIZE = 30;
+
 export default async function ParsaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const typeParam = (sp.type ?? "ALL").toUpperCase() as TypeKey;
   const type: TypeKey = TYPE_CODES.includes(typeParam) ? typeParam : "ALL";
+  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
 
   // 카테고리 lookup map (소분류, 업태)
   const [smallCats, buCats] = await Promise.all([
@@ -39,7 +43,7 @@ export default async function ParsaPage({
   const smallCatMap = new Map(smallCats.map((c) => [c.code, c.codeName]));
   const buCatMap = new Map(buCats.map((c) => [c.code, c.codeName]));
 
-  // 검색 결과 (q 있을 때만)
+  // 검색 결과 (q 있을 때만) + 페이지네이션
   let searchResults: Array<{
     goodId: string;
     goodName: string;
@@ -48,25 +52,43 @@ export default async function ParsaPage({
     goodTotalDivCode: string | null;
     detailMean: string | null;
   }> = [];
+  let searchTotal = 0;
 
   if (q) {
     const where: Prisma.ParsaProductWhereInput = {
       goodName: { contains: q, mode: "insensitive" },
     };
-    searchResults = await prisma.parsaProduct.findMany({
-      where,
-      orderBy: { goodName: "asc" },
-      take: 30,
-      select: {
-        goodId: true,
-        goodName: true,
-        goodSmlclsCode: true,
-        goodTotalCnt: true,
-        goodTotalDivCode: true,
-        detailMean: true,
-      },
-    });
+    [searchTotal, searchResults] = await Promise.all([
+      prisma.parsaProduct.count({ where }),
+      prisma.parsaProduct.findMany({
+        where,
+        orderBy: { goodName: "asc" },
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          goodId: true,
+          goodName: true,
+          goodSmlclsCode: true,
+          goodTotalCnt: true,
+          goodTotalDivCode: true,
+          detailMean: true,
+        },
+      }),
+    ]);
   }
+
+  const totalPages = Math.max(Math.ceil(searchTotal / PAGE_SIZE), 1);
+  const safePage = Math.min(page, totalPages);
+
+  // 페이지 링크 빌더 — q + type 보존
+  const buildHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (type !== "ALL") params.set("type", type);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/parsa?${qs}` : "/parsa";
+  };
 
   // 인기 카테고리 — 소분류(AL) 중에서 highCode가 있는 leaf 노드 위주로,
   // 카테고리별 상품 수가 많은 순으로 12개.
@@ -105,6 +127,14 @@ export default async function ParsaPage({
   // 안내 텍스트로만 표시. 가격 비교 페이지에서 업태별로 비교 가능.
   // (B2C 단순함 우선)
 
+  // 업태 칩 클릭 시 page=1 reset
+  const typeChipHref = (k: TypeKey) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (k !== "ALL") params.set("type", k);
+    return `/parsa${params.toString() ? "?" + params.toString() : ""}`;
+  };
+
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -117,7 +147,7 @@ export default async function ParsaPage({
         </p>
       </header>
 
-      {/* 검색 */}
+      {/* 검색 — 제출 시 page는 자연스럽게 1로 리셋(form에 page 없음) */}
       <form action="/parsa" method="get" className="flex gap-2">
         <input
           type="text"
@@ -135,18 +165,14 @@ export default async function ParsaPage({
         </button>
       </form>
 
-      {/* 업태 칩 */}
+      {/* 업태 칩 — 변경 시 page=1로 reset */}
       <nav className="flex gap-2 flex-wrap">
         {TYPE_CODES.map((k) => {
           const active = k === type;
-          const params = new URLSearchParams();
-          if (q) params.set("q", q);
-          if (k !== "ALL") params.set("type", k);
-          const href = `/parsa${params.toString() ? "?" + params.toString() : ""}`;
           return (
             <Link
               key={k}
-              href={href}
+              href={typeChipHref(k)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                 active
                   ? "bg-brand-500 text-white border-brand-500"
@@ -159,11 +185,11 @@ export default async function ParsaPage({
         })}
       </nav>
 
-      {/* 검색 결과 (q 있을 때만) */}
+      {/* 검색 결과 (q 있을 때만) — 페이지네이션 적용 */}
       {q && (
         <section>
           <h2 className="font-bold mb-3">
-            🔍 &quot;{q}&quot; 검색 결과 ({searchResults.length}건)
+            🔍 &quot;{q}&quot; 검색 결과 (총 {searchTotal.toLocaleString()}건)
           </h2>
           {searchResults.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
@@ -174,41 +200,48 @@ export default async function ParsaPage({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {searchResults.map((p) => {
-                const catName = p.goodSmlclsCode
-                  ? smallCatMap.get(p.goodSmlclsCode)
-                  : null;
-                const unit =
-                  p.goodTotalCnt && p.goodTotalDivCode
-                    ? `${p.goodTotalCnt}${p.goodTotalDivCode.toLowerCase()}`
-                    : p.detailMean ?? "";
-                return (
-                  <Link
-                    key={p.goodId}
-                    href={`/parsa/products/${encodeURIComponent(p.goodId)}`}
-                    className="card-clickable bg-white border border-stone-200 rounded-xl p-4 hover:border-brand-300 flex flex-col gap-1"
-                  >
-                    <div className="font-semibold text-stone-900 line-clamp-2">
-                      {p.goodName}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-stone-500">
-                      {catName && (
-                        <span className="px-2 py-0.5 rounded bg-stone-100">
-                          {catName}
-                        </span>
-                      )}
-                      {unit && <span>{unit}</span>}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {searchResults.map((p) => {
+                  const catName = p.goodSmlclsCode
+                    ? smallCatMap.get(p.goodSmlclsCode)
+                    : null;
+                  const unit =
+                    p.goodTotalCnt && p.goodTotalDivCode
+                      ? `${p.goodTotalCnt}${p.goodTotalDivCode.toLowerCase()}`
+                      : p.detailMean ?? "";
+                  return (
+                    <Link
+                      key={p.goodId}
+                      href={`/parsa/products/${encodeURIComponent(p.goodId)}`}
+                      className="card-clickable bg-white border border-stone-200 rounded-xl p-4 hover:border-brand-300 flex flex-col gap-1"
+                    >
+                      <div className="font-semibold text-stone-900 line-clamp-2">
+                        {p.goodName}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-stone-500">
+                        {catName && (
+                          <span className="px-2 py-0.5 rounded bg-stone-100">
+                            {catName}
+                          </span>
+                        )}
+                        {unit && <span>{unit}</span>}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              <Pagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                buildHref={buildHref}
+              />
+            </>
           )}
         </section>
       )}
 
-      {/* 인기 카테고리 (q 없을 때 기본 노출) */}
+      {/* 인기 카테고리 (q 없을 때 기본 노출) — 페이지네이션 없이 그대로 */}
       {!q && popularCategories.length > 0 && (
         <section>
           <h2 className="font-bold mb-3">📂 인기 카테고리</h2>
@@ -231,7 +264,7 @@ export default async function ParsaPage({
         </section>
       )}
 
-      {/* 매장 통계 */}
+      {/* 매장 통계 — 페이지네이션 없이 그대로 */}
       <section>
         <h2 className="font-bold mb-3">🏪 참여 매장 통계</h2>
         <div className="bg-white border border-stone-200 rounded-xl p-4">

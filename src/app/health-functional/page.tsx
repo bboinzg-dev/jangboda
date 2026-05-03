@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import Pagination from "@/components/Pagination";
 
 export const revalidate = 3600;
 
@@ -11,18 +12,22 @@ const TAB_LABEL: Record<TabKey, string> = {
   rawmaterial: "원료",
 };
 
+const PAGE_SIZE = 30;
+
 export default async function HealthFunctionalBrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const tabParam = (sp.tab ?? "category") as TabKey;
   const tab: TabKey = tabParam === "rawmaterial" ? "rawmaterial" : "category";
   const q = (sp.q ?? "").trim();
+  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
 
   let totalCategories = 0;
   let totalRawMaterials = 0;
+  let filteredTotal = 0;
   let categories: Array<{
     id: string;
     groupCode: string;
@@ -51,41 +56,65 @@ export default async function HealthFunctionalBrowsePage({
       const where: Prisma.HealthFunctionalCategoryWhereInput = q
         ? { groupName: { contains: q, mode: "insensitive" } }
         : {};
-      categories = await prisma.healthFunctionalCategory.findMany({
-        where,
-        orderBy: [{ largeCategoryName: "asc" }, { groupName: "asc" }],
-        take: 200,
-        select: {
-          id: true,
-          groupCode: true,
-          groupName: true,
-          largeCategoryName: true,
-          midCategoryName: true,
-          smallCategoryName: true,
-        },
-      });
+      const [count, items] = await Promise.all([
+        prisma.healthFunctionalCategory.count({ where }),
+        prisma.healthFunctionalCategory.findMany({
+          where,
+          orderBy: [{ largeCategoryName: "asc" }, { groupName: "asc" }],
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+          select: {
+            id: true,
+            groupCode: true,
+            groupName: true,
+            largeCategoryName: true,
+            midCategoryName: true,
+            smallCategoryName: true,
+          },
+        }),
+      ]);
+      filteredTotal = count;
+      categories = items;
     } else {
       const where: Prisma.HealthFunctionalRawMaterialWhereInput = q
         ? { rawMaterialName: { contains: q, mode: "insensitive" } }
         : {};
-      rawMaterials = await prisma.healthFunctionalRawMaterial.findMany({
-        where,
-        orderBy: { rawMaterialName: "asc" },
-        take: 200,
-        select: {
-          id: true,
-          recognitionNo: true,
-          rawMaterialName: true,
-          weightUnit: true,
-          dailyIntakeMin: true,
-          dailyIntakeMax: true,
-          primaryFunction: true,
-        },
-      });
+      const [count, items] = await Promise.all([
+        prisma.healthFunctionalRawMaterial.count({ where }),
+        prisma.healthFunctionalRawMaterial.findMany({
+          where,
+          orderBy: { rawMaterialName: "asc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+          select: {
+            id: true,
+            recognitionNo: true,
+            rawMaterialName: true,
+            weightUnit: true,
+            dailyIntakeMin: true,
+            dailyIntakeMax: true,
+            primaryFunction: true,
+          },
+        }),
+      ]);
+      filteredTotal = count;
+      rawMaterials = items;
     }
   } catch (e) {
     console.error("[health-functional] page load error:", e);
   }
+
+  const totalPages = Math.max(Math.ceil(filteredTotal / PAGE_SIZE), 1);
+  const safePage = Math.min(page, totalPages);
+
+  // 페이지네이션 링크 빌더 — 현재 tab + q 보존
+  const buildHref = (p: number) => {
+    const params = new URLSearchParams();
+    params.set("tab", tab);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("page", String(p));
+    return `/health-functional?${params.toString()}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -102,6 +131,7 @@ export default async function HealthFunctionalBrowsePage({
         {(Object.keys(TAB_LABEL) as TabKey[]).map((k) => {
           const active = k === tab;
           const total = k === "category" ? totalCategories : totalRawMaterials;
+          // 탭 변경 시 page는 자연스럽게 1로 리셋(미포함). 검색어 q는 보존.
           const href = `/health-functional?tab=${k}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
           return (
             <Link
@@ -120,6 +150,7 @@ export default async function HealthFunctionalBrowsePage({
         })}
       </nav>
 
+      {/* 검색 폼 — 탭 보존, page는 자동 리셋 */}
       <form method="GET" action="/health-functional" className="flex gap-2">
         <input type="hidden" name="tab" value={tab} />
         <input
@@ -140,11 +171,22 @@ export default async function HealthFunctionalBrowsePage({
         </button>
       </form>
 
+      <div className="text-xs text-stone-500">
+        총 {filteredTotal.toLocaleString()}건
+        {q && ` · "${q}"`}
+      </div>
+
       {tab === "category" ? (
         <CategoryList items={categories} q={q} />
       ) : (
         <RawMaterialList items={rawMaterials} q={q} />
       )}
+
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        buildHref={buildHref}
+      />
 
       <p className="text-[11px] text-stone-400 leading-relaxed">
         출처: 식약처 건강기능식품 DB(I0760·I-0050). 본 정보는 참고용이며 실제 제품

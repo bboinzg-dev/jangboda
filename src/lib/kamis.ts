@@ -157,39 +157,46 @@ export type KamisFetchResult = {
   error?: string;
 };
 
+// 주말/공휴일은 KAMIS 응답이 비어있을 수 있어 최근 평일까지 최대 5일 fallback
+function dateOffset(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function fetchKamisPrices(): Promise<KamisFetchResult> {
-  const date = new Date().toISOString().slice(0, 10);
+  const today = dateOffset(0);
   const certKey = process.env.KAMIS_CERT_KEY;
   const certId = process.env.KAMIS_CERT_ID;
 
   if (!certKey || !certId) {
     return {
-      prices: mockKamisData(date),
+      prices: mockKamisData(today),
       usedMock: true,
-      date,
+      date: today,
       error: !certKey
         ? "KAMIS_CERT_KEY 미설정"
         : "KAMIS_CERT_ID 미설정 (KAMIS는 인증키와 ID 두 개가 필요합니다)",
     };
   }
 
-  try {
-    const prices = await callKamisAll(date, certKey, certId);
-    if (prices.length > 0) return { prices, usedMock: false, date };
-    return {
-      prices: mockKamisData(date),
-      usedMock: true,
-      date,
-      error: "KAMIS 응답에 매칭되는 품목 없음 (mock으로 대체)",
-    };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.warn("[KAMIS]", msg);
-    return {
-      prices: mockKamisData(date),
-      usedMock: true,
-      date,
-      error: msg,
-    };
+  // 주말/공휴일은 데이터 없을 수 있어 오늘 → 어제 → ... 최대 5일 fallback
+  let lastError: string | undefined;
+  for (let off = 0; off <= 5; off++) {
+    const date = dateOffset(off);
+    try {
+      const prices = await callKamisAll(date, certKey, certId);
+      if (prices.length > 0) return { prices, usedMock: false, date };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+      console.warn(`[KAMIS] ${date}:`, lastError);
+    }
   }
+
+  return {
+    prices: mockKamisData(today),
+    usedMock: true,
+    date: today,
+    error: lastError ?? "KAMIS 응답이 5일 연속 비어있음 — mock 대체",
+  };
 }

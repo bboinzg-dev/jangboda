@@ -22,6 +22,8 @@ type Product = {
 };
 
 const ALL = "__all__";
+// 한 페이지에 보여줄 상품 개수
+const PAGE_SIZE = 30;
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
@@ -31,12 +33,16 @@ export default function SearchPage() {
   const [category, setCategory] = useState<string>(ALL);
   // 카테고리 칩 후보 — 가능한 모든 카테고리(현재 선택과 무관하게 한번 로드해서 유지)
   const [allCategories, setAllCategories] = useState<string[]>([]);
+  // 페이지네이션 — 클라이언트 측에서 sliced 표시
+  const [page, setPage] = useState(1);
 
   async function run(query: string, cat: string) {
     setLoading(true);
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (cat && cat !== ALL) params.set("category", cat);
+    // 카탈로그 전체를 한 번에 받아 클라이언트에서 페이지네이션 (parsa 미러 600+ 대응)
+    params.set("limit", "1000");
     const res = await fetch(`/api/products?${params.toString()}`);
     const data = await res.json();
     setProducts(data.products);
@@ -74,6 +80,24 @@ export default function SearchPage() {
       return (a.stats?.min ?? Infinity) - (b.stats?.min ?? Infinity);
     });
   }, [products, sortBy]);
+
+  // 검색어/카테고리/정렬 변경 시 1페이지로 리셋
+  useEffect(() => {
+    setPage(1);
+  }, [q, category, sortBy]);
+
+  // 결과 변동 시에도 안전하게 1페이지로
+  useEffect(() => {
+    setPage(1);
+  }, [products]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  // page가 totalPages를 벗어났을 때 보호
+  const currentPage = Math.min(page, totalPages);
+  const visible = sorted.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-4">
@@ -219,51 +243,87 @@ export default function SearchPage() {
           />
         )
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {sorted.map((p) => {
-            const upl = p.stats ? unitPriceLabel(p.stats.min, p.unit) : null;
-            return (
-              <Link
-                key={p.id}
-                href={`/products/${p.id}`}
-                className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
-              >
-                <div className="min-w-0">
-                  <div className="text-xs text-stone-500">
-                    {p.category} · {p.brand}
+        <>
+          {/* 결과 카운트 + 페이지 표시 */}
+          <div className="text-xs text-stone-500">
+            총 {sorted.length}개 상품 · 페이지 {currentPage}/{totalPages}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {visible.map((p) => {
+              const upl = p.stats ? unitPriceLabel(p.stats.min, p.unit) : null;
+              return (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.id}`}
+                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs text-stone-500">
+                      {p.category} · {p.brand}
+                    </div>
+                    <div className="font-semibold truncate flex items-center gap-1.5">
+                      <span className="truncate">{p.name}</span>
+                      {p.hasHaccp && (
+                        <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                          🏅 HACCP
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-stone-500">{p.unit}</div>
                   </div>
-                  <div className="font-semibold truncate flex items-center gap-1.5">
-                    <span className="truncate">{p.name}</span>
-                    {p.hasHaccp && (
-                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
-                        🏅 HACCP
-                      </span>
+                  <div className="text-right ml-4 shrink-0">
+                    {p.stats && p.stats.count > 0 ? (
+                      <>
+                        <div className="text-xs text-stone-500">최저가</div>
+                        <div className="font-bold text-brand-600">
+                          {formatWon(p.stats.min)}
+                        </div>
+                        {upl && (
+                          <div className="text-[11px] text-stone-500">{upl}</div>
+                        )}
+                        <div className="text-xs text-stone-500">
+                          {p.stats.count}개 매장
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-stone-400">가격 정보 없음</div>
                     )}
                   </div>
-                  <div className="text-xs text-stone-500">{p.unit}</div>
-                </div>
-                <div className="text-right ml-4 shrink-0">
-                  {p.stats && p.stats.count > 0 ? (
-                    <>
-                      <div className="text-xs text-stone-500">최저가</div>
-                      <div className="font-bold text-brand-600">
-                        {formatWon(p.stats.min)}
-                      </div>
-                      {upl && (
-                        <div className="text-[11px] text-stone-500">{upl}</div>
-                      )}
-                      <div className="text-xs text-stone-500">
-                        {p.stats.count}개 매장
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-stone-400">가격 정보 없음</div>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* 페이지네이션 — prev/next + 현재/전체 표시 */}
+          {totalPages > 1 && (
+            <nav
+              aria-label="검색 결과 페이지"
+              className="flex items-center justify-center gap-3 pt-2"
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-md border border-stone-300 bg-white text-sm text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ← 이전
+              </button>
+              <div className="text-sm text-stone-600 tabular-nums">
+                {currentPage} / {totalPages}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-md border border-stone-300 bg-white text-sm text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                다음 →
+              </button>
+            </nav>
+          )}
+        </>
       )}
     </div>
   );
