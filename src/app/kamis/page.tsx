@@ -19,10 +19,10 @@ export default async function KamisPage({
   const q = (sp.q ?? "").trim();
   const sort = sp.sort === "cheap" ? "cheap" : "fresh";
 
-  // KAMIS 가격 — productId 별로 가장 최신 1건씩
+  // KAMIS(농수산물) + 통계청(가공식품) — productId 별 가장 최신 1건씩
   const allPrices = await prisma.price.findMany({
     where: {
-      source: "kamis",
+      source: { in: ["kamis", "stats_official"] },
       ...(q
         ? {
             product: {
@@ -36,7 +36,7 @@ export default async function KamisPage({
     },
     orderBy: { createdAt: "desc" },
     distinct: ["productId"],
-    take: 100,
+    take: 200,
     include: { product: true },
   });
 
@@ -50,7 +50,7 @@ export default async function KamisPage({
       <div>
         <h1 className="text-2xl font-bold mb-1">📊 오늘의 시세</h1>
         <p className="text-sm text-stone-500">
-          KAMIS(한국 농수산물유통공사) 공식 매일 평균 소매시세
+          KAMIS(농수산물) + 통계청(가공식품) 공식 평균가
         </p>
       </div>
 
@@ -158,7 +158,8 @@ export default async function KamisPage({
                     </div>
                   )}
                   <div className="text-[10px] text-stone-400 mt-1">
-                    KAMIS · {formatRelativeDate(p.createdAt)}
+                    {p.source === "kamis" ? "KAMIS" : "통계청"} ·{" "}
+                    {formatRelativeDate(p.createdAt)}
                   </div>
                 </Link>
               );
