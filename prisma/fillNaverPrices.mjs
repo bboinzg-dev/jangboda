@@ -50,6 +50,44 @@ function isMatchTitle(title, productTokens) {
   return hits >= required;
 }
 
+// product.unit에서 핵심 사이즈 키워드 추출 (정규화)
+// "2L" → ["2L", "2l"]
+// "30구" → ["30구", "30개", "30입"]
+// "100g" → ["100g"]
+// "210g x 12개" → ["210g", "12개", "12입"]
+// 매칭 결과: title에 이 중 ≥1 포함되어야 unit 매칭 통과
+function extractSizeKeywords(unit) {
+  if (!unit) return [];
+  const u = unit.replace(/\s+/g, "").toLowerCase();
+  const keywords = new Set();
+  // 단위 + 숫자 패턴 추출
+  const matches = u.match(/(\d+(?:\.\d+)?)\s*(kg|g|ml|L|구|개|입|봉|병|캔|팩|매|롤|장)/gi);
+  if (matches) {
+    for (const m of matches) {
+      const cleaned = m.replace(/\s+/g, "");
+      keywords.add(cleaned);
+      // 동의어 보강
+      if (cleaned.endsWith("구")) {
+        const num = cleaned.replace("구", "");
+        keywords.add(num + "개");
+        keywords.add(num + "입");
+      }
+      if (cleaned.endsWith("개")) {
+        const num = cleaned.replace("개", "");
+        keywords.add(num + "구");
+        keywords.add(num + "입");
+      }
+    }
+  }
+  return Array.from(keywords);
+}
+
+function isUnitMatch(title, sizeKws) {
+  if (sizeKws.length === 0) return true; // unit 정보 없으면 통과
+  const tl = title.toLowerCase().replace(/\s+/g, "");
+  return sizeKws.some((kw) => tl.includes(kw.toLowerCase()));
+}
+
 function canonicalMall(name) {
   const n = (name || "").trim();
   if (n.includes("쿠팡")) return { canonical: "쿠팡", isMajor: true };
@@ -126,12 +164,14 @@ async function main() {
 
     try {
       const items = await searchNaver(query);
+      const sizeKws = extractSizeKeywords(p.unit);
 
-      // 검증: title이 product와 매칭 + multipack 제외
+      // 검증: title 토큰 매칭 + multipack 제외 + unit 매칭
       const validItems = items.filter((it) => {
         if (it.lprice <= 0) return false;
         if (isMultiPack(it.title)) return false;
         if (!isMatchTitle(it.title, uniqueTokens)) return false;
+        if (!isUnitMatch(it.title, sizeKws)) return false;
         return true;
       });
 

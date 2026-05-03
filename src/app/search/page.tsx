@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import EmptyState from "@/components/EmptyState";
+import ProductImage from "@/components/ProductImage";
 
 // search는 client에서 /api/products로 fetch — 페이지 자체는 정적
 export const dynamic = "force-static";
@@ -17,6 +18,7 @@ type Product = {
   brand: string | null;
   category: string;
   unit: string;
+  imageUrl?: string | null;
   stats?: { min: number; max: number; avg: number; count: number };
   hasHaccp?: boolean;
 };
@@ -255,39 +257,48 @@ export default function SearchPage() {
                 <Link
                   key={p.id}
                   href={`/products/${p.id}`}
-                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
+                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-3 pr-7 flex gap-3 items-start"
                 >
-                  <div className="min-w-0">
-                    <div className="text-xs text-stone-500">
-                      {p.category} · {p.brand}
+                  <ProductImage
+                    src={p.imageUrl}
+                    alt={p.name}
+                    size={64}
+                    className="shrink-0 rounded-md overflow-hidden bg-stone-50"
+                  />
+                  <div className="min-w-0 flex-1 flex justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs text-stone-500">
+                        {p.category}
+                        {p.brand ? ` · ${p.brand}` : ""}
+                      </div>
+                      <div className="font-semibold truncate flex items-center gap-1.5">
+                        <span className="truncate">{p.name}</span>
+                        {p.hasHaccp && (
+                          <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                            🏅 HACCP
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-stone-500">{p.unit}</div>
                     </div>
-                    <div className="font-semibold truncate flex items-center gap-1.5">
-                      <span className="truncate">{p.name}</span>
-                      {p.hasHaccp && (
-                        <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
-                          🏅 HACCP
-                        </span>
+                    <div className="text-right shrink-0">
+                      {p.stats && p.stats.count > 0 ? (
+                        <>
+                          <div className="text-xs text-stone-500">최저가</div>
+                          <div className="font-bold text-brand-600">
+                            {formatWon(p.stats.min)}
+                          </div>
+                          {upl && (
+                            <div className="text-[11px] text-stone-500">{upl}</div>
+                          )}
+                          <div className="text-xs text-stone-500">
+                            {p.stats.count}개 매장
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-stone-400">가격 정보 없음</div>
                       )}
                     </div>
-                    <div className="text-xs text-stone-500">{p.unit}</div>
-                  </div>
-                  <div className="text-right ml-4 shrink-0">
-                    {p.stats && p.stats.count > 0 ? (
-                      <>
-                        <div className="text-xs text-stone-500">최저가</div>
-                        <div className="font-bold text-brand-600">
-                          {formatWon(p.stats.min)}
-                        </div>
-                        {upl && (
-                          <div className="text-[11px] text-stone-500">{upl}</div>
-                        )}
-                        <div className="text-xs text-stone-500">
-                          {p.stats.count}개 매장
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-stone-400">가격 정보 없음</div>
-                    )}
                   </div>
                 </Link>
               );
