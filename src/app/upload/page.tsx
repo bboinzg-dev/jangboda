@@ -40,33 +40,59 @@ export default function UploadPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
 
-  // 이미지 max 1920px + JPEG 0.85 — Vercel body limit(4.5MB) + 우리 8MB 제한 통과
-  async function compressDataUrl(dataUrl: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const maxSize = 1920;
-        let w = img.naturalWidth;
-        let h = img.naturalHeight;
-        if (Math.max(w, h) > maxSize) {
-          const ratio = maxSize / Math.max(w, h);
-          w = Math.round(w * ratio);
-          h = Math.round(h * ratio);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(dataUrl); // canvas 못 쓰면 원본 그대로
-          return;
-        }
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
-      };
-      img.onerror = () => reject(new Error("이미지를 읽을 수 없습니다"));
-      img.src = dataUrl;
-    });
+  // 이미지 max 1920px + JPEG 0.85 + EXIF orientation 자동 적용 + 사용자 추가 회전
+  // 한국어 OCR은 글씨가 똑바로 서야 인식률 80%↑.
+  // 모바일 사진은 EXIF에 회전 메타가 들어가는데 일반 Image()/canvas는 무시 →
+  // createImageBitmap의 imageOrientation: 'from-image' 로 자동 적용.
+  async function compressDataUrl(
+    dataUrl: string,
+    rotateDegrees = 0
+  ): Promise<string> {
+    // dataUrl → blob → ImageBitmap (EXIF 자동 적용)
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(blob, {
+        imageOrientation: "from-image",
+      });
+    } catch {
+      // 일부 구버전 브라우저 fallback
+      bitmap = await createImageBitmap(blob);
+    }
+
+    const maxSize = 1920;
+    let w = bitmap.width;
+    let h = bitmap.height;
+    if (Math.max(w, h) > maxSize) {
+      const ratio = maxSize / Math.max(w, h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+
+    const rad = (rotateDegrees * Math.PI) / 180;
+    const swapped = rotateDegrees % 180 !== 0;
+    const canvas = document.createElement("canvas");
+    canvas.width = swapped ? h : w;
+    canvas.height = swapped ? w : h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return dataUrl;
+    }
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(bitmap, -w / 2, -h / 2, w, h);
+    bitmap.close();
+    return canvas.toDataURL("image/jpeg", 0.85);
+  }
+
+  // 사용자가 회전 버튼 눌렀을 때
+  async function rotateImage(degrees: number) {
+    if (!imagePreview) return;
+    const rotated = await compressDataUrl(imagePreview, degrees).catch(() => imagePreview);
+    setImagePreview(rotated);
+    setImageBase64(rotated.split(",")[1] ?? null);
   }
 
   async function handleCameraCapture(dataUrl: string) {
@@ -225,7 +251,7 @@ export default function UploadPage() {
         <section className="bg-white border border-line rounded-xl p-6 space-y-6">
           <div className="flex flex-col items-center">
             {imagePreview ? (
-              // 사진 있으면 미리보기 + 다시 찍기/지우기 옵션
+              // 사진 있으면 미리보기 + 회전 + 다시 찍기/갤러리
               <div className="w-full sm:w-[80%] space-y-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -233,6 +259,29 @@ export default function UploadPage() {
                   alt="업로드한 영수증"
                   className="w-full max-h-[60vh] rounded-xl border border-line object-contain bg-surface-muted"
                 />
+                {/* 회전 가이드 + 버튼 — 누운 영수증 OCR 인식률 0% 회피 */}
+                <div className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800">
+                  <span className="shrink-0">⚠️</span>
+                  <span className="flex-1">
+                    글씨가 <strong>똑바로 서있게</strong> 보여야 OCR이 정확합니다.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => rotateImage(-90)}
+                    className="shrink-0 px-2 py-1 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-medium"
+                    aria-label="왼쪽으로 90도 회전"
+                  >
+                    ↶ 90°
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => rotateImage(90)}
+                    className="shrink-0 px-2 py-1 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-medium"
+                    aria-label="오른쪽으로 90도 회전"
+                  >
+                    90° ↷
+                  </button>
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
