@@ -24,21 +24,27 @@ async function getOnboardingStatus(
 }
 
 async function getHomeData() {
-  // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
-  const kamisPrices = await prisma.price.findMany({
-    where: { source: "kamis" },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-    include: { product: true },
-    distinct: ["productId"],
-  });
-
-  // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순)
-  const products = await prisma.product.findMany({
-    where: { category: { not: "농수산물" } },
-    take: 30,
-    include: { prices: { take: 50, orderBy: { createdAt: "desc" } } },
-  });
+  // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
+  const [kamisPrices, products, productsCount, storesCount, pricesCount] =
+    await Promise.all([
+      // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
+      prisma.price.findMany({
+        where: { source: "kamis" },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        include: { product: true },
+        distinct: ["productId"],
+      }),
+      // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순)
+      prisma.product.findMany({
+        where: { category: { not: "농수산물" } },
+        take: 30,
+        include: { prices: { take: 50, orderBy: { createdAt: "desc" } } },
+      }),
+      prisma.product.count(),
+      prisma.store.count(),
+      prisma.price.count(),
+    ]);
 
   const priceCards = products
     .map((p) => {
@@ -63,18 +69,15 @@ async function getHomeData() {
     .sort((a, b) => b.diff - a.diff)
     .slice(0, 6);
 
-  const stats = {
-    products: await prisma.product.count(),
-    stores: await prisma.store.count(),
-    prices: await prisma.price.count(),
-  };
+  const stats = { products: productsCount, stores: storesCount, prices: pricesCount };
 
   return { kamisPrices, priceCards, stats };
 }
 
 export default async function HomePage() {
-  const { kamisPrices, priceCards, stats } = await getHomeData();
-  const user = await getCurrentUser();
+  // getHomeData (5개 쿼리 병렬) + getCurrentUser 동시 진행
+  const [data, user] = await Promise.all([getHomeData(), getCurrentUser()]);
+  const { kamisPrices, priceCards, stats } = data;
   const onboardingStatus = user ? await getOnboardingStatus(user.id) : undefined;
 
   return (

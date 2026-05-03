@@ -23,17 +23,6 @@ export default async function RecipesPage({
   const category = (sp.category ?? "").trim();
   const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
 
-  // 카테고리 칩 (DB의 distinct 값)
-  const categoryRows = await prisma.recipe.findMany({
-    where: { category: { not: null } },
-    distinct: ["category"],
-    select: { category: true },
-    orderBy: { category: "asc" },
-  });
-  const categories = categoryRows
-    .map((r) => r.category)
-    .filter((c): c is string => !!c);
-
   const where: Prisma.RecipeWhereInput = {};
   if (category) where.category = category;
   if (q) {
@@ -44,7 +33,19 @@ export default async function RecipesPage({
     ];
   }
 
-  const total = await prisma.recipe.count({ where });
+  // 카테고리 칩 + total count 병렬화 (둘 다 findMany/count 직전 의존성 없음)
+  const [categoryRows, total] = await Promise.all([
+    prisma.recipe.findMany({
+      where: { category: { not: null } },
+      distinct: ["category"],
+      select: { category: true },
+      orderBy: { category: "asc" },
+    }),
+    prisma.recipe.count({ where }),
+  ]);
+  const categories = categoryRows
+    .map((r) => r.category)
+    .filter((c): c is string => !!c);
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
   const safePage = Math.min(page, totalPages);
 
