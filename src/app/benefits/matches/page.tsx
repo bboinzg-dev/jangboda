@@ -4,6 +4,8 @@ import type { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { stripHtml } from "@/lib/benefits/sanitize";
 import { categoryGroup } from "@/lib/benefits/categories";
+import { sourceLabel } from "@/lib/benefits/types";
+import BackButton from "@/components/benefits/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -96,12 +98,7 @@ export default async function BenefitsMatchesPage({
     return (
       <div className="space-y-6">
         <div>
-          <Link
-            href="/benefits"
-            className="text-sm text-stone-500 hover:text-stone-700"
-          >
-            ← 정부 혜택 홈으로
-          </Link>
+          <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
         </div>
         <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
           <div className="text-stone-700 font-medium mb-1">로그인이 필요합니다</div>
@@ -129,12 +126,7 @@ export default async function BenefitsMatchesPage({
     return (
       <div className="space-y-6">
         <div>
-          <Link
-            href="/benefits"
-            className="text-sm text-stone-500 hover:text-stone-700"
-          >
-            ← 정부 혜택 홈으로
-          </Link>
+          <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
         </div>
         <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
           <div className="text-stone-700 font-medium mb-1">

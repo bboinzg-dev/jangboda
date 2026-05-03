@@ -9,6 +9,7 @@ import {
   originalsForGroup,
 } from "@/lib/benefits/categories";
 import { stripHtml } from "@/lib/benefits/sanitize";
+import BackButton from "@/components/benefits/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -146,12 +147,7 @@ export default async function BenefitsCatalogPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/benefits"
-          className="text-sm text-stone-500 hover:text-stone-700"
-        >
-          ← 정부 혜택 홈으로
-        </Link>
+        <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
       </div>
 
       <header>
