@@ -569,14 +569,15 @@ export default function CartPage() {
                 return (
                   <li
                     key={item.productId}
-                    className="flex items-center gap-2 p-2 border border-line rounded-xl"
+                    className="flex items-center gap-2 p-3 border border-line rounded-xl"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate text-ink-1">
+                      {/* 긴 상품명도 2줄까지 — 모바일에서 어떤 상품인지 명확하게 */}
+                      <div className="text-sm font-medium leading-snug text-ink-1 line-clamp-2">
                         {p?.name ?? "(미확인)"}
                       </div>
                       {p?.unit && (
-                        <div className="text-[11px] text-ink-3 truncate">
+                        <div className="text-xs text-ink-3 truncate mt-0.5">
                           {p.unit}
                         </div>
                       )}
@@ -591,13 +592,13 @@ export default function CartPage() {
                           parseInt(e.target.value) || 1
                         )
                       }
-                      className="w-14 px-2 py-1.5 border border-line-strong rounded text-center text-sm shrink-0"
+                      className="w-14 h-11 px-2 border border-line-strong rounded text-center text-sm shrink-0"
                       aria-label="수량"
                     />
                     <button
                       onClick={() => removeItem(item.productId)}
                       aria-label="삭제"
-                      className="w-7 h-7 shrink-0 text-ink-3 hover:text-rose-500"
+                      className="w-11 h-11 shrink-0 text-ink-3 hover:text-rose-500 inline-flex items-center justify-center"
                     >
                       ✕
                     </button>

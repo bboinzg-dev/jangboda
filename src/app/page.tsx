@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
-import { unitPriceLabel, unitPriceValue } from "@/lib/units";
+import { unitPriceParts, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
 import KamisTicker from "@/components/KamisTicker";
@@ -91,6 +91,13 @@ async function getHomeData() {
       const max = Math.max(...filteredPrices);
       const diff = max - min;
       if (diff === 0) return null;
+      // 단가 기준 절약률 — 같은 용량으로 환산했을 때의 절약 비율 (사용자에게 더 의미)
+      const minUnit = unitPriceValue(min, p.unit);
+      const maxUnit = unitPriceValue(max, p.unit);
+      const unitSavingsPct =
+        minUnit !== null && maxUnit !== null && maxUnit > 0
+          ? Math.round(((maxUnit - minUnit) / maxUnit) * 100)
+          : null;
       return {
         id: p.id,
         name: p.name,
@@ -99,6 +106,7 @@ async function getHomeData() {
         min,
         max,
         diff,
+        unitSavingsPct,
         hasHaccp: p.hasHaccp,
         imageUrl: p.imageUrl,
         excludedCount: p.prices.length - filteredPrices.length,
@@ -248,7 +256,7 @@ export default async function HomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {priceCards.map((c) => {
-              const upl = unitPriceLabel(c.min, c.unit);
+              const uparts = unitPriceParts(c.min, c.unit);
               return (
                 <Link
                   key={c.id}
@@ -259,8 +267,9 @@ export default async function HomePage() {
                   <ProductImage src={c.imageUrl} alt={c.name} size={56} />
                   <div className="min-w-0 flex-1">
                     <div className="text-xs text-ink-3">{c.category}</div>
-                    <div className="font-semibold truncate text-ink-1">{c.name}</div>
-                    <div className="text-xs text-ink-3">{c.unit}</div>
+                    {/* 긴 상품명도 2줄까지는 보이게 — 모바일에서 핵심 정보 손실 방지 */}
+                    <div className="font-semibold line-clamp-2 leading-snug text-ink-1">{c.name}</div>
+                    <div className="text-xs text-ink-3 mt-0.5">{c.unit}</div>
                     {c.hasHaccp && (
                       <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium mt-1">
                         🏅 HACCP
@@ -268,15 +277,31 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    <div className="text-xs text-ink-3">최저</div>
-                    <div className="text-[18px] font-extrabold tabular-nums text-ink-1">
-                      {formatWon(c.min)}
-                    </div>
-                    {upl && (
-                      <div className="text-[11px] text-ink-3 font-mono">{upl}</div>
+                    {uparts ? (
+                      <>
+                        {/* 단가를 메인으로 — 패키지 차이 무시하고 같은 기준으로 비교 */}
+                        <div className="text-[10px] text-ink-3 font-medium leading-none">
+                          최저 {uparts.basis}
+                        </div>
+                        <div className="text-[18px] font-extrabold tabular-nums text-ink-1 font-mono leading-tight">
+                          {uparts.amount}
+                        </div>
+                        <div className="text-[11px] text-ink-3 tabular-nums">
+                          실판매가 {formatWon(c.min)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-xs text-ink-3">최저</div>
+                        <div className="text-[18px] font-extrabold tabular-nums text-ink-1">
+                          {formatWon(c.min)}
+                        </div>
+                      </>
                     )}
                     <div className="text-xs text-danger-text mt-0.5 font-medium">
-                      최대 {formatWon(c.diff)} 절약
+                      {c.unitSavingsPct !== null && c.unitSavingsPct > 0
+                        ? `단가 ${c.unitSavingsPct}% 절약`
+                        : `최대 ${formatWon(c.diff)} 절약`}
                     </div>
                   </div>
                 </Link>

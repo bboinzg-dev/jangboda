@@ -368,7 +368,8 @@ export default function UploadPage() {
                           )}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-ink-2 truncate text-xs mb-1">
+                          {/* 영수증 원본 라인은 줄바꿈 허용 — 사용자가 어떤 항목인지 식별해야 매칭 가능 */}
+                          <div className="text-ink-2 break-words text-xs mb-1">
                             <span className="text-ink-3">원본: </span>
                             {it.rawName}
                           </div>

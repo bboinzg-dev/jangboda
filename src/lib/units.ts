@@ -110,3 +110,24 @@ export function unitPriceValue(price: number, unit: string): number | null {
   if (!q || q.value <= 0) return null;
   return (price * q.basisDenominator) / q.value;
 }
+
+// "100g당", "1L당", "1개당" 등 기준 라벨만 추출 — 파싱 실패 시 null
+export function unitBasisLabel(unit: string): string | null {
+  const q = parseUnit(unit);
+  return q ? q.basisLabel : null;
+}
+
+// 단가를 분리해서 ["100g당", "1,156원"] 두 토큰으로 반환 — 표시 분리용
+export function unitPriceParts(
+  price: number,
+  unit: string
+): { basis: string; amount: string } | null {
+  const q = parseUnit(unit);
+  if (!q || q.value <= 0) return null;
+  const perUnit = (price * q.basisDenominator) / q.value;
+  if (perUnit < 1) return null;
+  return {
+    basis: q.basisLabel,
+    amount: `${Math.round(perUnit).toLocaleString("ko-KR")}원`,
+  };
+}

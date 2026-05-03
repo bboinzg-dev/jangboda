@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
-import { unitPriceLabel, unitPriceValue } from "@/lib/units";
+import { unitPriceLabel, unitPriceParts, unitPriceValue } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
 import TrustBadge from "@/components/TrustBadge";
 import DirectionsButton from "@/components/DirectionsButton";
@@ -40,6 +40,8 @@ type Props = {
   showFavoriteFilter?: boolean;
 };
 
+type StoreSortBy = "unit" | "price";
+
 export default function PriceListClient({
   rows,
   unit,
@@ -48,8 +50,13 @@ export default function PriceListClient({
 }: Props) {
   const { authed, ids: favoriteIds } = useFavorites();
   const [favoriteOnly, setFavoriteOnly] = useState(false);
+  // 단가 파싱이 가능하면 단가순 디폴트, 아니면 가격순으로 자동 fallback
+  const canCompareUnit = unitPriceValue(1, unit) !== null;
+  const [sortBy, setSortBy] = useState<StoreSortBy>(
+    canCompareUnit ? "unit" : "price"
+  );
 
-  // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 가격 낮은 순)
+  // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 단가/가격 낮은 순)
   const filtered = favoriteOnly
     ? rows.filter((r) => favoriteIds.has(r.storeId))
     : rows;
@@ -57,12 +64,22 @@ export default function PriceListClient({
     const aFav = favoriteIds.has(a.storeId) ? 1 : 0;
     const bFav = favoriteIds.has(b.storeId) ? 1 : 0;
     if (aFav !== bFav) return bFav - aFav; // 즐겨찾기 우선
+    if (sortBy === "unit") {
+      const ua = unitPriceValue(a.price, unit);
+      const ub = unitPriceValue(b.price, unit);
+      // null은 뒤로
+      if (ua === null && ub === null) return a.price - b.price;
+      if (ua === null) return 1;
+      if (ub === null) return -1;
+      return ua - ub;
+    }
     return a.price - b.price;
   });
 
-  // 단가 outlier 분리 — 같은 SKU여도 매장별 패키지가 다른 경우(예: 코스트코 대용량)
+  // 단가 outlier 분리 — 같은 SKU여도 매장별 패키지가 다른 경우(예: 코스트코 대용량 박스)
   // 비교 정확도 위해 본 리스트에서 빼고 별도 섹션으로 표시.
-  // 기준: 단가가 중앙값 × 0.5 ~ × 1.7 범위 밖. row 4개 이상일 때만 적용.
+  // 기준: 단가가 중앙값의 ±50% 범위 밖 (0.5~1.5). row 3개 이상일 때만 적용.
+  // 양배추 15kg 박스 vs 양배추 1개 같은 케이스를 잡아냄
   const withUnitPrice = sortedAll.map((r) => ({
     row: r,
     unitPrice: unitPriceValue(r.price, unit),
@@ -71,13 +88,13 @@ export default function PriceListClient({
     .map((x) => x.unitPrice)
     .filter((v): v is number => v !== null && v > 0)
     .sort((a, b) => a - b);
-  // 3개 row 이상일 때 median 기반 outlier 분리 (이전엔 4 — 너무 보수적이라 묶음판매 못 잡음)
   const median =
     validUnitPrices.length >= 3
       ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
       : null;
+  // ±50% — 묶음판매/대용량 박스 더 적극적으로 분리
   const lowBound = median !== null ? median * 0.5 : null;
-  const highBound = median !== null ? median * 1.7 : null;
+  const highBound = median !== null ? median * 1.5 : null;
 
   const sorted = withUnitPrice
     .filter(
@@ -108,17 +125,47 @@ export default function PriceListClient({
 
   return (
     <div>
-      {showFavoriteFilter && authed && favoriteIds.size > 0 && (
-        <label className="inline-flex items-center gap-1.5 mb-2 text-xs text-ink-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={favoriteOnly}
-            onChange={(e) => setFavoriteOnly(e.target.checked)}
-            className="cursor-pointer"
-          />
-          ★ 즐겨찾기 매장만 ({favoriteIds.size})
-        </label>
-      )}
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        {showFavoriteFilter && authed && favoriteIds.size > 0 ? (
+          <label className="inline-flex items-center gap-1.5 text-xs text-ink-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={favoriteOnly}
+              onChange={(e) => setFavoriteOnly(e.target.checked)}
+              className="cursor-pointer"
+            />
+            ★ 즐겨찾기 매장만 ({favoriteIds.size})
+          </label>
+        ) : (
+          <span />
+        )}
+        {canCompareUnit && (
+          <div className="inline-flex items-center gap-1 text-[11px]">
+            <span className="text-ink-3">정렬:</span>
+            <button
+              onClick={() => setSortBy("unit")}
+              className={`px-2 py-0.5 rounded ${
+                sortBy === "unit"
+                  ? "bg-brand-100 text-brand-700 font-medium"
+                  : "text-ink-2 hover:bg-surface-muted"
+              }`}
+              title="단위가격(100g당, 1L당 등)으로 비교"
+            >
+              단가순
+            </button>
+            <button
+              onClick={() => setSortBy("price")}
+              className={`px-2 py-0.5 rounded ${
+                sortBy === "price"
+                  ? "bg-brand-100 text-brand-700 font-medium"
+                  : "text-ink-2 hover:bg-surface-muted"
+              }`}
+            >
+              가격순
+            </button>
+          </div>
+        )}
+      </div>
 
       {sorted.length === 0 ? (
         <div className="bg-white border border-line rounded-xl p-4 text-center text-ink-3 text-sm">
@@ -200,16 +247,30 @@ export default function PriceListClient({
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-3">
-                  <div className="text-[22px] font-extrabold tabular-nums tracking-tight text-ink-1">
-                    {formatWon(p.price)}
-                  </div>
                   {(() => {
-                    const upl = unitPriceLabel(p.price, unit);
-                    return upl ? (
-                      <div className="text-[11px] text-ink-3 font-mono -mt-0.5">
-                        {upl}
+                    const uparts = unitPriceParts(p.price, unit);
+                    if (uparts) {
+                      // 단가를 메인 — 사용자가 한 눈에 비교 가능
+                      return (
+                        <>
+                          <div className="text-[10px] text-ink-3 font-medium leading-none">
+                            {uparts.basis}
+                          </div>
+                          <div className="text-[20px] font-extrabold tabular-nums tracking-tight text-ink-1 font-mono leading-tight">
+                            {uparts.amount}
+                          </div>
+                          <div className="text-[11px] text-ink-3 tabular-nums leading-none">
+                            실판매가 {formatWon(p.price)}
+                          </div>
+                        </>
+                      );
+                    }
+                    // 단가 파싱 불가 시 가격만
+                    return (
+                      <div className="text-[22px] font-extrabold tabular-nums tracking-tight text-ink-1">
+                        {formatWon(p.price)}
                       </div>
-                    ) : null;
+                    );
                   })()}
                   <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">
                     <SourceBadge source={p.source} />

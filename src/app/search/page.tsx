@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
-import { unitPriceLabel, unitPriceValue } from "@/lib/units";
+import { unitPriceParts, unitPriceValue } from "@/lib/units";
 import EmptyState from "@/components/EmptyState";
 import ProductImage from "@/components/ProductImage";
 import { IconSearch } from "@/components/icons";
@@ -32,7 +32,9 @@ export default function SearchPage() {
   const [q, setQ] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>("min");
+  // 디폴트는 단가순 — 같은 용량으로 환산해서 비교하는 게 사용자에게 더 의미 있음
+  // (대용량 박스/소포장이 섞여도 공정 비교)
+  const [sortBy, setSortBy] = useState<SortBy>("unit");
   const [category, setCategory] = useState<string>(ALL);
   // 카테고리 칩 후보 — 가능한 모든 카테고리(현재 선택과 무관하게 한번 로드해서 유지)
   const [allCategories, setAllCategories] = useState<string[]>([]);
@@ -263,12 +265,12 @@ export default function SearchPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {visible.map((p) => {
-              const upl = p.stats ? unitPriceLabel(p.stats.min, p.unit) : null;
+              const uparts = p.stats ? unitPriceParts(p.stats.min, p.unit) : null;
               return (
                 <Link
                   key={p.id}
                   href={`/products/${p.id}`}
-                  className="card-clickable relative bg-white border border-line rounded-xl p-3 pr-7 flex gap-3 items-start"
+                  className="card-clickable relative bg-white border border-line rounded-xl p-4 pr-7 flex gap-3 items-start"
                 >
                   <ProductImage
                     src={p.imageUrl}
@@ -277,32 +279,48 @@ export default function SearchPage() {
                     className="shrink-0 rounded-md overflow-hidden bg-surface-muted"
                   />
                   <div className="min-w-0 flex-1 flex justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="text-xs text-ink-3">
                         {p.category}
                         {p.brand ? ` · ${p.brand}` : ""}
                       </div>
-                      <div className="font-semibold text-ink-1 truncate flex items-center gap-1.5">
-                        <span className="truncate">{p.name}</span>
+                      {/* 긴 상품명 2줄까지 노출 — 핵심 정보 손실 방지 */}
+                      <div className="font-semibold text-ink-1 leading-snug line-clamp-2">
+                        {p.name}
                         {p.hasHaccp && (
-                          <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                          <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0 ml-1 align-middle">
                             🏅 HACCP
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-ink-3">{p.unit}</div>
+                      <div className="text-xs text-ink-3 mt-0.5">{p.unit}</div>
                     </div>
                     <div className="text-right shrink-0">
                       {p.stats && p.stats.count > 0 ? (
                         <>
-                          <div className="text-xs text-ink-3">최저가</div>
-                          <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
-                            {formatWon(p.stats.min)}
-                          </div>
-                          {upl && (
-                            <div className="text-[11px] text-ink-3 font-mono">{upl}</div>
+                          {/* 단가를 메인 라인으로 — 같은 기준으로 비교 가능하게 */}
+                          {uparts ? (
+                            <>
+                              <div className="text-[10px] text-ink-3 font-medium">
+                                {uparts.basis}
+                              </div>
+                              <div className="text-xl font-extrabold tabular-nums tracking-tight text-brand-600 font-mono">
+                                {uparts.amount}
+                              </div>
+                              {/* 매장 가격은 보조 표시 */}
+                              <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
+                                실판매가 {formatWon(p.stats.min)}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-xs text-ink-3">최저가</div>
+                              <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
+                                {formatWon(p.stats.min)}
+                              </div>
+                            </>
                           )}
-                          <div className="text-xs text-ink-3">
+                          <div className="text-[10px] text-ink-3 mt-0.5">
                             {p.stats.count}개 매장
                           </div>
                         </>

@@ -464,21 +464,22 @@ export default async function ProfilePage() {
             ]}
           />
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-2">
             {myPrices.map((p) => (
               <li
                 key={p.id}
-                className="bg-white border border-line rounded-xl p-3 flex justify-between items-center text-sm hover:border-line-strong"
+                className="bg-white border border-line rounded-xl p-3 flex justify-between items-center gap-3 text-sm hover:border-line-strong"
               >
-                <div className="min-w-0">
-                  <div className="font-medium text-ink-1 truncate">
+                <div className="min-w-0 flex-1">
+                  {/* 긴 상품명 2줄까지 노출 */}
+                  <div className="font-medium text-ink-1 leading-snug line-clamp-2">
                     {p.product.name}
                   </div>
-                  <div className="text-xs text-ink-3 truncate">
+                  <div className="text-xs text-ink-3 truncate mt-0.5">
                     {p.store.chain.name} · {p.store.name}
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
+                <div className="text-right shrink-0">
                   <div className="font-semibold tabular-nums text-ink-1">
                     {formatWon(p.price)}
                   </div>
