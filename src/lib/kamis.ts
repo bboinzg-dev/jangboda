@@ -127,10 +127,17 @@ async function callKamisAll(
           previousPrice && previousPrice > 0
             ? ((price - previousPrice) / previousPrice) * 100
             : undefined;
+        // KAMIS unit 필드는 일관되지 않음:
+        //  - 어떤 품목은 "kg" / "L" (앞에 "1" 붙여야 "1kg"/"1L"이 됨)
+        //  - 어떤 품목은 이미 "100g" / "10개" (그대로 써야 함 — 앞에 "1" 붙이면 "1100g" 버그)
+        // 안전하게 KAMIS_TARGETS의 fixed unit 우선, 없으면 it.unit 그대로.
+        const apiUnit = it.unit?.trim() || "";
+        const unit = target.unit
+          || (/^\d/.test(apiUnit) ? apiUnit : (apiUnit ? `1${apiUnit}` : "1개"));
         out.push({
           productCode: target.itemCode,
           productName: target.name,
-          unit: it.unit ? `1${it.unit}` : target.unit,
+          unit,
           retailPrice: price,
           date,
           previousPrice,

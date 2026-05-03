@@ -7,8 +7,12 @@
       "schedule": "0 16 * * *"
     },
     {
-      "path": "/api/sync/naver?limit=10&onlyMajor=true",
+      "path": "/api/sync/naver?limit=20&onlyMajor=true&chain=true",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/sync/naver?recent=2h&limit=20&onlyMajor=true",
+      "schedule": "30 * * * *"
     },
     {
       "path": "/api/alerts/check",

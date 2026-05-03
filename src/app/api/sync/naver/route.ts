@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchNaverShop, pickLowestByMall } from "@/lib/naverShop";
 import { checkSyncAuth } from "@/lib/auth";
@@ -60,16 +61,36 @@ export async function POST(req: NextRequest) {
   if (authErr) return authErr;
 
   const { searchParams } = new URL(req.url);
-  // default 10 — 60초 timeout 안전 마진 (이전 20은 504 가끔 발생)
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "10"), 30);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 30);
+  const from = Math.max(0, parseInt(searchParams.get("from") ?? "0", 10) || 0);
+  const chain = searchParams.get("chain") === "true";
+  // ?recent=24h — 최근 N시간 안에 추가된 신규 상품만 sync (매시간 cron용)
+  const recentMatch = searchParams.get("recent")?.match(/^(\d+)h$/);
+  const recentHours = recentMatch ? parseInt(recentMatch[1], 10) : null;
   const startedAt = Date.now();
   const TIMEOUT_BUDGET_MS = 50_000; // Vercel 60s에서 10s 여유
   const onlyMajor = searchParams.get("onlyMajor") === "true";
 
+  // where 절 — 기본 농수산물 제외 + recent 옵션
+  const baseWhere: Prisma.ProductWhereInput = {
+    category: { not: "농수산물" },
+    ...(recentHours !== null
+      ? {
+          createdAt: {
+            gte: new Date(Date.now() - recentHours * 60 * 60 * 1000),
+          },
+        }
+      : {}),
+  };
+
+  // 전체 카탈로그 수 (partial 판단용)
+  const totalProducts = await prisma.product.count({ where: baseWhere });
+
   const products = await prisma.product.findMany({
-    where: { category: { not: "농수산물" } },
+    where: baseWhere,
+    skip: from,
     take: limit,
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: recentHours !== null ? "desc" : "asc" },
   });
 
   // 가공식품 — 네이버 검색 결과 첫 항목의 maker/brand로 manufacturer 자동 채움
@@ -198,14 +219,42 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // partial-resume + chain self-trigger
+  // 처리 끝까지 못 갔으면 (abortedEarly 또는 from+products.length < total) partial
+  const processedThrough = from + products.length;
+  const partial = abortedEarly || processedThrough < totalProducts;
+
+  // chain=true 면 다음 chunk를 fire-and-forget으로 자동 호출 (cron 1번으로 600 cover)
+  if (chain && partial && processedThrough < totalProducts) {
+    const host = req.headers.get("host");
+    if (host) {
+      const proto = host.startsWith("localhost") ? "http" : "https";
+      const params = new URLSearchParams({
+        limit: String(limit),
+        from: String(processedThrough),
+        chain: "true",
+      });
+      if (onlyMajor) params.set("onlyMajor", "true");
+      const nextUrl = `${proto}://${host}/api/sync/naver?${params}`;
+      void fetch(nextUrl, {
+        method: "POST",
+        headers: { "X-Sync-Token": process.env.SYNC_TOKEN || "" },
+      }).catch(() => {});
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     productsProcessed: products.length,
+    totalProducts,
     inserted,
     storesCreated,
     usedMockCount,
     skippedNonMajor,
     abortedEarly,
+    partial,
+    processedThrough,
+    chain,
     elapsedMs: Date.now() - startedAt,
     samples: samples.slice(0, 5),
   });
