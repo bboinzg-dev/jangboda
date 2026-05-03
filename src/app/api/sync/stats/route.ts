@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkSyncAuth } from "@/lib/auth";
-import { listItems, getPrices, getServiceableDate, type StatsPriceRow } from "@/lib/stats";
+import { listItems, getPrices, findLatestDataDate } from "@/lib/stats";
 
 export const maxDuration = 60;
 
@@ -85,7 +85,11 @@ export async function POST(req: NextRequest) {
   });
 
   const store = await ensureStatsStore();
-  const date = getServiceableDate();
+  // 데이터 publish lag 있어 최근 30일 안에서 데이터 있는 날짜를 자동 탐색
+  const date = await findLatestDataDate();
+  if (!date) {
+    return NextResponse.json({ ok: false, error: "최근 30일 내 데이터 없음" });
+  }
 
   let totalRowsFetched = 0;
   let matched = 0;

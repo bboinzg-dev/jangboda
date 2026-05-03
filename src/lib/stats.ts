@@ -119,12 +119,43 @@ export async function getPrices(
   return { rows, totalCount };
 }
 
-// D-2 (서비스 가능 최신일)
-export function getServiceableDate(): string {
+// D-N 일자 yyyymmdd 형식
+function dateOffsetStr(daysAgo: number): string {
   const d = new Date();
-  d.setDate(d.getDate() - 2);
+  d.setDate(d.getDate() - daysAgo);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}${mm}${dd}`;
+}
+
+// 데이터 publish가 들쭉날쭉이라 최근 데이터가 있는 날짜를 찾아 반환
+// 라면(A01110)으로 D-2 ~ D-30 range에서 sample 호출 → 데이터 있는 날짜 첫 번째 반환
+export async function findLatestDataDate(): Promise<string | null> {
+  const key = getKey();
+  if (!key) return null;
+  const sampleItem = "A01110"; // 라면 — 보통 데이터가 매일 있음
+  for (let daysAgo = 2; daysAgo <= 30; daysAgo++) {
+    const date = dateOffsetStr(daysAgo);
+    const url = `${BASE}/getPriceInfo?serviceKey=${key}&itemCode=${sampleItem}&startDate=${date}&endDate=${date}&pageNo=1&numOfRows=1`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const codeMatch = xml.match(/<resultCode>(\d+)<\/resultCode>/);
+      if (!codeMatch || codeMatch[1] !== "00") continue;
+      const totalMatch = xml.match(/<totalCount>(\d+)<\/totalCount>/);
+      if (totalMatch && parseInt(totalMatch[1], 10) > 0) {
+        return date;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+// D-2 (서비스 가능 최신일 — 빠른 사용용. publish lag 있으면 findLatestDataDate 권장)
+export function getServiceableDate(): string {
+  return dateOffsetStr(2);
 }
