@@ -272,6 +272,20 @@ export async function POST(req: NextRequest) {
     50000,
     Math.max(100, parseInt(url.searchParams.get("limit") ?? "10000", 10) || 10000)
   );
+  // chain=true 면 partial 시 다음 chunk를 self-trigger (cron 1번으로 13회 자동 처리용)
+  const chain = url.searchParams.get("chain") === "true";
+
+  // 같은 host로 self-trigger fetch (await 안 함 — fire-and-forget)
+  function selfTriggerNext(nextFrom: number) {
+    const host = req.headers.get("host");
+    if (!host) return;
+    const proto = host.startsWith("localhost") ? "http" : "https";
+    const nextUrl = `${proto}://${host}/api/sync/parsa/full-mirror?type=prices&from=${nextFrom}&limit=${limit}&chain=true`;
+    void fetch(nextUrl, {
+      method: "POST",
+      headers: { "X-Sync-Token": process.env.SYNC_TOKEN || "" },
+    }).catch(() => {});
+  }
 
   if (type !== "products" && type !== "prices" && type !== "both") {
     return NextResponse.json(
@@ -297,9 +311,12 @@ export async function POST(req: NextRequest) {
   // prices 단독
   if (type === "prices") {
     const r = await mirrorPrices(from, limit);
+    // chain=true 이고 partial이면 다음 chunk 자동 호출
+    if (chain && r.partial) selfTriggerNext(r.processedThrough);
     return NextResponse.json({
       ok: true,
       type,
+      chain,
       ...r,
       elapsedMs: Date.now() - startedAt,
     });

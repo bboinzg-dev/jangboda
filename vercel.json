@@ -61,6 +61,18 @@
     {
       "path": "/api/sync/parsa?type=prices",
       "schedule": "0 20 * * 6"
+    },
+    {
+      "path": "/api/sync/parsa/mirror",
+      "schedule": "0 21 * * 6"
+    },
+    {
+      "path": "/api/sync/parsa/full-mirror?type=products",
+      "schedule": "30 21 * * 6"
+    },
+    {
+      "path": "/api/sync/parsa/full-mirror?type=prices&from=0&limit=10000&chain=true",
+      "schedule": "0 22 * * 6"
     }
   ],
   "functions": {
@@ -73,6 +85,8 @@
     "src/app/api/sync/recipes/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/health-functional/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/parsa/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/parsa/mirror/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/parsa/full-mirror/route.ts": { "maxDuration": 60 },
     "src/app/api/alerts/check/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 },
