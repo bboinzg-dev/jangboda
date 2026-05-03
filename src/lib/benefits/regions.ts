@@ -374,19 +374,40 @@ export function regionFromAgency(
   agency: string | null | undefined,
 ): string[] | null {
   if (!agency) return null;
-  // 1차: 정식 명 그대로 포함되어 있는지
+
+  // 1단계: 시·도 식별
+  let sidoCode: string | null = null;
+  // 1-a) 정식 명 그대로 포함
   for (const [code, name] of Object.entries(SIDO_NAMES)) {
     if (code === "00000") continue;
+    if (agency.includes(name)) {
+      sidoCode = code;
+      break;
+    }
+  }
+  // 1-b) 약칭 매칭 ("특별시/광역시/특별자치시/특별자치도/특별도" 또는 끝의 "도" 제거)
+  if (!sidoCode) {
+    for (const [code, name] of Object.entries(SIDO_NAMES)) {
+      if (code === "00000") continue;
+      const shortName = name
+        .replace(/(특별자치시|특별자치도|특별시|광역시|특별도)$/, "")
+        .replace(/도$/, "");
+      if (shortName.length >= 2 && agency.includes(shortName)) {
+        sidoCode = code;
+        break;
+      }
+    }
+  }
+  if (!sidoCode) return null;
+
+  // 2단계: 시·군·구 식별 (해당 시·도 안에서만 매칭)
+  // "서울특별시 금천구" → 시·도 "11" + 시군구 "금천구" → "11545"
+  const sidoPrefix = sidoCode.slice(0, 2);
+  const sigunguList = SIGUNGU[sidoPrefix] ?? [];
+  for (const { code, name } of sigunguList) {
     if (agency.includes(name)) return [code];
   }
-  // 2차: 약칭 매칭 — "특별시/광역시/특별자치시/특별자치도/특별도" 접미사 제거,
-  //     마지막에 단독 "도"로 끝나면 그것도 제거
-  for (const [code, name] of Object.entries(SIDO_NAMES)) {
-    if (code === "00000") continue;
-    const shortName = name
-      .replace(/(특별자치시|특별자치도|특별시|광역시|특별도)$/, "")
-      .replace(/도$/, "");
-    if (shortName.length >= 2 && agency.includes(shortName)) return [code];
-  }
-  return null;
+
+  // 시·도만 식별되고 시·군·구 매칭 실패 → 시·도 단위 코드
+  return [sidoCode];
 }

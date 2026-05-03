@@ -715,11 +715,14 @@ function evaluateRegion(
   // 시군구(5자리) 정확 일치
   if (benefitRegions.includes(profileRegionCode))
     return { match: true, reason: "거주지 시군구 일치", missing: false };
-  // 시도(앞 2자리) 일치
+  // 시·도 단위 혜택만 시·도 일치로 매칭 (예: "11000"=서울시 전체)
+  // 다른 시군구 단위 혜택(예: "11545"=금천구)은 같은 시·도라도 매칭 X
   const sido = profileRegionCode.slice(0, 2);
-  const sidoMatch = benefitRegions.some((r) => r.slice(0, 2) === sido);
-  if (sidoMatch)
-    return { match: true, reason: "거주지 시·도 일치", missing: false };
+  const sidoLevelMatch = benefitRegions.some(
+    (r) => r.endsWith("000") && r.slice(0, 2) === sido,
+  );
+  if (sidoLevelMatch)
+    return { match: true, reason: "거주 시·도 단위 혜택", missing: false };
   return {
     match: false,
     reason: `거주 지역 불일치(혜택 제공 지역: ${benefitRegions.join(",")})`,
@@ -858,10 +861,13 @@ function evaluateNormalized(
       if (!code) {
         missingFields.push("residence.regionCode");
       } else {
+        // 시군구 정확 일치 OR 시·도 단위 혜택("11000")만 시·도 일치 허용
         const sido = code.slice(0, 2);
         const matched =
           rule.regions.includes(code) ||
-          rule.regions.some((r) => r.slice(0, 2) === sido);
+          rule.regions.some(
+            (r) => r.endsWith("000") && r.slice(0, 2) === sido,
+          );
         if (matched) {
           score += FLAG_WEIGHT;
           matchReasons.push("거주 지역 일치");

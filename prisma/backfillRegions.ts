@@ -3,10 +3,10 @@
 // 실행: npm run db:backfill:regions
 //
 // 로직:
-// - regionCodes가 정확히 ["00000"]인 레코드만 대상 (멱등 — 이미 시도 코드가
-//   채워진 항목은 skip)
-// - agency에서 regionFromAgency()가 시도 코드를 뽑아내면 그 값으로 update
-// - 아무 매칭도 안 되면 그대로 둠
+// - 모든 항목에 대해 regionFromAgency() 결과와 현재 regionCodes 비교
+// - 다르면 update (멱등 — 동일하면 skip)
+// - regionFromAgency가 null이면 그대로 둠
+// - 시·군·구 정밀화도 재실행 가능 ("11000" → "11545" 같은 case)
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -49,40 +49,55 @@ async function main() {
 
   let scanned = 0;
   let updated = 0;
-  let skippedNotNationwide = 0;
-  let skippedNoMatch = 0;
+  let unchanged = 0;
+  let noMatch = 0;
+  let sigunguPrecised = 0; // 기존 시·도 코드("11000")가 시·군·구 코드("11545")로 정밀화된 건수
 
   for (const b of all) {
     scanned++;
 
-    // 멱등: 이미 ["00000"] 외 값을 가진 항목은 건드리지 않음
-    const isExactlyNationwide =
-      b.regionCodes.length === 1 && b.regionCodes[0] === "00000";
-    if (!isExactlyNationwide) {
-      skippedNotNationwide++;
-    } else {
-      const inferred = regionFromAgency(b.agency);
-      if (inferred && inferred.length > 0) {
-        await prisma.benefit.update({
-          where: { id: b.id },
-          data: { regionCodes: inferred },
-        });
-        updated++;
-      } else {
-        skippedNoMatch++;
-      }
+    const inferred = regionFromAgency(b.agency);
+    if (!inferred || inferred.length === 0) {
+      noMatch++;
+      continue;
     }
 
-    if (scanned % 100 === 0) {
+    // 정렬 후 직렬화 비교 (멱등)
+    const cur = [...b.regionCodes].sort().join(",");
+    const next = [...inferred].sort().join(",");
+    if (cur === next) {
+      unchanged++;
+      continue;
+    }
+
+    // 시·군·구 정밀화 카운트 ("11000" → "11545" 같은 케이스)
+    if (
+      b.regionCodes.length === 1 &&
+      b.regionCodes[0].endsWith("000") &&
+      inferred.length === 1 &&
+      !inferred[0].endsWith("000") &&
+      b.regionCodes[0].slice(0, 2) === inferred[0].slice(0, 2)
+    ) {
+      sigunguPrecised++;
+    }
+
+    await prisma.benefit.update({
+      where: { id: b.id },
+      data: { regionCodes: inferred },
+    });
+    updated++;
+
+    if (scanned % 200 === 0) {
       console.log(
-        `진행 ${scanned}/${all.length} — 업데이트 ${updated} / 시도코드 이미 있음 ${skippedNotNationwide} / 매칭 실패 ${skippedNoMatch}`,
+        `진행 ${scanned}/${all.length} — 업데이트 ${updated} (시군구 정밀화 ${sigunguPrecised}) / 동일 ${unchanged} / 매칭 실패 ${noMatch}`,
       );
     }
   }
 
   console.log(
-    `\n완료: 전체 ${scanned}건 스캔, ${updated}건 업데이트, ` +
-      `${skippedNotNationwide}건 이미 시도 코드 있음(skip), ${skippedNoMatch}건 agency 매칭 실패(전국 유지)`,
+    `\n완료: 전체 ${scanned}건 스캔, ${updated}건 업데이트 ` +
+      `(그 중 시·군·구 정밀화 ${sigunguPrecised}건), ` +
+      `${unchanged}건 변화 없음, ${noMatch}건 agency 매칭 실패`,
   );
 }
 

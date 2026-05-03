@@ -37,12 +37,23 @@ const config: Config = {
           text: "#1d4ed8", // blue-700
         },
         surface: {
-          DEFAULT: "#ffffff",
-          muted: "#fafaf9", // stone-50
+          DEFAULT: "#FFFFFF",
+          muted: "#F0EDE5", // 2차 카드, hover, 비활성 칩
         },
         border: {
-          DEFAULT: "#e7e5e4", // stone-200
-          strong: "#d6d3d1", // stone-300
+          DEFAULT: "#ECE6DA", // 기본 보더 (stone-200 대체)
+          strong: "#D6CEBC", // 강조 보더
+        },
+        // 핸드오프 디자인 토큰 — 기존 stone-X 점진적 대체
+        page: "#FAF8F4", // 페이지 배경 (warm white)
+        ink: {
+          1: "#1B1815", // primary text (stone-900 대체)
+          2: "#4A453E", // secondary (stone-600 대체)
+          3: "#6F695C", // meta / placeholder (stone-500 대체, AA 통과)
+        },
+        line: {
+          DEFAULT: "#ECE6DA", // border alias
+          strong: "#D6CEBC",
         },
       },
       fontFamily: {

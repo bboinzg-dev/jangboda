@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --bg: #fafaf9;
+  --bg: #FAF8F4; /* 핸드오프 디자인 토큰: page (warm white) */
 }
 
 html,
 body {
   background: var(--bg);
-  color: #1c1917;
+  color: #1B1815; /* ink-1 */
   -webkit-font-smoothing: antialiased;
 }
 
