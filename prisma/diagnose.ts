@@ -15,7 +15,7 @@ function loadEnv() {
 }
 loadEnv();
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 const p = new PrismaClient();
 
 async function main() {
@@ -76,6 +76,55 @@ async function main() {
     },
   });
   console.log(`\n=== 일자리/고용/취업 키워드 매칭: ${job}건 ===`);
+
+  // 5a. sourceCode별 정형화 상태 (normalizedRules가 채워졌는지)
+  const sourceNorm = await p.benefit.groupBy({
+    by: ["sourceCode"],
+    where: { active: true },
+    _count: { _all: true },
+  });
+  console.log("\n=== 출처별 정형화 상태 ===");
+  for (const s of sourceNorm) {
+    const total = s._count._all;
+    const normalized = await p.benefit.count({
+      where: {
+        sourceCode: s.sourceCode,
+        active: true,
+        NOT: { normalizedRules: { equals: Prisma.DbNull } },
+      },
+    });
+    const noText = await p.benefit.count({
+      where: {
+        sourceCode: s.sourceCode,
+        active: true,
+        normalizedRules: { equals: Prisma.DbNull },
+      },
+    });
+    console.log(
+      `  ${s.sourceCode}: 전체 ${total} / 정형 ${normalized} / 미정형(스킵 또는 실패) ${noText}`,
+    );
+  }
+
+  // 5c. 행안부 API totalCount 확인 — 실제 데이터셋이 얼마나 큰지
+  console.log("\n=== 행안부 GOV24 API totalCount 확인 ===");
+  try {
+    const key = process.env.DATA_GO_KR_SERVICE_KEY;
+    if (!key) throw new Error("DATA_GO_KR_SERVICE_KEY 없음");
+    const url = new URL("https://api.odcloud.kr/api/gov24/v3/serviceList");
+    url.searchParams.set("page", "1");
+    url.searchParams.set("perPage", "1");
+    url.searchParams.set("returnType", "JSON");
+    url.searchParams.set("serviceKey", key);
+    const res = await fetch(url.toString());
+    const json = (await res.json()) as { totalCount?: number; matchCount?: number; currentCount?: number };
+    console.log(
+      `  GOV24 totalCount=${json.totalCount} (우리 DB GOV24=${
+        sourceNorm.find((s) => s.sourceCode === "GOV24")?._count._all ?? 0
+      })`,
+    );
+  } catch (e) {
+    console.log(`  실패: ${e instanceof Error ? e.message : e}`);
+  }
 
   // 5b. 고유가/민생 GOV24 검색 — MANUAL 중복 확인
   const oilGov = await p.benefit.findMany({

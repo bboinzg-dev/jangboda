@@ -51,11 +51,38 @@ function extractFreeText(rules: unknown): {
     }
     return undefined;
   };
+  // 행안부/중기부 표준 영문 코드명까지 매핑 — bizinfo/mssSupport는 영문 키로 저장됨
   return {
-    지원대상: pick("지원대상", "supportTarget", "trgterIndvdlArray", "target"),
-    선정기준: pick("선정기준", "selectionCriteria", "slctCritrCn", "criteria"),
-    지원내용: pick("지원내용", "supportContent", "sportCn", "content"),
-    신청방법: pick("신청방법", "applicationMethod", "aplyMthdCn", "method"),
+    지원대상: pick(
+      "지원대상",
+      "trgetNm", // bizinfo / mssSupport
+      "supportTarget",
+      "trgterIndvdlArray",
+      "target",
+    ),
+    선정기준: pick(
+      "선정기준",
+      "refrncNm", // mssSupport (참고/선정 기준)
+      "selectionCriteria",
+      "slctCritrCn",
+      "criteria",
+    ),
+    지원내용: pick(
+      "지원내용",
+      "sportCn", // bizinfo
+      "pldirSportRealmLclasCodeNm", // 분류 (지원 분야)
+      "hashtags", // 태그 — 추가 컨텍스트
+      "supportContent",
+      "content",
+    ),
+    신청방법: pick(
+      "신청방법",
+      "reqstMthPapersCn", // mssSupport (신청 방법/서류)
+      "reqstBeginEndDe", // 신청 기간 (LLM이 마감일 추출용)
+      "applicationMethod",
+      "aplyMthdCn",
+      "method",
+    ),
   };
 }
 

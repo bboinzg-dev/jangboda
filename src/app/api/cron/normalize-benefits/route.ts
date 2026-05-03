@@ -43,11 +43,12 @@ function extractFreeText(rules: unknown): {
     }
     return undefined;
   };
+  // 행안부/중기부 표준 영문 코드명까지 매핑 (bizinfo/mssSupport용)
   return {
-    지원대상: pick("지원대상", "supportTarget", "trgterIndvdlArray", "target"),
-    선정기준: pick("선정기준", "selectionCriteria", "slctCritrCn", "criteria"),
-    지원내용: pick("지원내용", "supportContent", "sportCn", "content"),
-    신청방법: pick("신청방법", "applicationMethod", "aplyMthdCn", "method"),
+    지원대상: pick("지원대상", "trgetNm", "supportTarget", "trgterIndvdlArray", "target"),
+    선정기준: pick("선정기준", "refrncNm", "selectionCriteria", "slctCritrCn", "criteria"),
+    지원내용: pick("지원내용", "sportCn", "pldirSportRealmLclasCodeNm", "hashtags", "supportContent", "content"),
+    신청방법: pick("신청방법", "reqstMthPapersCn", "reqstBeginEndDe", "applicationMethod", "aplyMthdCn", "method"),
   };
 }
 

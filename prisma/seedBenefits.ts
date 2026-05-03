@@ -230,8 +230,9 @@ async function main() {
   const manualSaved = await upsertMany(MANUAL_ITEMS);
   console.log(`[MANUAL] 저장 ${manualSaved}건`);
 
-  // gov24는 가장 풍부 — maxPages 30 (3000건)
-  await runOne("gov24", (o) => fetchGov24(o), { perPage: 100, maxPages: 30 });
+  // gov24는 가장 풍부 — totalCount 10,931 (2026-05 기준)
+  // maxPages 110 × perPage 100 = 11,000 한도 (totalCount 약간 위)
+  await runOne("gov24", (o) => fetchGov24(o), { perPage: 100, maxPages: 110 });
   // 중기부/기업마당은 보통 수백~천 건 — maxPages 10
   await runOne("mssBiz", (o) => fetchMssBiz(o), { perPage: 100, maxPages: 10 });
   await runOne("mssSupport", (o) => fetchMssSupport(o), { perPage: 100, maxPages: 10 });
