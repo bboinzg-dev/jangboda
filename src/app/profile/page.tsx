@@ -534,6 +534,30 @@ export default async function ProfilePage() {
         <h2 className="font-bold mb-3 text-ink-1">도구</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Link
+            href="/benefits"
+            className="card-clickable bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col gap-1 hover:border-indigo-400"
+          >
+            <div className="text-sm font-semibold text-indigo-900 flex items-center justify-between gap-2">
+              <span>🎁 정부 혜택</span>
+              <span className="text-indigo-500">›</span>
+            </div>
+            <small className="text-xs text-indigo-700">
+              내가 받을 수 있는 지원금 매칭
+            </small>
+          </Link>
+          <Link
+            href="/benefits/saved"
+            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+          >
+            <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
+              <span>★ 저장한 혜택</span>
+              <span className="text-ink-3">›</span>
+            </div>
+            <small className="text-xs text-ink-3">
+              나중에 신청할 혜택 모음
+            </small>
+          </Link>
+          <Link
             href="/budget"
             className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
           >

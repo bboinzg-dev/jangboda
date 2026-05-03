@@ -76,17 +76,38 @@ export default function UploadPage() {
     setParsing(true);
     setResult(null);
     setSubmitResult(null);
-    const res = await fetch("/api/receipts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64 }),
-    });
-    const data = await res.json();
-    setResult(data);
-    setItems(data.items);
-    setStoreId(data.storeId ?? "");
-    await Promise.all([loadStores(), loadProducts()]);
-    setParsing(false);
+    // 60초 client-side timeout — server timeout 후 무한 대기 방지
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
+    try {
+      const res = await fetch("/api/receipts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64 }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(errBody.error ?? `OCR 실패 (${res.status})`);
+      }
+      const data = await res.json();
+      setResult(data);
+      setItems(data.items);
+      setStoreId(data.storeId ?? "");
+      await Promise.all([loadStores(), loadProducts()]);
+    } catch (e) {
+      clearTimeout(timeoutId);
+      const msg =
+        e instanceof Error
+          ? e.name === "AbortError"
+            ? "OCR 응답이 60초를 넘겼어요. 사진 크기를 줄여 다시 시도해 주세요."
+            : e.message
+          : String(e);
+      setSubmitResult(`❌ ${msg}`);
+    } finally {
+      setParsing(false);
+    }
   }
 
   async function submit() {

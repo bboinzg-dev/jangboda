@@ -254,17 +254,36 @@ export async function enrichMssBiz(item: BenefitRaw): Promise<BenefitRaw> {
   let touched = false;
 
   // 사업개요 우선순위: 본문 → 기존 summary → fileName fallback
-  if (rules["사업개요"] == null || rules["사업개요"] === "") {
+  // mss list API의 dataContents(=summary)는 HTML이 섞여있으니 stripHtml로 정리.
+  // 정리 후 비어있는(`hwpEditorBoardContent` div 빈 껍데기뿐인) 문자열은 fallback으로 떨어짐.
+  const existingGaeyo = rules["사업개요"];
+  // 기존 사업개요에 HTML 태그가 섞여있으면(이전 버전 enrich 결과) stripHtml로 정리
+  if (typeof existingGaeyo === "string" && /<[a-z][^>]*>/i.test(existingGaeyo)) {
+    const cleaned = stripHtml(existingGaeyo).trim();
+    if (cleaned !== existingGaeyo) {
+      rules["사업개요"] = cleaned;
+      touched = true;
+    }
+  }
+  const currentGaeyo = rules["사업개요"];
+  const gaeyoEmpty =
+    currentGaeyo == null ||
+    currentGaeyo === "" ||
+    (typeof currentGaeyo === "string" && currentGaeyo.trim().length < 10);
+  if (gaeyoEmpty) {
     let gaeyo: string | undefined;
     if (body && body.length >= 30) {
-      gaeyo = body;
-    } else if (sumLen >= 30) {
-      gaeyo = (item.summary ?? "").trim();
+      gaeyo = body; // extractMssEditorBody가 이미 stripHtml 처리
     } else {
-      // fileName을 사업개요 fallback으로 — 파일명만 있어도 LLM 정형화가 단서로 사용
-      const fname = typeof rules.fileName === "string" ? rules.fileName : undefined;
-      if (fname && fname.trim().length >= 5) {
-        gaeyo = `첨부파일: ${fname.trim()}`;
+      const cleanedSummary = stripHtml(item.summary ?? "").trim();
+      if (cleanedSummary.length >= 30) {
+        gaeyo = cleanedSummary;
+      } else {
+        // fileName을 사업개요 fallback으로 — 파일명만 있어도 LLM 정형화가 단서로 사용
+        const fname = typeof rules.fileName === "string" ? rules.fileName : undefined;
+        if (fname && fname.trim().length >= 5) {
+          gaeyo = `첨부파일: ${fname.trim()}`;
+        }
       }
     }
     if (gaeyo) {

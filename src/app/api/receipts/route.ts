@@ -5,6 +5,9 @@ import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
 
+// Vercel 함수 timeout — OCR(CLOVA/Vision) + storage 업로드 + 매칭까지 60초 허용
+export const maxDuration = 60;
+
 // POST /api/receipts — 영수증 이미지 업로드 + OCR 파싱 + 자동 매칭 시도
 // body: { imageBase64?: string }
 // 로그인 사용자가 있으면 자동으로 contributor로 사용 (uploaderId 제거됨)

@@ -41,14 +41,24 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
     ],
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-OCR-SECRET": secret,
-    },
-    body: JSON.stringify(body),
-  });
+  // 30초 timeout — CLOVA가 hang해도 client가 무한 대기하지 않도록
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-OCR-SECRET": secret,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
