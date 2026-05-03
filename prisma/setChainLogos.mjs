@@ -32,6 +32,9 @@ const LOGO_MAP = {
   "킴스클럽": "/logos/kims-club.jpg",
   "농협하나로마트": "/logos/nh-haneoro.png",
   "홈플러스 익스프레스": "/logos/homeplus-express.jpg",
+  // DB 실제 chain name과 mismatch 별칭
+  "MINISTOP": "/logos/ministop.svg",        // 영문 표기
+  "하나로마트": "/logos/nh-haneoro.png",     // 짧은 이름
 };
 
 async function main() {
