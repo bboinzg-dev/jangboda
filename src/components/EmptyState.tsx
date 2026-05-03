@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 // 재사용 가능한 빈 상태(empty state) 카드
@@ -33,13 +34,13 @@ export default function EmptyState({
       className={`bg-white border border-border rounded-xl p-8 md:p-10 text-center ${className}`}
     >
       {illustration ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={illustration}
           alt=""
           aria-hidden
+          width={160}
+          height={160}
           className="mx-auto mb-3 w-32 h-32 md:w-40 md:h-40 object-contain"
-          loading="lazy"
         />
       ) : (
         <div className="text-5xl md:text-6xl mb-3" aria-hidden>

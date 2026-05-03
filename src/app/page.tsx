@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
@@ -139,23 +140,26 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* hero illustration — LCP 후보라 priority로 즉시 fetch */}
+          <Image
             src="/illustrations/home-hero.png"
             alt=""
             aria-hidden
+            width={224}
+            height={224}
+            priority
             className="hidden md:block w-44 lg:w-56 h-auto justify-self-end"
-            loading="eager"
           />
         </div>
         {/* 모바일 — 우측 일러스트 대신 하단 배너로 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/illustrations/home-hero.png"
           alt=""
           aria-hidden
+          width={128}
+          height={128}
+          priority
           className="md:hidden mt-4 w-32 h-32 mx-auto block"
-          loading="eager"
         />
       </section>
 
