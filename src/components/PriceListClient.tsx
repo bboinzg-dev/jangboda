@@ -165,18 +165,26 @@ export default function PriceListClient({
                         />
                       </div>
                     )}
-                    {p.online && p.productUrl && (
-                      <div className="mt-1.5">
-                        <a
-                          href={p.productUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
+                    {p.online && (
+                      <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                        {p.productUrl && (
+                          <a
+                            href={p.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
+                          >
+                            <span aria-hidden>🛒</span>
+                            <span>구매하러 가기</span>
+                            <span aria-hidden>↗</span>
+                          </a>
+                        )}
+                        <span
+                          className="text-[10px] text-stone-500"
+                          title="온라인 가격은 배송비/묶음 수량에 따라 실제 부담이 다를 수 있어요"
                         >
-                          <span aria-hidden>🛒</span>
-                          <span>구매하러 가기</span>
-                          <span aria-hidden>↗</span>
-                        </a>
+                          📦 배송비 별도
+                        </span>
                       </div>
                     )}
                   </div>

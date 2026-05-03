@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
-import { unitPriceLabel } from "@/lib/units";
+import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
 import KamisTicker from "@/components/KamisTicker";
@@ -36,9 +36,36 @@ async function getHomeData() {
   const priceCards = products
     .map((p) => {
       if (p.prices.length === 0) return null;
-      const prices = p.prices.map((x) => x.price);
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
+
+      // 단가 기반 outlier 제외 — 코스트코 대용량 박스 같은 다른 패키지는 비교에서 빼고
+      // "가격차" 부풀려지는 거 방지. PriceListClient와 동일한 ±50%/+70% 기준.
+      const withUnitPrice = p.prices.map((x) => ({
+        price: x.price,
+        unitPrice: unitPriceValue(x.price, p.unit),
+      }));
+      const validUnit = withUnitPrice
+        .map((x) => x.unitPrice)
+        .filter((v): v is number => v !== null && v > 0)
+        .sort((a, b) => a - b);
+      const median =
+        validUnit.length >= 4
+          ? validUnit[Math.floor(validUnit.length / 2)]
+          : null;
+
+      const filteredPrices =
+        median !== null
+          ? withUnitPrice
+              .filter(
+                (x) =>
+                  x.unitPrice === null ||
+                  (x.unitPrice >= median * 0.5 && x.unitPrice <= median * 1.7)
+              )
+              .map((x) => x.price)
+          : withUnitPrice.map((x) => x.price);
+
+      if (filteredPrices.length === 0) return null;
+      const min = Math.min(...filteredPrices);
+      const max = Math.max(...filteredPrices);
       const diff = max - min;
       if (diff === 0) return null;
       return {
@@ -50,6 +77,7 @@ async function getHomeData() {
         max,
         diff,
         hasHaccp: p.hasHaccp,
+        excludedCount: p.prices.length - filteredPrices.length,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -176,7 +204,10 @@ export default async function HomePage() {
         <section>
           <h2 className="text-base font-bold mb-3 flex items-center gap-2">
             💸 가격차 큰 상품 TOP 6
-            <span className="text-xs text-stone-500 font-normal">
+            <span
+              className="text-xs text-stone-500 font-normal"
+              title="단가 기준으로 다른 패키지(대용량 박스 등)는 비교에서 제외"
+            >
               마트별 비교 효과 큼
             </span>
           </h2>
