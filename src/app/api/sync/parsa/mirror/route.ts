@@ -62,9 +62,17 @@ export async function POST(req: NextRequest) {
   if (authErr) return authErr;
 
   const startedAt = Date.now();
+  const TIME_BUDGET_MS = 50_000;
+  const url = new URL(req.url);
+  const fromParam = parseInt(url.searchParams.get("from") ?? "0", 10);
+  const startFrom = Number.isFinite(fromParam) && fromParam >= 0 ? fromParam : 0;
+  const sliceLimit = Math.min(
+    1000,
+    Math.max(50, parseInt(url.searchParams.get("limit") ?? "300", 10) || 300)
+  );
 
-  // 1) ParsaStore 전체 조회
-  const parsaStores = await prisma.parsaStore.findMany({
+  // 1) ParsaStore — partial-resume용 slice
+  const parsaStoresAll = await prisma.parsaStore.findMany({
     select: {
       entpId: true,
       entpName: true,
@@ -77,7 +85,8 @@ export async function POST(req: NextRequest) {
     },
     orderBy: { entpId: "asc" },
   });
-  const totalParsaStores = parsaStores.length;
+  const totalParsaStores = parsaStoresAll.length;
+  const parsaStores = parsaStoresAll.slice(startFrom, startFrom + sliceLimit);
 
   if (totalParsaStores === 0) {
     return NextResponse.json({
@@ -186,6 +195,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const processedThrough = startFrom + parsaStores.length;
+  const partial = processedThrough < totalParsaStores;
+
   return NextResponse.json({
     ok: true,
     totalParsaStores,
@@ -193,6 +205,9 @@ export async function POST(req: NextRequest) {
     inserted,
     updated,
     withCoords,
+    partial,
+    processedThrough,
+    sliceLimit,
     elapsedMs: Date.now() - startedAt,
   });
 }

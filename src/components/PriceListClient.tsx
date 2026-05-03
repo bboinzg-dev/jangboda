@@ -8,6 +8,7 @@ import TrustBadge from "@/components/TrustBadge";
 import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
+import CollapsibleList from "@/components/CollapsibleList";
 
 type TrustInfo = {
   count: number;
@@ -121,7 +122,7 @@ export default function PriceListClient({
           즐겨찾기 매장에는 이 상품이 등록되지 않았습니다
         </div>
       ) : (
-        <ul className="space-y-2">
+        <CollapsibleList initialCount={5} as="ul" innerClassName="space-y-2">
           {sorted.map((p, i) => {
             const tag = freshnessTag(p.updatedAt);
             const savingsPct =
@@ -219,7 +220,7 @@ export default function PriceListClient({
               </li>
             );
           })}
-        </ul>
+        </CollapsibleList>
       )}
 
       {outliers.length > 0 && (

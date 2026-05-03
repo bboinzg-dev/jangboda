@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import EmptyState from "@/components/EmptyState";
+import CollapsibleList from "@/components/CollapsibleList";
 
 // 1시간 ISR — 매주 금요일 갱신되는 공공 데이터.
 export const revalidate = 3600;
@@ -188,7 +189,11 @@ export default async function ParsaProductDetailPage({
             )}
           </div>
 
-          <ul className="bg-white border border-stone-200 rounded-xl overflow-hidden divide-y divide-stone-100">
+          <CollapsibleList
+            initialCount={5}
+            as="ul"
+            innerClassName="bg-white border border-stone-200 rounded-xl overflow-hidden divide-y divide-stone-100"
+          >
             {prices.map((p, i) => {
               const store = storeMap.get(p.entpId);
               const typeName = store?.entpTypeCode
@@ -244,7 +249,7 @@ export default async function ParsaProductDetailPage({
                 </li>
               );
             })}
-          </ul>
+          </CollapsibleList>
         </section>
       )}
 

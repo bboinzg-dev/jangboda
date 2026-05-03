@@ -10,6 +10,7 @@ import CartProductSearch, {
 import { useFavorites } from "@/components/FavoritesProvider";
 import RecipeRecommendations from "@/components/RecipeRecommendations";
 import ShoppingMode, { type ShoppingItem } from "@/components/ShoppingMode";
+import CollapsibleList from "@/components/CollapsibleList";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -643,7 +644,7 @@ export default function CartPage() {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
+              <CollapsibleList initialCount={5} innerClassName="space-y-3">
                 {offlineResults.map((r, i) => (
                   <ComparisonCard
                     key={r.storeId}
@@ -653,7 +654,7 @@ export default function CartPage() {
                     distanceKm={r._distanceKm}
                   />
                 ))}
-              </div>
+              </CollapsibleList>
             )}
           </div>
 
@@ -667,7 +668,7 @@ export default function CartPage() {
                 온라인 매장 결과가 없어요
               </div>
             ) : (
-              <div className="space-y-3">
+              <CollapsibleList initialCount={5} innerClassName="space-y-3">
                 {onlineResults.map((r, i) => (
                   <ComparisonCard
                     key={r.storeId}
@@ -677,7 +678,7 @@ export default function CartPage() {
                     distanceKm={null}
                   />
                 ))}
-              </div>
+              </CollapsibleList>
             )}
           </div>
 
