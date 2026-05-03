@@ -108,11 +108,35 @@ export async function fetchNaverShop(query: string): Promise<NaverFetchResult> {
   }
 }
 
-// mall별 최저가 1건씩 압축
+// "2개 묶음" / "x2 세트" 같은 multi-pack 상품은 가격이 단일 SKU의 N배라
+// 같은 product에 등록되면 비교 부정확. title 휴리스틱으로 제외.
+const MULTIPACK_PATTERNS: RegExp[] = [
+  /\b[xX×]\s*[2-9]\b/,                  // x2, X3, ×4
+  /\bx\s*[2-9]\s*개/,                    // x2개
+  /[2-9]\s*개\s*묶음/,                   // 2개 묶음
+  /[2-9]\s*개\s*세트/,                   // 3개 세트
+  /[2-9]\s*개\s*입\s*\d+\s*세트/,        // 5개입 2세트
+  /\b[2-9]\s*세트\b/,                    // 2세트
+  /\b[2-9]\s*PACK/i,                     // 2PACK
+  /[2-9]\s*개\s*[xX×]\s*\d+/,           // 5개 x 2
+  /^\s*\[\s*[2-9]\s*개\s*\]/,           // [2개] 시작
+  /\(\s*[2-9]\s*개\s*\)/,                // (2개)
+  /[2-9]\s*개입\s*[xX×]\s*[2-9]/,       // 5개입 x 2
+  /\b[2-9]\s*box\b/i,                    // 2box
+  /번들\s*[2-9]/,                        // 번들 2
+  /[2-9]\s*box\s*묶음/i,
+];
+
+function isMultiPack(title: string): boolean {
+  return MULTIPACK_PATTERNS.some((p) => p.test(title));
+}
+
+// mall별 최저가 1건씩 압축 — multi-pack은 제외
 export function pickLowestByMall(items: NaverShopItem[]): NaverShopItem[] {
   const byMall = new Map<string, NaverShopItem>();
   for (const it of items) {
     if (it.lprice <= 0) continue;
+    if (isMultiPack(it.title)) continue; // 묶음 판매 제외
     const cur = byMall.get(it.mallName);
     if (!cur || it.lprice < cur.lprice) byMall.set(it.mallName, it);
   }

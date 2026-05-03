@@ -71,8 +71,9 @@ export default function PriceListClient({
     .map((x) => x.unitPrice)
     .filter((v): v is number => v !== null && v > 0)
     .sort((a, b) => a - b);
+  // 3개 row 이상일 때 median 기반 outlier 분리 (이전엔 4 — 너무 보수적이라 묶음판매 못 잡음)
   const median =
-    validUnitPrices.length >= 4
+    validUnitPrices.length >= 3
       ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
       : null;
   const lowBound = median !== null ? median * 0.5 : null;
