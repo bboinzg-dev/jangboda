@@ -147,7 +147,10 @@ export default function UploadPage() {
       clearTimeout(timeoutId);
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(errBody.error ?? `OCR 실패 (${res.status})`);
+        const errMsg = errBody.hint
+          ? `${errBody.error ?? "OCR 실패"}\n${errBody.hint}`
+          : errBody.error ?? `OCR 실패 (${res.status})`;
+        throw new Error(errMsg);
       }
       const data = await res.json();
       setResult(data);

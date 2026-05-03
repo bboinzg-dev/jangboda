@@ -22,7 +22,22 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   const uploaderId = user?.id;
 
-  const { receipt, usedMock, source } = await parseReceipt(imageBase64 ?? null);
+  let receipt, usedMock, source;
+  try {
+    const result = await parseReceipt(imageBase64 ?? null);
+    receipt = result.receipt;
+    usedMock = result.usedMock;
+    source = result.source;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      {
+        error: msg,
+        hint: "영수증을 더 밝은 곳에서 똑바로 찍거나, 글씨가 흐리지 않게 찍어주세요. 그래도 안 되면 OCR 환경변수(CLOVA_OCR_URL/SECRET) 확인 필요합니다.",
+      },
+      { status: 502 }
+    );
+  }
 
   // 매장 추론
   const storeId = await matchStore(receipt.storeHint);

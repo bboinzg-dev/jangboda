@@ -364,6 +364,8 @@ export type OcrSource = "clova" | "google_vision" | "mock";
 export async function parseReceipt(
   imageBase64: string | null
 ): Promise<{ receipt: ParsedReceipt; usedMock: boolean; source: OcrSource }> {
+  let lastError: string | null = null;
+
   // 1순위: CLOVA Receipt OCR
   const hasClova = !!process.env.CLOVA_OCR_URL && !!process.env.CLOVA_OCR_SECRET;
   if (hasClova && imageBase64) {
@@ -372,8 +374,11 @@ export async function parseReceipt(
       if (receipt.items.length > 0 || receipt.storeHint) {
         return { receipt, usedMock: false, source: "clova" };
       }
+      lastError = "CLOVA가 글씨를 인식하지 못했습니다.";
     } catch (e) {
-      console.warn("[OCR] CLOVA 실패, 다음 fallback:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn("[OCR] CLOVA 실패:", msg);
+      lastError = `CLOVA OCR 호출 실패: ${msg.slice(0, 100)}`;
     }
   }
 
@@ -382,16 +387,26 @@ export async function parseReceipt(
   if (hasVision && imageBase64) {
     try {
       const receipt = await callGoogleVision(imageBase64);
-      // Vision 휴리스틱이 아무것도 못 뽑은 경우 → mock으로 fallback (사용자에게 noise 안 주기)
       if (receipt.items.length > 0 || receipt.storeHint) {
         return { receipt, usedMock: false, source: "google_vision" };
       }
-      console.warn("[OCR] Vision 응답에서 품목 추출 실패, mock으로 fallback");
+      lastError = "Vision OCR이 글씨를 인식하지 못했습니다.";
     } catch (e) {
-      console.warn("[OCR] Vision 실패, mock으로 fallback:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn("[OCR] Vision 실패:", msg);
+      lastError = `Vision OCR 호출 실패: ${msg.slice(0, 100)}`;
     }
   }
 
-  // 3순위: Mock
+  // 이미지가 있는데 OCR 다 실패한 경우 — mock 노이즈 대신 명확한 에러로
+  // (demo용 mock은 imageBase64가 null인 흐름에만 사용)
+  if (imageBase64) {
+    throw new Error(
+      lastError ??
+        "OCR 서비스가 설정되지 않았습니다. 영수증 사진 처리에 실패했습니다."
+    );
+  }
+
+  // 이미지 없는 demo 흐름만 mock
   return { receipt: mockOcr(), usedMock: true, source: "mock" };
 }
