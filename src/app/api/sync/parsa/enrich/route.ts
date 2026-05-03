@@ -67,33 +67,39 @@ export async function POST(req: NextRequest) {
   let foodsafetyMatched = 0;
   let nutritionMatched = 0;
   let failed = 0;
+  const debugLog: Array<{ name: string; fsResult: string; nutritionResult: string }> = [];
+  const isDebug = url.searchParams.get("debug") === "true";
 
   for (const p of products) {
     if (Date.now() - startedAt > TIME_BUDGET_MS) break;
 
     const updates: Prisma.ProductUncheckedUpdateInput = {};
     let metadataPatch: Record<string, unknown> | null = null;
+    let fsDebug = "skip";
+    let nutDebug = "skip";
 
     // 1) 식약처 enrich — barcode/manufacturer 비어있을 때만
     if (doFoodsafety && (!p.barcode || !p.manufacturer)) {
       try {
-        // ParsaProduct는 brand 비어있고 goodName이 "팔도 왕뚜껑(110g)" 형태라
-        // 기본 minScore=5로는 매칭 어려움. 3으로 낮춰 token 매칭만으로도 OK.
         const fs = await findBestMatchForProduct(p.name, p.brand, { minScore: 3 });
         if (fs) {
           if (!p.barcode && fs.barcode) updates.barcode = fs.barcode;
           if (!p.manufacturer && fs.manufacturer) updates.manufacturer = fs.manufacturer;
-          // category는 신중히 — parsa 기본 카테고리 "참가격 등록 상품"일 때만
-          // 식약처 소분류명(category.minor)으로 덮어쓰기
           if (fs.category?.minor && p.category === "참가격 등록 상품") {
             updates.category = fs.category.minor;
           }
           foodsafetyMatched++;
+          fsDebug = `match:${fs.productName}|brand=${fs.manufacturer}|barcode=${fs.barcode}`;
+        } else {
+          fsDebug = "no match";
         }
-      } catch {
+      } catch (e) {
         failed++;
+        fsDebug = `error:${e instanceof Error ? e.message : String(e)}`;
       }
     }
+
+    if (isDebug) debugLog.push({ name: p.name, fsResult: fsDebug, nutritionResult: nutDebug });
 
     // 2) 영양정보 enrich
     if (doNutrition) {
@@ -165,6 +171,7 @@ export async function POST(req: NextRequest) {
     partial,
     processedThrough,
     elapsedMs: Date.now() - startedAt,
+    ...(isDebug ? { debug: debugLog } : {}),
   });
 }
 
