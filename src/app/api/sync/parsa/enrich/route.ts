@@ -44,16 +44,12 @@ export async function POST(req: NextRequest) {
   const doFoodsafety = type === "foodsafety" || type === "both";
   const doNutrition = type === "nutrition" || type === "both";
 
-  // 농수산물 카테고리 product는 식약처 가공식품 DB 대상 아님 — 제외
-  const total = await prisma.product.count({
-    where: { category: { not: "농수산물" } },
-  });
-
   // ParsaProduct만 enrich — 시드 7개는 식약처 SKU 없는 항목들이라 시간 낭비
   const baseWhere = {
     category: { not: "농수산물" },
     externalId: { startsWith: "parsa:product:" },
   };
+  const total = await prisma.product.count({ where: baseWhere });
   const products = await prisma.product.findMany({
     where: baseWhere,
     select: {
