@@ -45,6 +45,7 @@ const blueIcon = L.divIcon({
 export type StoreMarker = {
   id: string;
   name: string;
+  chainId?: string;
   chainName: string;
   chainLogoUrl?: string | null;
   address: string;
@@ -52,6 +53,7 @@ export type StoreMarker = {
   lng: number;
   distanceKm?: number | null;
   priceCount?: number;
+  chainPriceCount?: number; // 같은 chain의 다른 매장까지 합한 가격 수
 };
 
 type Props = {

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($line = Select-String -Path \"C:\\\\project\\\\jangboda\\\\.env\" -Pattern '^GEMINI_API_KEY=' -SimpleMatch | Select-Object -First 1; if \\($null -eq $line\\) { Write-Output \"MISSING: .env에 GEMINI_API_KEY 줄이 아예 없음\" } else { $val = \\($line.Line -replace '^GEMINI_API_KEY=',''\\).Trim\\('\"'\\).Trim\\(\"'\"\\); Write-Output \\(\"FOUND: line=\" + $line.LineNumber + \" length=\" + $val.Length + \" starts_with_AIza=\" + \\($val.StartsWith\\('AIza'\\)\\)\\) })",
+      "PowerShell(Select-String -Path \"C:\\\\project\\\\jangboda\\\\.env\" -Pattern 'GEMINI' | ForEach-Object { \"line \" + $_.LineNumber + \": \\(length=\" + $_.Line.Length + \"\\)\" })"
+    ]
+  }
+}

@@ -36,9 +36,26 @@ async function getStoreDetail(id: string) {
     orderBy: { createdAt: "desc" },
   });
 
+  // 매장 직접 가격이 없으면 같은 chain의 다른 매장 가격 fallback
+  // (참가격 데이터는 본사 대표매장에만 매핑되어 있어 일반 지점이 0건인 경우 多)
+  let isFallback = false;
+  let pricesToUse = allPrices;
+  if (allPrices.length === 0) {
+    const chainPrices = await prisma.price.findMany({
+      where: {
+        store: { chainId: store.chainId },
+        NOT: { storeId: id },
+      },
+      include: { product: true },
+      orderBy: { createdAt: "desc" },
+    });
+    pricesToUse = chainPrices;
+    isFallback = chainPrices.length > 0;
+  }
+
   // productId 별 최신 1건만 (같은 상품 여러 가격이 쌓여있어도)
-  const latestByProduct = new Map<string, typeof allPrices[number]>();
-  for (const p of allPrices) {
+  const latestByProduct = new Map<string, typeof pricesToUse[number]>();
+  for (const p of pricesToUse) {
     if (!latestByProduct.has(p.productId)) {
       latestByProduct.set(p.productId, p);
     }
@@ -58,7 +75,7 @@ async function getStoreDetail(id: string) {
     items: list.sort((a, b) => a.product.name.localeCompare(b.product.name)),
   }));
 
-  return { store, items, categories };
+  return { store, items, categories, isFallback };
 }
 
 export default async function StoreDetailPage({
@@ -68,7 +85,7 @@ export default async function StoreDetailPage({
 }) {
   const data = await getStoreDetail(params.id);
   if (!data) return notFound();
-  const { store, items, categories } = data;
+  const { store, items, categories, isFallback } = data;
 
   const cat = store.chain.category || "mart";
   const icon = CATEGORY_ICONS[cat] ?? "🛒";
@@ -98,7 +115,9 @@ export default async function StoreDetailPage({
 
         <div className="mt-4 flex items-center gap-3">
           <div>
-            <div className="text-xs text-stone-500">등록 가격</div>
+            <div className="text-xs text-stone-500">
+              {isFallback ? `같은 ${store.chain.name} 가격` : "등록 가격"}
+            </div>
             <div className="text-2xl font-bold text-brand-600">
               {items.length}건
             </div>
@@ -109,6 +128,13 @@ export default async function StoreDetailPage({
             </div>
           )}
         </div>
+        {isFallback && (
+          <div className="mt-3 text-xs bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800">
+            이 매장의 직접 등록 가격은 없어, 같은{" "}
+            <strong>{store.chain.name}</strong> 다른 매장의 참고 가격을 보여드립니다.
+            지점별 가격 차이가 있을 수 있어요.
+          </div>
+        )}
       </header>
 
       {items.length === 0 ? (

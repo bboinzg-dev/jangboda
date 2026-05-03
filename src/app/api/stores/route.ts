@@ -16,9 +16,23 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  // chainId별 prices 합계 — store가 0건이어도 chain 단위로 가격 정보 노출
+  // (참가격 데이터는 본사 대표매장에만 매핑되어 일반 매장이 0건인 경우 대처)
+  const chainGroups = await prisma.price.groupBy({
+    by: ["storeId"],
+    _count: true,
+  });
+  const storeIdToCount = new Map(chainGroups.map((g) => [g.storeId, g._count]));
+  const chainTotals = new Map<string, number>();
+  for (const s of stores) {
+    const c = storeIdToCount.get(s.id) ?? 0;
+    chainTotals.set(s.chainId, (chainTotals.get(s.chainId) ?? 0) + c);
+  }
+
   let result = stores.map((s) => ({
     id: s.id,
     name: s.name,
+    chainId: s.chainId,
     chainName: s.chain.name,
     chainCategory: s.chain.category,
     chainLogoUrl: s.chain.logoUrl, // 매장 카드 등에 chain 로고 표시
@@ -27,6 +41,7 @@ export async function GET(req: NextRequest) {
     lng: s.lng,
     hours: s.hours,
     priceCount: s._count.prices,
+    chainPriceCount: chainTotals.get(s.chainId) ?? 0,
     distanceKm: !isNaN(lat) && !isNaN(lng) ? distanceKm(lat, lng, s.lat, s.lng) : null,
   }));
 

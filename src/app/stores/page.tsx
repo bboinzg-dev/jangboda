@@ -430,7 +430,15 @@ export default function StoresPage() {
                           </div>
                         )}
                         <div className="text-xs text-stone-500 pointer-events-none">
-                          {s.priceCount}건 가격
+                          {s.priceCount && s.priceCount > 0 ? (
+                            <>{s.priceCount}건 가격</>
+                          ) : s.chainPriceCount && s.chainPriceCount > 0 ? (
+                            <span className="text-stone-400">
+                              같은 {s.chainName} {s.chainPriceCount}건
+                            </span>
+                          ) : (
+                            <span className="text-stone-400">가격 정보 없음</span>
+                          )}
                         </div>
                         {s.lat > 0 && s.lng > 0 && (
                           <DirectionsButton
