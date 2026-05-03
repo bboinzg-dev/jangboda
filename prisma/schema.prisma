@@ -59,6 +59,9 @@ model Product {
   description  String?  // 자유 메모 (제조국, 유통기한, 영양정보 등)
   hasHaccp     Boolean  @default(false)         // HACCP 적용업소 여부 (sync 시 갱신)
   haccpInfo    Json?                            // { licenseNo, appnDate, appnNo, bsshName } 캐시
+  // 외부 출처 식별자 (예: "parsa:product:5478" = 한국소비자원 goodId 5478)
+  // Store.externalId와 동일 패턴 — 같은 출처 상품 재동기화 시 멱등 upsert 키.
+  externalId   String?  @unique
   createdAt    DateTime @default(now())
   prices       Price[]
   aliases      ProductAlias[]
