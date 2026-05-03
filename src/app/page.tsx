@@ -14,7 +14,7 @@ export const revalidate = 60;
 
 async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
-  const [kamisPrices, products, productsCount, storesCount, pricesCount] =
+  const [kamisPrices, statsPrices, products, productsCount, storesCount, pricesCount] =
     await Promise.all([
       // KAMIS 시세 — 농수산물 가상 매장 — ticker용 충분히 가져옴
       prisma.price.findMany({
@@ -24,11 +24,25 @@ async function getHomeData() {
         include: { product: true },
         distinct: ["productId"],
       }),
-      // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순)
+      // 통계청 시세 — 가공식품 (라면/김치/식용유 등)
+      prisma.price.findMany({
+        where: { source: "stats_official" },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        include: { product: true },
+        distinct: ["productId"],
+      }),
+      // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순) — 시세 가격 제외
       prisma.product.findMany({
         where: { category: { not: "농수산물" } },
         take: 30,
-        include: { prices: { take: 50, orderBy: { createdAt: "desc" } } },
+        include: {
+          prices: {
+            where: { source: { not: "stats_official" } },
+            take: 50,
+            orderBy: { createdAt: "desc" },
+          },
+        },
       }),
       prisma.product.count(),
       prisma.store.count(),
@@ -89,11 +103,14 @@ async function getHomeData() {
 
   const stats = { products: productsCount, stores: storesCount, prices: pricesCount };
 
-  return { kamisPrices, priceCards, stats };
+  // 오늘의 시세 = KAMIS(농수산물) + 통계청(가공식품) 병합
+  const tickerPrices = [...kamisPrices, ...statsPrices];
+
+  return { tickerPrices, priceCards, stats };
 }
 
 export default async function HomePage() {
-  const { kamisPrices, priceCards, stats } = await getHomeData();
+  const { tickerPrices, priceCards, stats } = await getHomeData();
 
   return (
     <div className="space-y-8">
@@ -169,14 +186,14 @@ export default async function HomePage() {
       {/* 식약처 회수·판매중지 식품 배너 — 최근 7일, 안전 경고 */}
       <RecallBanner />
 
-      {/* KAMIS 실시간 시세 — 자동 ticker (위로 흐름 + 마우스오버 일시정지) */}
-      {kamisPrices.length > 0 && (
+      {/* 실시간 시세 — KAMIS(농수산물) + 통계청(가공식품) ticker */}
+      {tickerPrices.length > 0 && (
         <section>
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-base font-bold flex items-center gap-2">
               📊 오늘의 시세
               <span className="text-xs text-stone-500 font-normal">
-                KAMIS 공식 평균가
+                KAMIS · 통계청 공식 평균가
               </span>
             </h2>
             <Link
@@ -187,7 +204,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <KamisTicker
-            items={kamisPrices.map((p) => {
+            items={tickerPrices.map((p) => {
               const m = ((p as { metadata?: unknown }).metadata ?? null) as
                 | { changeAmount?: number; changePct?: number }
                 | null;
@@ -258,7 +275,7 @@ export default async function HomePage() {
       )}
 
       {/* 가치 0건 안내 — 시드만 있을 때 */}
-      {priceCards.length === 0 && kamisPrices.length === 0 && (
+      {priceCards.length === 0 && tickerPrices.length === 0 && (
         <section className="bg-white border border-stone-200 rounded-xl p-8 text-center">
           <div className="text-4xl mb-3">🛒</div>
           <h2 className="font-bold mb-1">아직 가격 데이터가 부족해요</h2>

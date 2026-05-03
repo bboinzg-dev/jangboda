@@ -36,7 +36,10 @@ export async function GET(req: NextRequest) {
   // 각 상품의 최저가/평균가 계산을 위해 가격 한 번 더 집계
   const productIds = products.map((p) => p.id);
   const allPrices = await prisma.price.findMany({
-    where: { productId: { in: productIds } },
+    where: {
+      productId: { in: productIds },
+      source: { not: "stats_official" }, // 시세는 매장 가격 통계에서 제외
+    },
     select: { productId: true, price: true },
   });
 

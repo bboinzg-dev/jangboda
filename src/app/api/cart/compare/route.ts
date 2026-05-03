@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
     const [stores, allPrices] = await Promise.all([
       prisma.store.findMany({ include: { chain: true } }),
       prisma.price.findMany({
-        where: { productId: { in: productIds } },
+        where: {
+          productId: { in: productIds },
+          source: { not: "stats_official" }, // 시세는 매장 비교에서 제외
+        },
         orderBy: { createdAt: "desc" },
         include: { product: { select: { name: true } } },
       }),

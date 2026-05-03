@@ -35,8 +35,12 @@ async function getProductDetail(id: string) {
 
     // 한 번의 쿼리로 이 productId의 모든 가격 가져오기 (N+1 회피)
     // store 정보는 join으로 같이. take 5000 제한 (메모리 보호)
+    // source=stats_official(통계청 시세)는 매장이 아니라 시세이므로 매장 비교에서 제외
     const allPrices = await prisma.price.findMany({
-      where: { productId: id },
+      where: {
+        productId: id,
+        source: { not: "stats_official" },
+      },
       include: { store: { include: { chain: true } } },
       orderBy: { createdAt: "desc" },
       take: 5000,
