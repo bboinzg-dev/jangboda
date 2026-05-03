@@ -30,7 +30,7 @@ export default function EmptyState({
 }) {
   return (
     <div
-      className={`bg-white border border-stone-200 rounded-xl p-8 md:p-10 text-center ${className}`}
+      className={`bg-white border border-border rounded-xl p-8 md:p-10 text-center ${className}`}
     >
       {illustration ? (
         // eslint-disable-next-line @next/next/no-img-element

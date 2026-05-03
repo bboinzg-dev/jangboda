@@ -82,7 +82,7 @@ export default function IngredientsPanel({ productId }: { productId: string }) {
 
   if (loading) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <div className="h-5 w-28 bg-stone-100 rounded animate-pulse mb-3" />
         <div className="text-xs text-stone-400">
           원재료 정보 불러오는 중...
@@ -93,7 +93,7 @@ export default function IngredientsPanel({ productId }: { productId: string }) {
 
   if (!data || !data.found || data.ingredients.length === 0) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <h2 className="font-bold text-sm mb-1 text-stone-600">
           🧪 원재료 정보
         </h2>
@@ -113,7 +113,7 @@ export default function IngredientsPanel({ productId }: { productId: string }) {
         }${data.productName ?? ""})`;
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-4">
+    <section className="bg-white border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🧪 원재료 정보
         {data.productType && (

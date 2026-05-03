@@ -68,7 +68,7 @@ export default function OnboardingCard({
   // 비로그인 상태 — 가벼운 안내 카드
   if (!authed) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
+      <section className="bg-white border border-border rounded-xl p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-bold text-base mb-1">🛒 장보다 시작하기</h2>
@@ -115,7 +115,7 @@ export default function OnboardingCard({
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-5">
+    <section className="bg-white border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
           <h2 className="font-bold text-base">🛒 장보다 시작하기</h2>
@@ -184,15 +184,15 @@ function Step({
         href={href}
         className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
           done
-            ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
-            : "bg-stone-50 border-stone-200 hover:bg-stone-100"
+            ? "bg-success-soft border-success-soft hover:opacity-90"
+            : "bg-stone-50 border-border hover:bg-stone-100"
         }`}
       >
         {/* 단계 표시 — 완료/미완료 */}
         <div
           className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
             done
-              ? "bg-emerald-500 text-white"
+              ? "bg-success text-white"
               : "bg-stone-200 text-stone-600"
           }`}
           aria-label={done ? "완료" : `단계 ${n}`}
@@ -205,14 +205,14 @@ function Step({
         <div className="min-w-0 flex-1">
           <div
             className={`font-medium text-sm ${
-              done ? "text-emerald-900" : "text-stone-900"
+              done ? "text-success-text" : "text-stone-900"
             }`}
           >
             {title}
           </div>
           <div
             className={`text-xs truncate ${
-              done ? "text-emerald-700" : "text-stone-500"
+              done ? "text-success-text" : "text-stone-500"
             }`}
           >
             {desc}
@@ -220,7 +220,7 @@ function Step({
         </div>
         <div
           className={`text-xs shrink-0 ${
-            done ? "text-emerald-600" : "text-stone-400"
+            done ? "text-success-text" : "text-stone-400"
           }`}
         >
           {done ? "완료" : "→"}

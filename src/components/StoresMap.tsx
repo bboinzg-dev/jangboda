@@ -88,7 +88,7 @@ export default function StoresMap({ stores, myLocation, height = "400px" }: Prop
     : [offline[0].lat, offline[0].lng];
 
   return (
-    <div style={{ height }} className="rounded-lg overflow-hidden border border-stone-200">
+    <div style={{ height }} className="rounded-lg overflow-hidden border border-border">
       <MapContainer
         center={center}
         zoom={12}

@@ -133,7 +133,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
         </div>
         <div className="w-full bg-stone-700 rounded-full h-2 max-w-xl mx-auto overflow-hidden">
           <div
-            className="bg-emerald-400 h-full rounded-full transition-all duration-300"
+            className="bg-success h-full rounded-full transition-all duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -151,13 +151,13 @@ export default function ShoppingMode({ items, onClose }: Props) {
                 className={`w-full text-left rounded-2xl p-5 flex items-center gap-4 transition active:scale-[0.98] ${
                   isChecked
                     ? "bg-stone-800 border border-stone-700"
-                    : "bg-white border border-stone-200 shadow-sm"
+                    : "bg-white border border-border shadow-sm"
                 }`}
               >
                 <span
                   className={`shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-3xl transition ${
                     isChecked
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-success text-white"
                       : "bg-stone-100 border-2 border-stone-300 text-transparent"
                   }`}
                 >
@@ -203,7 +203,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-full text-lg font-bold w-full max-w-xs"
+            className="bg-success hover:opacity-90 text-white px-8 py-3 rounded-full text-lg font-bold w-full max-w-xs"
           >
             돌아가기
           </button>

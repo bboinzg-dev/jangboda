@@ -53,7 +53,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
 
   if (loading) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <div className="h-5 w-36 bg-stone-100 rounded animate-pulse mb-3" />
         <div className="text-xs text-stone-400">
           농가 이력 정보 불러오는 중...
@@ -64,7 +64,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
 
   if (!data || data.items.length === 0) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
           🌱 농산물이력추적
         </h2>
@@ -79,7 +79,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-4">
+    <section className="bg-white border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🌱 농산물이력추적
         <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
@@ -94,7 +94,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
         {data.items.map((item) => (
           <li
             key={item.id}
-            className="border border-stone-200 rounded-lg p-2.5 text-sm"
+            className="border border-border rounded-lg p-2.5 text-sm"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">

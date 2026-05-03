@@ -151,6 +151,7 @@ export default function SearchPage() {
         q ? (
           // 검색어가 있는데 결과 0건
           <EmptyState
+            illustration="/illustrations/empty-search.png"
             icon="🔍"
             title={`"${q}" 검색 결과가 없어요`}
             description={
@@ -187,6 +188,7 @@ export default function SearchPage() {
         ) : category !== ALL ? (
           // 검색어 없이 카테고리만 — 빈 카테고리
           <EmptyState
+            illustration="/illustrations/empty-search.png"
             icon="📂"
             title={`"${category}" 카테고리에 등록된 상품이 없어요`}
             description="다른 카테고리를 보거나, 영수증을 올려 직접 카탈로그를 채워보세요."
@@ -206,6 +208,7 @@ export default function SearchPage() {
         ) : (
           // 초기/완전 빈 상태
           <EmptyState
+            illustration="/illustrations/empty-cart.png"
             icon="🛒"
             title="아직 등록된 상품이 없어요"
             description="첫 영수증을 올리면 카탈로그가 자동으로 만들어지고, 다른 사용자도 함께 절약합니다."

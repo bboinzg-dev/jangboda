@@ -70,7 +70,7 @@ export default function ProductSearchPicker({
     <div ref={containerRef} className="relative flex-1 min-w-0">
       {selected ? (
         <div
-          className="flex items-center justify-between gap-2 px-3 py-2 border border-emerald-300 bg-emerald-50/50 rounded text-sm cursor-pointer"
+          className="flex items-center justify-between gap-2 px-3 py-2 border border-success-soft bg-success-soft/50 rounded text-sm cursor-pointer"
           onClick={() => {
             clear();
             setOpen(true);
@@ -88,7 +88,7 @@ export default function ProductSearchPicker({
             )}
           </div>
           <span
-            className="text-xs text-stone-400 hover:text-rose-500 shrink-0"
+            className="text-xs text-stone-400 hover:text-danger shrink-0"
             aria-label="다시 선택"
           >
             ✕
@@ -110,7 +110,7 @@ export default function ProductSearchPicker({
           />
           {open && filtered.length > 0 && (
             <ul
-              className="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto bg-white border border-stone-200 rounded-md shadow-lg"
+              className="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto bg-white border border-border rounded-md shadow-lg"
               role="listbox"
             >
               {filtered.map((p) => (
@@ -132,7 +132,7 @@ export default function ProductSearchPicker({
             </ul>
           )}
           {open && filtered.length === 0 && query.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full bg-white border border-stone-200 rounded-md shadow-lg p-3 text-xs text-stone-500 text-center">
+            <div className="absolute z-20 mt-1 w-full bg-white border border-border rounded-md shadow-lg p-3 text-xs text-stone-500 text-center">
               "{query}"에 맞는 상품이 없습니다
             </div>
           )}

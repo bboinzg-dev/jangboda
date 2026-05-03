@@ -158,7 +158,7 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
     <div className="relative" style={{ height }}>
       <div
         ref={containerRef}
-        className="rounded-lg overflow-hidden border border-stone-200 h-full w-full"
+        className="rounded-lg overflow-hidden border border-border h-full w-full"
       />
       {overlayMessage && (
         <div className="absolute inset-0 bg-stone-100/90 rounded-lg flex items-center justify-center text-stone-500 text-sm pointer-events-none">

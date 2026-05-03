@@ -234,6 +234,7 @@ export default async function ProductDetailPage({
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
       {offlineRows.length === 0 && onlineRows.length === 0 ? (
         <EmptyState
+          illustration="/illustrations/empty-cart.png"
           icon="🏷️"
           title="이 상품은 아직 매장에 등록되지 않았습니다"
           description={

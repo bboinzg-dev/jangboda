@@ -93,7 +93,7 @@ export default function NutritionPanel({ productId }: { productId: string }) {
 
   if (loading) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <div className="h-5 w-28 bg-stone-100 rounded animate-pulse mb-3" />
         <div className="text-xs text-stone-400">영양정보 불러오는 중...</div>
       </section>
@@ -102,7 +102,7 @@ export default function NutritionPanel({ productId }: { productId: string }) {
 
   if (!data || !data.found || !data.nutrition) {
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <h2 className="font-bold text-sm mb-1 text-stone-600">
           🥗 영양 정보
         </h2>
@@ -145,7 +145,7 @@ export default function NutritionPanel({ productId }: { productId: string }) {
       : "식품의약품안전처 식품영양성분DB";
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-4">
+    <section className="bg-white border border-border rounded-xl p-4">
       <div className="flex items-baseline justify-between gap-2 flex-wrap mb-2">
         <h2 className="font-bold text-sm flex items-center gap-2">
           🥗 영양 정보

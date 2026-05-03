@@ -13,24 +13,24 @@ export default async function RecallBanner() {
 
   if (recalls.length === 0) return null;
 
-  // 등급 배지 색상
+  // 등급 배지 색상 — 1등급(가장 심각)만 danger, 2/3등급은 본래 단계별 톤 유지
   const gradeBadgeClass = (grade?: string | null) => {
     if (!grade) return "bg-stone-100 text-stone-600";
-    if (grade.includes("1")) return "bg-rose-100 text-rose-700";
+    if (grade.includes("1")) return "bg-danger-soft text-danger-text";
     if (grade.includes("2")) return "bg-orange-100 text-orange-700";
-    if (grade.includes("3")) return "bg-amber-100 text-amber-700";
+    if (grade.includes("3")) return "bg-warning-soft text-warning-text";
     return "bg-stone-100 text-stone-600";
   };
 
   return (
-    <section className="bg-rose-50 border border-rose-200 rounded-xl p-4 md:p-5">
+    <section className="bg-danger-soft border border-danger-soft rounded-xl p-4 md:p-5">
       <div className="flex items-baseline justify-between mb-3">
-        <h2 className="text-base font-bold text-rose-900 flex items-center gap-2">
+        <h2 className="text-base font-bold text-danger-text flex items-center gap-2">
           🚨 최근 회수·판매중지 식품 {recalls.length}건
         </h2>
         <Link
           href="/recalls"
-          className="text-xs text-rose-700 hover:text-rose-900 font-medium"
+          className="text-xs text-danger-text hover:opacity-80 font-medium"
         >
           전체보기 ›
         </Link>
@@ -39,7 +39,7 @@ export default async function RecallBanner() {
         {recalls.map((r) => (
           <li
             key={r.id}
-            className="bg-white border border-rose-100 rounded-lg p-3 flex items-start gap-3"
+            className="bg-white border border-danger-soft rounded-lg p-3 flex items-start gap-3"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -61,7 +61,7 @@ export default async function RecallBanner() {
                   {r.manufacturer}
                 </div>
               )}
-              <div className="text-xs text-rose-700 mt-0.5 line-clamp-1">
+              <div className="text-xs text-danger-text mt-0.5 line-clamp-1">
                 {r.reason}
               </div>
             </div>

@@ -149,7 +149,7 @@ export default function SeafoodTracePanel({
   };
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-4">
+    <section className="bg-white border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🐟 수산물 이력추적 조회
       </h2>
@@ -200,7 +200,7 @@ export default function SeafoodTracePanel({
         <div className="space-y-4">
           {/* 기본정보 */}
           {result.basic && (
-            <div className="border border-stone-200 rounded-lg p-3">
+            <div className="border border-border rounded-lg p-3">
               <div className="text-xs font-semibold text-stone-700 mb-2">
                 기본정보
               </div>
@@ -231,7 +231,7 @@ export default function SeafoodTracePanel({
 
           {/* 생산이력 */}
           {result.productions.length > 0 && (
-            <div className="border border-stone-200 rounded-lg p-3">
+            <div className="border border-border rounded-lg p-3">
               <div className="text-xs font-semibold text-stone-700 mb-2 flex items-center gap-2">
                 생산이력
                 <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
@@ -267,7 +267,7 @@ export default function SeafoodTracePanel({
 
           {/* 출하이력 */}
           {result.releases.length > 0 && (
-            <div className="border border-stone-200 rounded-lg p-3">
+            <div className="border border-border rounded-lg p-3">
               <div className="text-xs font-semibold text-stone-700 mb-2 flex items-center gap-2">
                 출하이력
                 <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
@@ -307,7 +307,7 @@ export default function SeafoodTracePanel({
           )}
 
           {result.source === "mock" && (
-            <div className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+            <div className="text-[11px] text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
               ⚠ 개발 환경: 샘플(mock) 데이터입니다
             </div>
           )}

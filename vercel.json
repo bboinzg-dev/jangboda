@@ -45,6 +45,10 @@
     {
       "path": "/api/sync/health-functional",
       "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/sync/parsa",
+      "schedule": "0 18 * * 6"
     }
   ],
   "functions": {
@@ -56,6 +60,7 @@
     "src/app/api/sync/agritrace/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/recipes/route.ts": { "maxDuration": 60 },
     "src/app/api/sync/health-functional/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/parsa/route.ts": { "maxDuration": 60 },
     "src/app/api/alerts/check/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 },

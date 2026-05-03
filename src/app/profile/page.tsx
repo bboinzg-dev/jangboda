@@ -88,6 +88,7 @@ export default async function ProfilePage() {
         <h2 className="font-bold mb-3">★ 즐겨찾기 매장 ({favorites.length}개)</h2>
         {favorites.length === 0 ? (
           <EmptyState
+            illustration="/illustrations/empty-stores.png"
             icon="★"
             title="자주 가는 마트를 등록해보세요"
             description={
@@ -130,6 +131,7 @@ export default async function ProfilePage() {
         <h2 className="font-bold mb-3">📸 내 영수증 ({myReceipts.length}건)</h2>
         {myReceipts.length === 0 ? (
           <EmptyState
+            illustration="/illustrations/receipt-illustration.png"
             icon="📸"
             title="아직 올린 영수증이 없어요"
             description={
@@ -186,6 +188,7 @@ export default async function ProfilePage() {
         <h2 className="font-bold mb-3">💰 내가 등록한 가격 ({myPrices.length}건)</h2>
         {myPrices.length === 0 ? (
           <EmptyState
+            illustration="/illustrations/empty-cart.png"
             icon="💰"
             title="아직 등록한 가격이 없어요"
             description={

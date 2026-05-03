@@ -19,7 +19,7 @@ export default function Nav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="bg-white border-b border-stone-200 sticky top-0 z-20">
+    <header className="bg-white border-b border-border sticky top-0 z-20">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <span className="text-2xl">🛒</span>
@@ -49,7 +49,7 @@ export default function Nav() {
             <span>영수증</span>
           </Link>
 
-          <span className="ml-1 pl-2 border-l border-stone-200">
+          <span className="ml-1 pl-2 border-l border-border">
             <AuthButton />
           </span>
         </nav>

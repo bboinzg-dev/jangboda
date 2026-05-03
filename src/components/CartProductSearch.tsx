@@ -138,8 +138,8 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
                 key={p.id}
                 className={`flex items-center gap-3 p-3 border rounded-lg bg-white transition ${
                   inCart
-                    ? "border-emerald-300 bg-emerald-50/40"
-                    : "border-stone-200 hover:border-brand-300"
+                    ? "border-success-soft bg-success-soft/40"
+                    : "border-border hover:border-brand-300"
                 }`}
               >
                 <div className="min-w-0 flex-1">
@@ -167,7 +167,7 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
                   aria-label={`${p.name} 장바구니에 담기`}
                   className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition ${
                     inCart
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                      ? "bg-success-soft text-success-text hover:opacity-80"
                       : "bg-brand-500 text-white hover:bg-brand-600"
                   }`}
                 >

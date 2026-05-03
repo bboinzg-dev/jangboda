@@ -311,6 +311,7 @@ export default function StoresPage() {
       ) : stores.length === 0 ? (
         // 매장 데이터 자체가 0건 — 첫 방문/자동 발견 미수행
         <EmptyState
+          illustration="/illustrations/empty-stores.png"
           icon="📍"
           title="아직 등록된 매장이 없어요"
           description={
@@ -347,6 +348,7 @@ export default function StoresPage() {
       ) : filtered.length === 0 ? (
         // 데이터는 있는데 필터로 0건
         <EmptyState
+          illustration="/illustrations/empty-stores.png"
           icon="🔍"
           title={
             filter === "favorite"

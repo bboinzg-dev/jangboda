@@ -126,12 +126,12 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
 
   if (active && !open) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm flex items-center justify-between">
+      <div className="bg-success-soft border border-success-soft rounded-lg p-3 text-sm flex items-center justify-between">
         <span>🔔 이 상품 가격 알림이 켜져있습니다</span>
         <button
           onClick={deactivate}
           disabled={busy}
-          className="text-xs text-rose-600 hover:underline"
+          className="text-xs text-danger-text hover:underline"
         >
           해제
         </button>
@@ -140,7 +140,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
   }
 
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-3">
+    <div className="bg-white border border-border rounded-lg p-3">
       {!open ? (
         <button
           onClick={() => setOpen(true)}
@@ -174,7 +174,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
               취소
             </button>
           </div>
-          {msg && <div className="text-xs text-rose-600">{msg}</div>}
+          {msg && <div className="text-xs text-danger-text">{msg}</div>}
         </div>
       )}
     </div>

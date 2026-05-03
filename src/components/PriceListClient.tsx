@@ -96,7 +96,7 @@ export default function PriceListClient({
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-stone-200 rounded-lg p-6 text-center text-stone-500 text-sm">
+      <div className="bg-white border border-border rounded-lg p-6 text-center text-stone-500 text-sm">
         {emptyHint}
       </div>
     );
@@ -117,7 +117,7 @@ export default function PriceListClient({
       )}
 
       {sorted.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-lg p-4 text-center text-stone-500 text-sm">
+        <div className="bg-white border border-border rounded-lg p-4 text-center text-stone-500 text-sm">
           즐겨찾기 매장에는 이 상품이 등록되지 않았습니다
         </div>
       ) : (
@@ -138,7 +138,7 @@ export default function PriceListClient({
                     ? "border-brand-400 bg-brand-50/30"
                     : isFav
                     ? "border-amber-200 bg-amber-50/30"
-                    : "border-stone-200"
+                    : "border-border"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -223,11 +223,11 @@ export default function PriceListClient({
       )}
 
       {outliers.length > 0 && (
-        <details className="mt-3 border border-amber-200 bg-amber-50/50 rounded-lg">
-          <summary className="cursor-pointer p-3 text-xs text-amber-900 font-medium select-none">
+        <details className="mt-3 border border-warning-soft bg-warning-soft/50 rounded-lg">
+          <summary className="cursor-pointer p-3 text-xs text-warning-text font-medium select-none">
             ⚠️ 패키지가 다를 가능성이 있는 가격 {outliers.length}건 (펼쳐 보기)
           </summary>
-          <div className="px-3 pb-3 text-[11px] text-amber-800/80 mb-1">
+          <div className="px-3 pb-3 text-[11px] text-warning-text/80 mb-1">
             같은 상품으로 등록됐지만 단가가 다른 매장과 크게 다릅니다.
             대용량/소포장 등 포장 단위 차이일 수 있어 비교 목록에서 분리했습니다.
           </div>
@@ -237,7 +237,7 @@ export default function PriceListClient({
               return (
                 <li
                   key={p.priceId}
-                  className="flex items-center justify-between gap-2 bg-white border border-amber-100 rounded p-2"
+                  className="flex items-center justify-between gap-2 bg-white border border-warning-soft rounded p-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-stone-700 truncate">

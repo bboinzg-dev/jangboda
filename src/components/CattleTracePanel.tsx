@@ -116,7 +116,7 @@ export default function CattleTracePanel({
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+    <section className="bg-white border border-border rounded-xl p-5 space-y-4">
       <header className="space-y-1">
         <h2 className="font-bold text-stone-900 flex items-center gap-2">
           🐄 이력추적 조회
@@ -164,7 +164,7 @@ export default function CattleTracePanel({
         <div className="space-y-3">
           {/* 통합 정보 */}
           {data.integrated && (
-            <div className="border border-stone-200 rounded-lg p-3 bg-stone-50/50">
+            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
               <h3 className="text-sm font-semibold text-stone-700 mb-2">
                 통합 이력
               </h3>
@@ -191,7 +191,7 @@ export default function CattleTracePanel({
 
           {/* 생산 정보 */}
           {data.production && (
-            <div className="border border-stone-200 rounded-lg p-3 bg-stone-50/50">
+            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
               <h3 className="text-sm font-semibold text-stone-700 mb-2">
                 생산 정보
               </h3>
@@ -214,7 +214,7 @@ export default function CattleTracePanel({
 
           {/* 가공 이력 */}
           {data.processes.length > 0 && (
-            <div className="border border-stone-200 rounded-lg p-3 bg-stone-50/50">
+            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
               <h3 className="text-sm font-semibold text-stone-700 mb-2">
                 가공 이력 ({data.processes.length}건)
               </h3>
@@ -237,7 +237,7 @@ export default function CattleTracePanel({
           )}
 
           {data.source === "mock" && (
-            <div className="text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded px-2 py-1">
+            <div className="text-[11px] text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
               개발 모드: 샘플 데이터 (실제 API 키 미설정)
             </div>
           )}

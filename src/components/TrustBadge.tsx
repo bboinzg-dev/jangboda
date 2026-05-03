@@ -14,10 +14,10 @@ export default function TrustBadge({ count, latestDate, source }: Props) {
 
   if (count >= 5 && days <= 7) {
     label = "🛡️ 검증됨";
-    className = "bg-emerald-100 text-emerald-700";
+    className = "bg-success-soft text-success-text";
   } else if (count >= 2 && days <= 30) {
     label = "✓ 확인됨";
-    className = "bg-blue-100 text-blue-700";
+    className = "bg-info-soft text-info-text";
   }
 
   // source가 'naver' 같은 단일 자동수집 소스면 단독 등록 그대로

@@ -60,7 +60,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
   if (productNames.length === 0) return null;
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+    <section className="bg-white border border-border rounded-xl p-4 md:p-5">
       <h2 className="font-bold mb-1 flex items-center gap-2">
         🍳 이 재료로 만들 수 있는 요리
       </h2>
@@ -75,7 +75,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
       )}
 
       {!loading && recipes !== null && recipes.length === 0 && (
-        <div className="text-sm text-stone-500 text-center py-6 border border-dashed border-stone-200 rounded-lg">
+        <div className="text-sm text-stone-500 text-center py-6 border border-dashed border-border rounded-lg">
           장바구니 재료로 만들 수 있는 등록 레시피가 없습니다.
           <br />
           <Link
@@ -93,7 +93,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
             <li key={r.id}>
               <Link
                 href={`/recipes/${r.id}`}
-                className="card-clickable flex gap-3 p-2 border border-stone-200 rounded-lg hover:border-brand-300 hover:bg-brand-50/30 transition"
+                className="card-clickable flex gap-3 p-2 border border-border rounded-lg hover:border-brand-300 hover:bg-brand-50/30 transition"
               >
                 <div className="shrink-0 w-16 h-16 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center text-stone-300 text-2xl">
                   {r.imageMain ? (
@@ -115,7 +115,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
                         {r.category}
                       </span>
                     )}
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
+                    <span className="text-[10px] bg-success-soft text-success-text px-1.5 py-0.5 rounded font-bold">
                       주재료 {r.totalIngredients}종 중 {r.matchCount}종 보유
                     </span>
                   </div>

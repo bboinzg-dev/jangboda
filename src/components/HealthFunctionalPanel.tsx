@@ -84,7 +84,7 @@ export default function HealthFunctionalPanel({
     // 건강기능식품 카테고리일 때만 로딩 placeholder 표시
     if (!isHealthFunctional) return null;
     return (
-      <section className="bg-white border border-stone-200 rounded-xl p-4">
+      <section className="bg-white border border-border rounded-xl p-4">
         <div className="text-sm text-stone-500">
           건강기능 정보를 불러오는 중…
         </div>
@@ -109,7 +109,7 @@ export default function HealthFunctionalPanel({
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-xl p-5 space-y-4">
+    <section className="bg-white border border-border rounded-xl p-5 space-y-4">
       <header className="space-y-1">
         <h2 className="font-bold text-stone-900 flex items-center gap-2">
           🌿 이 제품과 관련된 건강기능 정보
@@ -134,7 +134,7 @@ export default function HealthFunctionalPanel({
                 {categories.map((c) => (
                   <span
                     key={c.id}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 text-xs"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-success-soft text-success-text border border-success-soft px-2.5 py-1 text-xs"
                     title={[
                       c.largeCategoryName,
                       c.midCategoryName,
@@ -145,7 +145,7 @@ export default function HealthFunctionalPanel({
                   >
                     <span className="font-medium">{c.groupName}</span>
                     {c.largeCategoryName && (
-                      <span className="text-[10px] text-emerald-500">
+                      <span className="text-[10px] text-success">
                         · {c.largeCategoryName}
                       </span>
                     )}
@@ -171,7 +171,7 @@ export default function HealthFunctionalPanel({
                   return (
                     <div
                       key={rm.id}
-                      className="border border-stone-200 rounded-lg p-3 bg-stone-50/50"
+                      className="border border-border rounded-lg p-3 bg-stone-50/50"
                     >
                       <div className="font-medium text-stone-900 text-sm">
                         {rm.rawMaterialName}
@@ -193,14 +193,14 @@ export default function HealthFunctionalPanel({
                           <button
                             type="button"
                             onClick={() => toggleWarning(rm.id)}
-                            className="text-[11px] text-amber-700 hover:text-amber-800 underline-offset-2 hover:underline"
+                            className="text-[11px] text-warning-text hover:opacity-80 underline-offset-2 hover:underline"
                           >
                             {warningOpen
                               ? "▾ 주의사항 닫기"
                               : "▸ 섭취 주의사항 보기"}
                           </button>
                           {warningOpen && (
-                            <div className="mt-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded px-2 py-1.5 leading-relaxed">
+                            <div className="mt-1.5 text-xs text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1.5 leading-relaxed">
                               {rm.warning}
                             </div>
                           )}

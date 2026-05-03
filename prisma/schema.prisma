@@ -400,3 +400,42 @@ model HealthFunctionalRawMaterial {
 
   @@index([rawMaterialName])
 }
+
+// 한국소비자원 참가격 — 매장 (getStoreInfoSvc)
+model ParsaStore {
+  id              String   @id @default(cuid())
+  entpId          String   @unique                  // 매장 고유 ID
+  entpName        String
+  entpTypeCode    String?                            // LM(대형마트), SM(SSM), 등
+  entpAreaCode    String?                            // 시도 코드
+  areaDetailCode  String?                            // 시군구 코드
+  entpTelno       String?
+  postNo          String?
+  addrBasic       String?                            // plmkAddrBasic (지번)
+  addrDetail      String?
+  roadAddrBasic   String?                            // 도로명 주소 (있을 수 있음)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([entpTypeCode])
+  @@index([entpAreaCode])
+}
+
+// 한국소비자원 참가격 — 상품 (getProductInfoSvc)
+model ParsaProduct {
+  id                String   @id @default(cuid())
+  goodId            String   @unique                // 상품 고유 ID
+  goodName          String
+  productEntpCode   String?                          // 제조사 코드
+  goodUnitDivCode   String?                          // 단위 구분 코드 (G, ML 등)
+  goodBaseCnt       String?                          // 기준 수량
+  goodSmlclsCode    String?                          // 소분류 코드
+  goodTotalCnt      String?                          // 전체 수량
+  goodTotalDivCode  String?                          // 전체 구분 코드
+  detailMean        String?                          // 상세 의미
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([goodSmlclsCode])
+  @@index([goodName])
+}

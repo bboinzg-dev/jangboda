@@ -172,6 +172,7 @@ export default async function BudgetPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">가계부</h1>
         <EmptyState
+          illustration="/illustrations/receipt-illustration.png"
           icon="🧾"
           title="지금 영수증 한 장 올리면 가계부가 시작됩니다"
           description={

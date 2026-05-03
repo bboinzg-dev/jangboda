@@ -114,7 +114,7 @@ export default function CategoryForm({ category, initialValues }: Props) {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-5">
+      <div className="bg-white border border-border rounded-xl p-6 space-y-5">
         <p className="text-xs text-stone-500">
           모든 항목은 선택입니다. 아는 만큼만 입력해도 됩니다.
         </p>
@@ -156,7 +156,7 @@ export default function CategoryForm({ category, initialValues }: Props) {
 
       {/* 에러 표시 */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-lg p-3">
+        <div className="bg-danger-soft border border-danger-soft text-danger-text text-sm rounded-lg p-3">
           <div className="font-medium">{error}</div>
           {issues.length > 0 && (
             <ul className="mt-2 list-disc list-inside text-xs space-y-0.5">
@@ -175,7 +175,7 @@ export default function CategoryForm({ category, initialValues }: Props) {
           type="button"
           onClick={handleSkip}
           disabled={submitting}
-          className="flex-1 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 py-2.5 rounded-lg font-medium disabled:opacity-50"
+          className="flex-1 bg-white hover:bg-stone-50 border border-border text-stone-700 py-2.5 rounded-lg font-medium disabled:opacity-50"
         >
           건너뛰기
         </button>
@@ -317,7 +317,7 @@ function RadioGroup({
             className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer transition ${
               active
                 ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-medium"
-                : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                : "bg-white border-border text-stone-600 hover:border-stone-300"
             }`}
           >
             <input
@@ -1000,7 +1000,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
       {list.map((child, idx) => (
         <div
           key={idx}
-          className="border border-stone-200 rounded-lg p-4 space-y-3"
+          className="border border-border rounded-lg p-4 space-y-3"
         >
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-stone-700">
@@ -1009,7 +1009,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
             <button
               type="button"
               onClick={() => remove(idx)}
-              className="text-xs text-rose-500 hover:text-rose-700"
+              className="text-xs text-danger hover:text-danger-text"
             >
               삭제
             </button>

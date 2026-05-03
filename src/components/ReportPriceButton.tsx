@@ -65,7 +65,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[10px] text-stone-400 hover:text-rose-500 px-1.5 py-0.5"
+        className="text-[10px] text-stone-400 hover:text-danger px-1.5 py-0.5"
         title="가격 신고"
         aria-label="가격 신고"
       >
@@ -120,7 +120,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
             </div>
 
             {err && (
-              <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded p-2">
+              <div className="text-xs text-danger-text bg-danger-soft border border-danger-soft rounded p-2">
                 {err}
               </div>
             )}
@@ -137,7 +137,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
               <button
                 type="submit"
                 disabled={busy}
-                className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
+                className="bg-danger hover:opacity-90 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
               >
                 {busy ? "전송 중..." : "신고 접수"}
               </button>
