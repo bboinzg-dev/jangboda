@@ -77,6 +77,10 @@
     {
       "path": "/api/sync/parsa/full-mirror?type=prices&from=0&limit=10000&chain=true",
       "schedule": "0 22 * * 6"
+    },
+    {
+      "path": "/api/sync/product-images?limit=30&chain=true",
+      "schedule": "0 4 1 * *"
     }
   ],
   "functions": {
@@ -95,6 +99,7 @@
     "src/app/api/cron/benefits-deadline/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/normalize-benefits/route.ts": { "maxDuration": 60 },
-    "src/app/api/cron/stale-benefits/route.ts": { "maxDuration": 60 }
+    "src/app/api/cron/stale-benefits/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/product-images/route.ts": { "maxDuration": 60 }
   }
 }

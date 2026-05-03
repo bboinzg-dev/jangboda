@@ -23,15 +23,15 @@ const LOGO_MAP = {
   // 백화점
   "현대백화점": "/logos/hyundai.svg",
   "신세계백화점": "/logos/shinsegae.svg",
-  // Wikimedia에 없어 자체 placeholder SVG로 대체한 chain
-  "트레이더스": "/logos/traders.svg",
-  "이마트에브리데이": "/logos/emart-everyday.svg",
-  "롯데슈퍼": "/logos/lotte-super.svg",
-  "롯데백화점": "/logos/lotte-dept.svg",
-  "GS더프레시": "/logos/gs-fresh.svg",
-  "킴스클럽": "/logos/kims-club.svg",
-  "농협하나로마트": "/logos/nh-haneoro.svg",
-  "홈플러스 익스프레스": "/logos/homeplus-express.svg",
+  // 사용자가 직접 다운로드한 진짜 로고 (PNG/JPG)
+  "트레이더스": "/logos/traders.png",
+  "이마트에브리데이": "/logos/emart-everyday.png",
+  "롯데슈퍼": "/logos/lotte-super.jpg",
+  "롯데백화점": "/logos/lotte-dept.png",
+  "GS더프레시": "/logos/gs-fresh.png",
+  "킴스클럽": "/logos/kims-club.jpg",
+  "농협하나로마트": "/logos/nh-haneoro.png",
+  "홈플러스 익스프레스": "/logos/homeplus-express.jpg",
 };
 
 async function main() {
