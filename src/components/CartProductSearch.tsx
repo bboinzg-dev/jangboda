@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatWon } from "@/lib/format";
+import ProductImage from "@/components/ProductImage";
 
 export type SearchableProduct = {
   id: string;
@@ -12,6 +13,7 @@ export type SearchableProduct = {
   priceCount?: number;
   stats?: { min: number; max: number; avg: number; count: number };
   hasHaccp?: boolean;
+  imageUrl?: string | null;
 };
 
 type Props = {
@@ -142,6 +144,8 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
                     : "border-border hover:border-brand-300"
                 }`}
               >
+                {/* 좌측 썸네일 — imageUrl 없으면 폴백 아이콘 */}
+                <ProductImage src={p.imageUrl} alt={p.name} size={48} />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm truncate flex items-center gap-1.5">
                     <span className="truncate">{p.name}</span>

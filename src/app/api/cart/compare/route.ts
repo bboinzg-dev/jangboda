@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
         storeName: store.name,
         chainName: store.chain.name,
         chainCategory: store.chain.category,
+        chainLogoUrl: store.chain.logoUrl, // 매장 카드에서 chain 로고 표시용
         address: store.address,
         lat: store.lat,
         lng: store.lng,

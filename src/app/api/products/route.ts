@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
         priceCount: p._count.prices,
         stats: stats.get(p.id),
         hasHaccp: p.hasHaccp,
+        imageUrl: p.imageUrl,
       })),
     },
     {

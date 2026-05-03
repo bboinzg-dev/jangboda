@@ -170,6 +170,20 @@ export async function POST(req: NextRequest) {
     }
     if (usedMock) usedMockCount++;
 
+    // Product.imageUrl이 비어 있고, 첫 결과의 image URL이 있으면 자동 채움
+    // (네이버 쇼핑 썸네일 — shopping-phinf.pstatic.net 호스팅)
+    const firstItemWithImage = items.find((it) => it.image);
+    if (!product.imageUrl && firstItemWithImage?.image) {
+      try {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { imageUrl: firstItemWithImage.image },
+        });
+      } catch {
+        // ignore — 동시성/이미 채워진 경우
+      }
+    }
+
     // mall 이름을 canonical로 변환 후 mall당 최저가 + 그 link 저장
     const byCanonical = new Map<
       string,

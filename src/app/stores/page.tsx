@@ -15,6 +15,7 @@ import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 import EmptyState from "@/components/EmptyState";
 import CollapsibleList from "@/components/CollapsibleList";
+import ChainLogo from "@/components/ChainLogo";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -402,15 +403,22 @@ export default function StoresPage() {
                         className="absolute inset-0 z-0"
                         aria-label={`${s.name} 가격 보기`}
                       />
-                      <div className="min-w-0 relative z-10 pointer-events-none flex-1">
-                        <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
-                          <span>{icon}</span>
-                          <span>{label}</span>
-                          <span className="text-stone-300">·</span>
-                          <span>{s.chainName}</span>
+                      <div className="min-w-0 relative z-10 pointer-events-none flex-1 flex items-center gap-3">
+                        <ChainLogo
+                          src={s.chainLogoUrl}
+                          name={s.chainName}
+                          size={28}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
+                            <span>{icon}</span>
+                            <span>{label}</span>
+                            <span className="text-stone-300">·</span>
+                            <span>{s.chainName}</span>
+                          </div>
+                          <div className="font-semibold">{s.name}</div>
+                          <div className="text-xs text-stone-500">{s.address}</div>
                         </div>
-                        <div className="font-semibold">{s.name}</div>
-                        <div className="text-xs text-stone-500">{s.address}</div>
                       </div>
                       <div className="relative z-10 mr-2 self-center pointer-events-auto">
                         <FavoriteToggle storeId={s.id} stopPropagation />

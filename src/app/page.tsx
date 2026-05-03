@@ -5,6 +5,7 @@ import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
 import KamisTicker from "@/components/KamisTicker";
+import ProductImage from "@/components/ProductImage";
 
 // ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분.
 // 개인화 데이터는 OnboardingCard가 자체 client-side fetch (페이지 ISR 유지를 위해)
@@ -77,6 +78,7 @@ async function getHomeData() {
         max,
         diff,
         hasHaccp: p.hasHaccp,
+        imageUrl: p.imageUrl,
         excludedCount: p.prices.length - filteredPrices.length,
       };
     })
@@ -218,9 +220,11 @@ export default async function HomePage() {
                 <Link
                   key={c.id}
                   href={`/products/${c.id}`}
-                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between items-center"
+                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between items-center gap-3"
                 >
-                  <div className="min-w-0">
+                  {/* 카드 좌측 썸네일 — 네이버 쇼핑 동기화로 자동 채움 */}
+                  <ProductImage src={c.imageUrl} alt={c.name} size={56} />
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs text-stone-500">{c.category}</div>
                     <div className="font-semibold truncate">{c.name}</div>
                     <div className="text-xs text-stone-500">{c.unit}</div>

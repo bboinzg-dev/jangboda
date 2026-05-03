@@ -46,6 +46,7 @@ export type StoreMarker = {
   id: string;
   name: string;
   chainName: string;
+  chainLogoUrl?: string | null;
   address: string;
   lat: number;
   lng: number;

@@ -13,6 +13,7 @@ import AgriTraceLookup from "@/components/AgriTraceLookup";
 import HealthFunctionalPanel from "@/components/HealthFunctionalPanel";
 import CattleTracePanel from "@/components/CattleTracePanel";
 import SeafoodTracePanel from "@/components/SeafoodTracePanel";
+import ProductImage from "@/components/ProductImage";
 
 export const revalidate = 30;
 
@@ -143,20 +144,31 @@ export default async function ProductDetailPage({
       </div>
 
       <header className="bg-white border border-stone-200 rounded-xl p-6">
-        <div className="text-xs text-stone-500">{product.category}</div>
-        <h1 className="text-2xl font-bold mt-1 flex items-center gap-2 flex-wrap">
-          {product.name}
-          {product.hasHaccp && (
-            <span
-              className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
-              title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
-            >
-              🏅 HACCP
-            </span>
-          )}
-        </h1>
-        <div className="text-stone-600 text-sm mt-1">
-          {product.brand} · {product.unit}
+        {/* 좌측 큰 썸네일 + 우측 메타 — 모바일은 세로 스택 */}
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+          <ProductImage
+            src={product.imageUrl}
+            alt={product.name}
+            size={128}
+            className="self-center sm:self-start"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-stone-500">{product.category}</div>
+            <h1 className="text-2xl font-bold mt-1 flex items-center gap-2 flex-wrap">
+              {product.name}
+              {product.hasHaccp && (
+                <span
+                  className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
+                  title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
+                >
+                  🏅 HACCP
+                </span>
+              )}
+            </h1>
+            <div className="text-stone-600 text-sm mt-1">
+              {product.brand} · {product.unit}
+            </div>
+          </div>
         </div>
 
         {/* 제조/원산지/등급/인증 정보 */}

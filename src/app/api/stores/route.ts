@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     name: s.name,
     chainName: s.chain.name,
     chainCategory: s.chain.category,
+    chainLogoUrl: s.chain.logoUrl, // 매장 카드 등에 chain 로고 표시
     address: s.address,
     lat: s.lat,
     lng: s.lng,

@@ -11,6 +11,7 @@ import { useFavorites } from "@/components/FavoritesProvider";
 import RecipeRecommendations from "@/components/RecipeRecommendations";
 import ShoppingMode, { type ShoppingItem } from "@/components/ShoppingMode";
 import CollapsibleList from "@/components/CollapsibleList";
+import ChainLogo from "@/components/ChainLogo";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -26,6 +27,7 @@ type Comparison = {
   storeName: string;
   chainName: string;
   chainCategory?: string;
+  chainLogoUrl?: string | null;
   address?: string;
   lat?: number;
   lng?: number;
@@ -767,6 +769,7 @@ function ComparisonCard({
               </span>
             )}
             {isFavorite && <span className="text-amber-500 text-xs">★</span>}
+            <ChainLogo src={r.chainLogoUrl} name={r.chainName} size={24} />
             <span className="font-bold">{r.chainName}</span>
             <span className="text-xs text-stone-500">{r.storeName}</span>
             {distanceKm !== null && (

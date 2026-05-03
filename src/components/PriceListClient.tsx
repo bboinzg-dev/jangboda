@@ -9,6 +9,7 @@ import DirectionsButton from "@/components/DirectionsButton";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 import CollapsibleList from "@/components/CollapsibleList";
+import ChainLogo from "@/components/ChainLogo";
 
 type TrustInfo = {
   count: number;
@@ -20,6 +21,7 @@ export type PriceRowData = {
   storeId: string;
   storeName: string;
   chainName: string;
+  chainLogoUrl?: string | null; // chain.logoUrl — 옵셔널 (호출자가 안 주면 미표시)
   lat: number;
   lng: number;
   price: number;
@@ -152,7 +154,14 @@ export default function PriceListClient({
                     <FavoriteToggle storeId={p.storeId} size="sm" />
                   )}
                   <div className="min-w-0">
-                    <div className="font-semibold truncate">{p.chainName}</div>
+                    <div className="font-semibold truncate flex items-center gap-1.5">
+                      <ChainLogo
+                        src={p.chainLogoUrl}
+                        name={p.chainName}
+                        size={20}
+                      />
+                      <span className="truncate">{p.chainName}</span>
+                    </div>
                     <div className="text-xs text-stone-500 truncate">
                       {p.storeName}
                     </div>
@@ -249,8 +258,15 @@ export default function PriceListClient({
                   className="flex items-center justify-between gap-2 bg-white border border-warning-soft rounded p-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-stone-700 truncate">
-                      {p.chainName} · {p.storeName}
+                    <div className="text-sm font-medium text-stone-700 truncate flex items-center gap-1.5">
+                      <ChainLogo
+                        src={p.chainLogoUrl}
+                        name={p.chainName}
+                        size={16}
+                      />
+                      <span className="truncate">
+                        {p.chainName} · {p.storeName}
+                      </span>
                     </div>
                     <div className="text-[10px] text-stone-500 mt-0.5">
                       {unitPriceLabel(p.price, unit) ?? "단가 계산 불가"}
