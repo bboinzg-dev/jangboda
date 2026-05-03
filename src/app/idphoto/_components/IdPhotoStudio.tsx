@@ -266,9 +266,37 @@ export default function IdPhotoStudio({
 
   return (
     <div className="space-y-6">
+      <section className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+        <div className="font-semibold text-sm text-rose-900 mb-2">
+          🎯 본인답게 나오는 비결 — 거리·렌즈·각도가 가장 중요해요
+        </div>
+        <p className="text-[11px] text-rose-900/80 mb-2 leading-relaxed">
+          AI는 입력 사진의 얼굴 비례를 그대로 본인의 실제 얼굴로 보고 작업합니다.
+          가까이서 찍은 셀카는 광각 왜곡으로 코·이마가 커지고 귀·턱이 작아지므로,
+          결과물도 그대로 왜곡돼요.
+        </p>
+        <ul className="text-xs text-rose-900/80 leading-relaxed space-y-1 list-disc pl-5">
+          <li>
+            <b>📏 거리 1.5~2m</b> — 누군가에게 부탁하거나 삼각대+셀프타이머. 팔 뻗은
+            셀카는 비례가 왜곡되니 비추천
+          </li>
+          <li>
+            <b>🔭 줌 1.5~2x</b> — 광각 대신 살짝 망원 (아이폰 1x→2x, 갤럭시 1x→3x).
+            사진관이 망원렌즈로 찍는 이유와 같음
+          </li>
+          <li>
+            <b>📷 카메라는 눈 높이</b> — 위에서 내려찍기/아래서 올려찍기 X
+          </li>
+          <li>
+            <b>🔍 얼굴이 충분히 크게</b> — 사진 안에서 얼굴 가로 400px 이상이 안정.
+            너무 멀어서 콩알만 하면 AI가 디테일을 추측해 다른 사람 같아져요
+          </li>
+        </ul>
+      </section>
+
       <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
         <div className="font-semibold text-sm text-amber-900 mb-2">
-          💡 잘 나오게 찍는 팁 — AI는 입력 사진을 기준으로 만들어요
+          💡 그 외 기본 가이드
         </div>
         <ul className="text-xs text-amber-900/80 leading-relaxed space-y-1 list-disc pl-5">
           <li>
@@ -284,13 +312,16 @@ export default function IdPhotoStudio({
             <b>밝은 곳</b>에서 · 양쪽 얼굴에 그림자가 지지 않는 균일한 빛
           </li>
           <li>
-            <b>배경은 단색</b>(흰 벽/밝은 색)일수록 좋음 — 정리되지 않은 배경은 결과 품질에 영향
+            <b>배경은 단색</b>(흰 벽/밝은 색)일수록 좋음
           </li>
           <li>
             <b>모자·선글라스·마스크 금지</b>, 안경은 빛 반사·렌즈 글레어 없게
           </li>
           <li>
             머리카락이 눈썹·눈을 가리지 않도록, 옷은 단색 상의 권장
+          </li>
+          <li>
+            <b>흔들림·흐림·노이즈 X</b> — 흐릿한 사진은 AI가 추측으로 채워 본인 모습이 변형됨
           </li>
         </ul>
       </section>
