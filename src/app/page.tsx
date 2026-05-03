@@ -87,16 +87,22 @@ export default async function HomePage() {
               >
                 🛒 장보기 비교 시작
               </Link>
-              <div className="grid grid-cols-2 gap-2 md:flex md:gap-2">
+              <div className="grid grid-cols-3 gap-2 md:flex md:gap-2">
                 <Link
                   href="/upload"
-                  className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
                 >
-                  📸 영수증 올리기
+                  📸 영수증
+                </Link>
+                <Link
+                  href="/scan"
+                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                >
+                  📷 바코드
                 </Link>
                 <Link
                   href="/stores"
-                  className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
                 >
                   📍 주변 마트
                 </Link>
