@@ -71,9 +71,20 @@ export async function fetchGov24(
   url.searchParams.set("returnType", "JSON");
   url.searchParams.set("serviceKey", serviceKey);
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Gov24 API 요청 실패: ${res.status} ${res.statusText}`);
+  // 4xx/5xx 시 지수 backoff 재시도 — odcloud는 가끔 일시 throttle을 줌
+  let res: Response | null = null;
+  let lastErr = "";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    res = await fetch(url.toString(), { cache: "no-store" });
+    if (res.ok) break;
+    lastErr = `${res.status} ${res.statusText}`;
+    // 마지막 시도가 아니면 1초 → 2초 backoff
+    if (attempt < 3) {
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
+  if (!res || !res.ok) {
+    throw new Error(`Gov24 API 요청 실패 (3회 재시도): ${lastErr}`);
   }
 
   const json = (await res.json()) as Gov24Response;

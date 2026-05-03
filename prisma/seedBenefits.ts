@@ -231,8 +231,9 @@ async function main() {
   console.log(`[MANUAL] 저장 ${manualSaved}건`);
 
   // gov24는 가장 풍부 — totalCount 10,931 (2026-05 기준)
-  // maxPages 110 × perPage 100 = 11,000 한도 (totalCount 약간 위)
-  await runOne("gov24", (o) => fetchGov24(o), { perPage: 100, maxPages: 110 });
+  // perPage 1000 × maxPages 12 = 12,000 한도 (호출 횟수 12회로 throttle 회피)
+  // 이전 perPage=100/maxPages=110 조합은 호출 110회로 일시 throttle 발생 (page 39부터 400)
+  await runOne("gov24", (o) => fetchGov24(o), { perPage: 1000, maxPages: 12 });
   // 중기부/기업마당은 보통 수백~천 건 — maxPages 10
   await runOne("mssBiz", (o) => fetchMssBiz(o), { perPage: 100, maxPages: 10 });
   await runOne("mssSupport", (o) => fetchMssSupport(o), { perPage: 100, maxPages: 10 });
