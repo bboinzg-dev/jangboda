@@ -6,6 +6,8 @@ import { regionCodesLabel } from "@/lib/benefits/regions";
 import { sourceLabel } from "@/lib/benefits/types";
 import { categoryGroup } from "@/lib/benefits/categories";
 import { stripHtml } from "@/lib/benefits/sanitize";
+import MatchActions from "@/components/benefits/MatchActions";
+import BackButton from "@/components/benefits/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +26,22 @@ async function getBenefitDetail(id: string) {
   return benefit;
 }
 
-// 현재 사용자의 BenefitMatch 조회 (있으면)
+// 현재 사용자의 BenefitMatch 조회.
+// authed: 로그인 여부. match: 매칭 행(없으면 null).
 async function getMatchForCurrentUser(benefitId: string) {
   const authUser = await getCurrentUser();
-  if (!authUser) return null;
+  if (!authUser) return { authed: false, match: null };
   // Supabase auth user.id로 BenefitProfile 조회
-  // (User 테이블 동기화는 다른 곳에서 처리되었다고 가정. 없으면 null)
   const profile = await prisma.benefitProfile.findUnique({
     where: { userId: authUser.id },
   });
-  if (!profile) return null;
+  if (!profile) return { authed: true, match: null };
   const match = await prisma.benefitMatch.findUnique({
     where: {
       profileId_benefitId: { profileId: profile.id, benefitId },
     },
   });
-  return match;
+  return { authed: true, match };
 }
 
 function formatDateOnly(d: Date | null | undefined): string {
@@ -65,7 +67,7 @@ export default async function BenefitDetailPage({
   const benefit = await getBenefitDetail(params.id);
   if (!benefit) return notFound();
 
-  const match = await getMatchForCurrentUser(benefit.id);
+  const { authed, match } = await getMatchForCurrentUser(benefit.id);
 
   // 출처 라벨 + 카테고리 그룹 라벨 (단일 소스 함수 사용)
   const srcLabel = sourceLabel(benefit.sourceCode);
@@ -89,12 +91,7 @@ export default async function BenefitDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/benefits"
-          className="text-sm text-stone-500 hover:text-stone-700"
-        >
-          ← 정부 혜택 홈으로
-        </Link>
+        <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
       </div>
 
       {/* 헤더 카드 */}
@@ -218,26 +215,31 @@ export default async function BenefitDetailPage({
             </div>
           )}
 
-          {/* 액션 버튼 — 라우트 미구현. 자리표시. */}
-          {/* TODO: POST /api/benefits/match/[id]/action 구현 후 form action 연결 */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled
-              className="text-sm bg-white border border-indigo-300 text-indigo-700 px-3 py-1.5 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-              title="곧 활성화됩니다"
-            >
-              {match.userAction === "saved" ? "저장됨" : "이 혜택 저장하기"}
-            </button>
-            <button
-              type="button"
-              disabled
-              className="text-sm bg-white border border-stone-300 text-stone-600 px-3 py-1.5 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-              title="곧 활성화됩니다"
-            >
-              관심 없음
-            </button>
-          </div>
+          <MatchActions
+            benefitId={benefit.id}
+            initialAction={match.userAction ?? null}
+          />
+        </section>
+      )}
+
+      {/* 매칭 카드가 없는 경우(비로그인 / 매칭 미실행)에도 액션 영역 노출 */}
+      {!match && (
+        <section className="bg-white border border-stone-200 rounded-xl p-5">
+          {authed ? (
+            <>
+              <div className="text-sm text-stone-700 mb-1">
+                아직 자격 평가 결과가 없어요.
+              </div>
+              <div className="text-xs text-stone-500">
+                저장해두고 정보를 입력하면 매칭 점수가 계산됩니다.
+              </div>
+              <MatchActions benefitId={benefit.id} initialAction={null} />
+            </>
+          ) : (
+            <div className="text-sm text-stone-600">
+              로그인하면 이 혜택을 저장하고 자격 매칭 결과를 받아볼 수 있어요.
+            </div>
+          )}
         </section>
       )}
 

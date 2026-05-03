@@ -107,7 +107,21 @@ export default async function BenefitsHomePage() {
       {matchInfo && (
         <section>
           <div className="flex items-end justify-between mb-4">
-            <h2 className="text-xl font-bold">내게 맞는 혜택</h2>
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xl font-bold">내게 맞는 혜택</h2>
+              <Link
+                href="/benefits/matches"
+                className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
+              >
+                전체 보기 →
+              </Link>
+              <Link
+                href="/benefits/saved"
+                className="text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
+              >
+                저장한 혜택 →
+              </Link>
+            </div>
             <span className="text-xs text-stone-500">
               상위 {matchInfo.matches.length}건 / 점수 높은 순
             </span>
