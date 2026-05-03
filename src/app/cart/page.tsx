@@ -72,8 +72,8 @@ export default function CartPage() {
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
   const [distanceFilter, setDistanceFilter] = useState<DistanceFilter>(null);
 
-  // 복사 토스트
-  const [copied, setCopied] = useState(false);
+  // 복사/공유 토스트 (메시지 포함)
+  const [copied, setCopied] = useState<null | "shared" | "copied">(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 장보기 모드 (풀스크린 체크리스트)
@@ -173,10 +173,7 @@ export default function CartPage() {
   async function compare() {
     if (cart.length === 0) return;
     setLoading(true);
-    // 비교와 동시에 위치도 요청 (아직 없으면)
-    if (geo.status === "idle") {
-      requestGeolocation();
-    }
+    // 위치는 사용자가 명시적으로 "내 위치 사용" 버튼을 눌러야만 요청 (자동 트리거 X)
     const res = await fetch("/api/cart/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -311,9 +308,33 @@ export default function CartPage() {
     return lines.join("\n");
   }
 
-  async function copyShoppingList() {
+  async function shareShoppingList() {
     if (cart.length === 0) return;
     const text = buildShoppingListText();
+    const title = "🛒 장보기 리스트";
+
+    // 1) navigator.share 시도 — 모바일 브라우저(iOS Safari, Android Chrome)에서 네이티브 공유 시트 띄움
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        typeof (navigator as Navigator & { share?: (data: ShareData) => Promise<void> }).share === "function"
+      ) {
+        await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({
+          title,
+          text,
+        });
+        setCopied("shared");
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = setTimeout(() => setCopied(null), 2000);
+        return;
+      }
+    } catch (e) {
+      // 사용자가 공유 시트 취소 → 토스트 띄우지 않고 종료
+      if (e instanceof Error && e.name === "AbortError") return;
+      // 그 외 실패는 클립보드 복사로 폴백
+    }
+
+    // 2) navigator.clipboard.writeText 폴백
     let ok = false;
     try {
       if (
@@ -327,8 +348,9 @@ export default function CartPage() {
     } catch {
       ok = false;
     }
+
+    // 3) 마지막 폴백: 숨겨진 textarea + execCommand
     if (!ok) {
-      // Fallback: 숨겨진 textarea + execCommand
       try {
         const ta = document.createElement("textarea");
         ta.value = text;
@@ -345,9 +367,9 @@ export default function CartPage() {
       }
     }
     if (ok) {
-      setCopied(true);
+      setCopied("copied");
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      copyTimerRef.current = setTimeout(() => setCopied(null), 2000);
     }
   }
 
@@ -397,11 +419,15 @@ export default function CartPage() {
               )}
               {cart.length > 0 && (
                 <button
-                  onClick={copyShoppingList}
+                  onClick={shareShoppingList}
                   className="text-xs px-2 py-1 border border-stone-300 rounded hover:bg-stone-50 text-stone-700"
-                  title="장보기 리스트를 클립보드에 복사"
+                  title="장보기 리스트를 가족·친구에게 공유"
                 >
-                  {copied ? "✓" : "📋 복사"}
+                  {copied === "shared"
+                    ? "✓ 보냈어요!"
+                    : copied === "copied"
+                    ? "✓ 복사됨!"
+                    : "📤 친구한테 보내기"}
                 </button>
               )}
               {cart.length > 0 && (
@@ -497,55 +523,59 @@ export default function CartPage() {
             )}
           </div>
 
-          {/* 거리 필터 */}
+          {/* 거리 필터 — 위치 권한 상태별 분기 */}
           {showDistanceFilter && (
-            <div className="mb-3 flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-stone-500">📍 거리</span>
-              <div className="flex gap-1.5 flex-wrap">
-                {DISTANCE_OPTIONS.map((opt) => {
-                  const disabled =
-                    geo.status !== "ready" && opt.value !== null;
-                  const active = distanceFilter === opt.value;
-                  return (
-                    <button
-                      key={opt.label}
-                      onClick={() => setDistanceFilter(opt.value)}
-                      disabled={disabled}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                        active
-                          ? "bg-brand-500 border-brand-500 text-white"
-                          : "bg-white border-stone-300 text-stone-700 hover:bg-stone-50"
-                      } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {geo.status === "idle" && (
-                <button
-                  onClick={requestGeolocation}
-                  className="text-xs text-brand-600 hover:underline"
-                >
-                  📍 내 위치 사용
-                </button>
+            <>
+              {/* 권한 받기 전: 안내 카드 + 단일 버튼 (60대 사용자도 명확) */}
+              {(geo.status === "idle" || geo.status === "loading") && (
+                <div className="mb-3 flex items-center gap-3 flex-wrap bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
+                  <span className="text-sm text-stone-700 flex-1 min-w-[200px]">
+                    📍 가까운 마트만 보고 싶다면 오른쪽 버튼을 눌러주세요
+                  </span>
+                  <button
+                    onClick={requestGeolocation}
+                    disabled={geo.status === "loading"}
+                    className="text-sm px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white rounded-lg font-semibold shrink-0"
+                  >
+                    {geo.status === "loading" ? "위치 확인 중..." : "내 위치 사용"}
+                  </button>
+                </div>
               )}
-              {geo.status === "loading" && (
-                <span className="text-xs text-stone-500">
-                  📍 위치 가져오는 중...
-                </span>
+
+              {/* 권한 받은 후: 거리 칩 노출 */}
+              {geo.status === "ready" && (
+                <div className="mb-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-stone-500">📍 거리</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {DISTANCE_OPTIONS.map((opt) => {
+                      const active = distanceFilter === opt.value;
+                      return (
+                        <button
+                          key={opt.label}
+                          onClick={() => setDistanceFilter(opt.value)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            active
+                              ? "bg-brand-500 border-brand-500 text-white"
+                              : "bg-white border-stone-300 text-stone-700 hover:bg-stone-50"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-              {geo.status === "denied" && (
-                <span className="text-xs text-stone-500">
-                  위치 권한이 없어 거리 필터를 사용할 수 없습니다
-                </span>
+
+              {/* 권한 거부/오류: 안내 메시지만 */}
+              {(geo.status === "denied" || geo.status === "error") && (
+                <div className="mb-3 text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+                  {geo.status === "denied"
+                    ? "위치 권한이 없어 거리 필터를 사용할 수 없습니다"
+                    : "위치를 가져올 수 없어 거리 필터를 사용할 수 없습니다"}
+                </div>
               )}
-              {geo.status === "error" && (
-                <span className="text-xs text-stone-500">
-                  위치를 가져올 수 없어 거리 필터를 사용할 수 없습니다
-                </span>
-              )}
-            </div>
+            </>
           )}
 
           {/* 절약 하이라이트 */}
@@ -650,6 +680,21 @@ export default function CartPage() {
               </div>
             )}
           </div>
+
+          {/* 큰 "장보기 시작" CTA — 비교 끝났으니 바로 마트로 갈 수 있게 */}
+          {cart.length > 0 && (
+            <div className="mt-5">
+              <button
+                onClick={() => setShoppingOpen(true)}
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl text-base font-bold shadow-sm"
+              >
+                🛒 장보기 시작 — 큰 글씨로 체크하기
+              </button>
+              <p className="text-xs text-stone-500 text-center mt-1.5">
+                마트에서 보면서 한 줄씩 체크할 수 있어요
+              </p>
+            </div>
+          )}
         </section>
       )}
 

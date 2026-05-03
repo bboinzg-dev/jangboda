@@ -2,26 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import AuthButton from "./AuthButton";
 
-// 데스크톱 nav — 핵심 5개 + 영수증 강조 버튼
+// 데스크톱 nav — 핵심 4개 + 영수증 강조 버튼
+// 정부 혜택은 홈 카드로, 가계부·AI 증명사진·동기화는 /profile 도구함으로 이동
 const NAV_ITEMS = [
   { href: "/search", label: "상품 검색" },
   { href: "/cart", label: "장보기" },
   { href: "/stores", label: "주변 매장" },
   { href: "/profile", label: "내 정보" },
-  { href: "/benefits", label: "정부 혜택" },
-];
-
-// /sync는 자동 갱신 중이라 사용자 메뉴에서 제거 — 필요 시 /profile 도구에서 접근
-const SECONDARY_ITEMS = [
-  { href: "/budget", label: "가계부" },
-  { href: "/idphoto", label: "AI 증명사진 🔒" },
 ];
 
 export default function Nav() {
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -57,15 +49,6 @@ export default function Nav() {
             <span>영수증</span>
           </Link>
 
-          {/* 더보기 — 가계부, 동기화 등 */}
-          <button
-            onClick={() => setOpen(!open)}
-            aria-label="더보기"
-            className="ml-1 px-2 py-2 hover:bg-stone-100 rounded-md text-stone-600"
-          >
-            ⋯
-          </button>
-
           <span className="ml-1 pl-2 border-l border-stone-200">
             <AuthButton />
           </span>
@@ -76,28 +59,6 @@ export default function Nav() {
           <AuthButton />
         </div>
       </div>
-
-      {/* 데스크톱 더보기 드롭 */}
-      {open && (
-        <div className="hidden md:block border-t border-stone-100 bg-white">
-          <div className="max-w-5xl mx-auto px-4 py-2 flex gap-2 text-xs">
-            {SECONDARY_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`px-3 py-1.5 rounded ${
-                  isActive(item.href)
-                    ? "bg-brand-50 text-brand-700 font-medium"
-                    : "text-stone-600 hover:bg-stone-100"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </header>
   );
 }

@@ -65,6 +65,13 @@ export default function StoresPage() {
   const [regionLabel, setRegionLabel] = useState<string | null>(null);
   const { authed, ids: favoriteIds } = useFavorites();
 
+  // discoverMsg 5초 자동 사라짐
+  useEffect(() => {
+    if (!discoverMsg) return;
+    const t = setTimeout(() => setDiscoverMsg(null), 5000);
+    return () => clearTimeout(t);
+  }, [discoverMsg]);
+
   async function load(lat?: number, lng?: number) {
     setLoading(true);
     const params = new URLSearchParams();
@@ -223,42 +230,12 @@ export default function StoresPage() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleSearchByLocation}
-            className="text-sm bg-white border border-stone-300 px-3 py-1.5 rounded-md hover:bg-stone-50"
+            className="text-sm bg-brand-500 hover:bg-brand-600 text-white border border-brand-600 px-4 py-2 rounded-md font-semibold"
           >
-            📍 내 위치
-          </button>
-          <button
-            onClick={handleDiscoverNearby}
-            disabled={discovering}
-            className="text-sm bg-brand-600 text-white border border-brand-700 px-3 py-1.5 rounded-md hover:bg-brand-700 disabled:opacity-60"
-          >
-            {discovering ? "검색 중..." : "🔍 주변 자동 추가"}
+            📍 내 위치 보기
           </button>
         </div>
       </div>
-
-      {/* 지역 검색 */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSearchRegion();
-        }}
-        className="flex gap-2"
-      >
-        <input
-          value={regionQuery}
-          onChange={(e) => setRegionQuery(e.target.value)}
-          placeholder="지역 검색 (예: 강남역, 잠실, 서울 송파구)"
-          className="flex-1 px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:border-brand-400"
-          aria-label="지역 검색"
-        />
-        <button
-          type="submit"
-          className="bg-stone-700 hover:bg-stone-800 text-white px-4 py-2 rounded-md text-sm"
-        >
-          검색
-        </button>
-      </form>
 
       {(loc || regionLabel) && (
         <div className="text-xs text-stone-500">
@@ -299,6 +276,34 @@ export default function StoresPage() {
 
       {/* 지도 */}
       <StoresMap stores={filtered} myLocation={loc} height="380px" />
+
+      {/* 지역 검색 — 평소엔 접혀있고, 필요한 사람만 펼침 */}
+      <details className="bg-white border border-stone-200 rounded-lg">
+        <summary className="cursor-pointer px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 select-none">
+          🔎 다른 지역 검색하기
+        </summary>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearchRegion();
+          }}
+          className="flex gap-2 px-4 pb-4 pt-1"
+        >
+          <input
+            value={regionQuery}
+            onChange={(e) => setRegionQuery(e.target.value)}
+            placeholder="예: 강남역, 잠실, 서울 송파구"
+            className="flex-1 px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:border-brand-400"
+            aria-label="지역 검색"
+          />
+          <button
+            type="submit"
+            className="bg-stone-700 hover:bg-stone-800 text-white px-4 py-2 rounded-md text-sm"
+          >
+            검색
+          </button>
+        </form>
+      </details>
 
       {/* 리스트 */}
       {loading ? (

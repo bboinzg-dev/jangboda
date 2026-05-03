@@ -36,14 +36,11 @@ export const metadata: Metadata = {
     title: "장보다 — 우리 동네 마트 가격 비교",
     description: "오프라인 마트 + 온라인 쇼핑몰 가격을 한 번에 비교",
   },
-  icons: {
-    icon: [
-      {
-        url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='80'%3E🛒%3C/text%3E%3C/svg%3E",
-        type: "image/svg+xml",
-      },
-    ],
-  },
+  // 아이콘/OG는 Next.js App Router convention 자동 처리:
+  //   src/app/icon.png → favicon
+  //   src/app/apple-icon.png → apple-touch-icon
+  //   src/app/opengraph-image.png → og:image
+  //   src/app/twitter-image.png → twitter:image
 };
 
 export default function RootLayout({
@@ -53,7 +50,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="min-h-screen">
+      <head>
+        {/*
+          Pretendard 폰트 로드 (CDN 방식)
+          - public/fonts 에 폰트 파일을 두지 않고 jsDelivr CDN을 사용
+          - next/font/local 대신 CDN을 채택한 이유: 폰트 파일 관리 부담 제거
+          - Tailwind의 font-pretendard 유틸리티와 함께 동작
+        */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css"
+        />
+      </head>
+      <body className="min-h-screen font-pretendard">
         <FavoritesProvider>
           <Nav />
           <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>

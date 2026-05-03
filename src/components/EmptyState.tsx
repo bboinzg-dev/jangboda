@@ -12,6 +12,7 @@ export type EmptyStateAction = {
 
 export default function EmptyState({
   icon,
+  illustration,
   title,
   description,
   actions = [],
@@ -19,6 +20,8 @@ export default function EmptyState({
   children,
 }: {
   icon: string;
+  /** 옵션: 큰 일러스트 PNG 경로 (예: "/illustrations/empty-cart.png"). 있으면 이모지 대신 노출 */
+  illustration?: string;
   title: string;
   description?: ReactNode;
   actions?: EmptyStateAction[];
@@ -29,9 +32,20 @@ export default function EmptyState({
     <div
       className={`bg-white border border-stone-200 rounded-xl p-8 md:p-10 text-center ${className}`}
     >
-      <div className="text-5xl md:text-6xl mb-3" aria-hidden>
-        {icon}
-      </div>
+      {illustration ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={illustration}
+          alt=""
+          aria-hidden
+          className="mx-auto mb-3 w-32 h-32 md:w-40 md:h-40 object-contain"
+          loading="lazy"
+        />
+      ) : (
+        <div className="text-5xl md:text-6xl mb-3" aria-hidden>
+          {icon}
+        </div>
+      )}
       <h2 className="font-bold text-base md:text-lg text-stone-900 mb-1">
         {title}
       </h2>

@@ -32,3 +32,31 @@ body {
 .card-clickable:hover::after {
   @apply text-brand-500;
 }
+
+/* 재사용 가능한 유틸리티 컴포넌트 (reusable utility components) */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg transition;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 font-medium rounded-lg transition;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-danger hover:opacity-90 text-white font-semibold rounded-lg transition;
+  }
+  .input-base {
+    @apply w-full px-3 py-2 border border-border rounded-lg bg-white text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1 transition;
+  }
+  .badge-success {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-success-soft text-success-text rounded text-[11px] font-medium;
+  }
+  .badge-warning {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning-soft text-warning-text rounded text-[11px] font-medium;
+  }
+  .badge-danger {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-danger-soft text-danger-text rounded text-[11px] font-medium;
+  }
+  .badge-info {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-info-soft text-info-text rounded text-[11px] font-medium;
+  }
+}

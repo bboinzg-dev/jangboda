@@ -101,20 +101,24 @@ export default function SearchPage() {
 
       {/* 카테고리 칩 — 모바일은 가로 스크롤, 데스크톱은 자유 줄바꿈 */}
       {allCategories.length > 0 && (
-        <div className="flex md:flex-wrap flex-nowrap gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 scrollbar-thin">
-          <CategoryChip
-            label="전체"
-            active={category === ALL}
-            onClick={() => setCategory(ALL)}
-          />
-          {allCategories.map((c) => (
+        <div className="relative">
+          <div className="flex md:flex-wrap flex-nowrap gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 scrollbar-thin">
             <CategoryChip
-              key={c}
-              label={c}
-              active={category === c}
-              onClick={() => setCategory(c)}
+              label="전체"
+              active={category === ALL}
+              onClick={() => setCategory(ALL)}
             />
-          ))}
+            {allCategories.map((c) => (
+              <CategoryChip
+                key={c}
+                label={c}
+                active={category === c}
+                onClick={() => setCategory(c)}
+              />
+            ))}
+          </div>
+          {/* 모바일에서 오른쪽 끝 페이드 — 더 있다는 시각 힌트 */}
+          <div className="md:hidden pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
         </div>
       )}
 
@@ -128,9 +132,16 @@ export default function SearchPage() {
         </button>
         <button
           onClick={() => setSortBy("unit")}
-          className={`px-2 py-1 rounded ${sortBy === "unit" ? "bg-brand-100 text-brand-700 font-medium" : "text-stone-600 hover:bg-stone-100"}`}
+          title="같은 용량으로 환산했을 때 더 싼 상품이 위로 (예: 100g당 가격, 1L당 가격)"
+          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-100 text-brand-700 font-medium" : "text-stone-600 hover:bg-stone-100"}`}
         >
-          단가 (원/100g · 원/1L)
+          용량 대비 가격
+          <span
+            aria-hidden
+            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-current text-[9px] font-semibold leading-none"
+          >
+            i
+          </span>
         </button>
       </div>
 

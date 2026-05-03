@@ -104,56 +104,6 @@ export default async function HomePage() {
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
 
-      {/* 정부 혜택 추천 — 별도 모듈 진입점 (모바일 BottomNav가 꽉 차서 홈에 카드로 노출) */}
-      <section>
-        <Link
-          href="/benefits"
-          className="block bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-100 rounded-2xl p-5 md:p-6 transition"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-[11px] font-medium text-indigo-700 mb-1">
-                정부 혜택 추천 · NEW
-              </div>
-              <h2 className="text-lg md:text-xl font-bold text-stone-900 mb-1">
-                받을 수 있는 정부 지원금, 한 번에
-              </h2>
-              <p className="text-sm text-stone-600 leading-relaxed">
-                중앙정부·구청·시청의 혜택을 통합 매칭. 소상공인·청년·신혼·출산
-                등 사각지대 없이.
-              </p>
-            </div>
-            <div className="shrink-0 text-indigo-700 text-2xl leading-none mt-1">›</div>
-          </div>
-        </Link>
-      </section>
-
-      {/* AI 증명사진 — 부가기능 (비밀번호 게이트). 데스크톱에선 더보기에도 노출 */}
-      <section>
-        <Link
-          href="/idphoto"
-          className="block bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-100 rounded-2xl p-5 md:p-6 transition"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-[11px] font-medium text-amber-700 mb-1">
-                부가기능 · 비밀번호 필요 🔒
-              </div>
-              <h2 className="text-lg md:text-xl font-bold text-stone-900 mb-1">
-                AI 증명사진, 30초 만에
-              </h2>
-              <p className="text-sm text-stone-600 leading-relaxed">
-                여권·주민증·비자 등 10가지 규격을 자동 보정·리사이즈. 인쇄용
-                저장도 지원.
-              </p>
-            </div>
-            <div className="shrink-0 text-amber-700 text-2xl leading-none mt-1">
-              ›
-            </div>
-          </div>
-        </Link>
-      </section>
-
       {/* 식약처 회수·판매중지 식품 배너 — 최근 7일, 안전 경고 */}
       <RecallBanner />
 
@@ -254,6 +204,61 @@ export default async function HomePage() {
           </Link>
         </section>
       )}
+
+      {/* 부가 서비스 — 장보기 외 함께 사용할 수 있는 서비스 */}
+      <section>
+        <h2 className="text-base font-bold mb-1 flex items-center gap-2">
+          💡 부가 서비스
+        </h2>
+        <p className="text-xs text-stone-500 mb-3">
+          장보기 외에 함께 사용할 수 있는 서비스
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Link
+            href="/benefits"
+            className="block bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-100 rounded-2xl p-5 transition"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-medium text-indigo-700 mb-1">
+                  정부 혜택 추천
+                </div>
+                <h3 className="text-base font-bold text-stone-900 mb-1">
+                  받을 수 있는 정부 지원금, 한 번에
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  중앙정부·구청·시청의 혜택을 통합 매칭.
+                </p>
+              </div>
+              <div className="shrink-0 text-indigo-700 text-xl leading-none mt-1">
+                ›
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/idphoto"
+            className="block bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-100 rounded-2xl p-5 transition"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-medium text-amber-700 mb-1">
+                  AI 증명사진 · 비밀번호 필요
+                </div>
+                <h3 className="text-base font-bold text-stone-900 mb-1">
+                  AI 증명사진, 30초 만에
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  여권·주민증·비자 등 10가지 규격을 자동 보정.
+                </p>
+              </div>
+              <div className="shrink-0 text-amber-700 text-xl leading-none mt-1">
+                ›
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* 미니 통계 — 신뢰감 */}
       <section className="text-center text-xs text-stone-400 pt-2">

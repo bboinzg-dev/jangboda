@@ -259,26 +259,99 @@ export default async function ProfilePage() {
         </ul>
       </section>
 
-      {/* 🔧 도구 — 모바일 사용자 접근성 (데스크톱 더보기 메뉴 대체) */}
+      {/* 🛠 도구 — 모바일 사용자 접근성 (데스크톱 더보기 메뉴 대체) */}
       <section>
-        <h2 className="font-bold mb-3">🔧 도구</h2>
+        <h2 className="font-bold mb-3">🛠 도구</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Link
             href="/budget"
             className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
           >
-            <div className="text-base font-semibold">📊 가계부</div>
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>📊 가계부</span>
+              <span className="text-stone-400">›</span>
+            </div>
             <small className="text-xs text-stone-500">
               월별/카테고리별 소비 통계
+            </small>
+          </Link>
+          <Link
+            href="/idphoto"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>📷 AI 증명사진</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              여권·주민증·비자 등 자동 보정
             </small>
           </Link>
           <Link
             href="/sync"
             className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
           >
-            <div className="text-base font-semibold">🔄 데이터 동기화</div>
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>🔄 데이터 동기화</span>
+              <span className="text-stone-400">›</span>
+            </div>
             <small className="text-xs text-stone-500">
               최신 가격 정보 갱신
+            </small>
+          </Link>
+        </div>
+      </section>
+
+      {/* 📋 부가 정보 — 회수·이력·건강기능식품·레시피 등 보조 자료 */}
+      <section>
+        <h2 className="font-bold mb-3">📋 부가 정보</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Link
+            href="/recalls"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>⚠️ 회수·판매중지</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              식약처 안전 경고 식품
+            </small>
+          </Link>
+          <Link
+            href="/agritrace"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>🌾 농산물 이력</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              생산·유통 단계 추적
+            </small>
+          </Link>
+          <Link
+            href="/health-functional"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>💊 건강기능식품</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              인증 제품 검색
+            </small>
+          </Link>
+          <Link
+            href="/recipes"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>🍳 레시피</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              재료 기반 추천 레시피
             </small>
           </Link>
         </div>

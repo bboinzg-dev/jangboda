@@ -230,48 +230,7 @@ export default async function ProductDetailPage({
         </div>
       </header>
 
-      <section>
-        <h2 className="font-bold mb-3 flex items-center gap-2">
-          📈 가격 추이
-          <span className="text-xs text-stone-500 font-normal">
-            (최근 60일, 매장별)
-          </span>
-        </h2>
-        <PriceHistoryChart history={history} />
-      </section>
-
-      {/* 원재료 정보 — 농수산물(KAMIS)은 C002에 데이터 없음 → 스킵 */}
-      {product.category !== "농수산물" && (
-        <IngredientsPanel productId={product.id} />
-      )}
-
-      {/* 영양 정보 — 식품영양성분DB는 가공식품/농수산물 모두 보유 → 모든 카테고리 표시 */}
-      <NutritionPanel productId={product.id} />
-
-      {/* 농산물이력추적 — 농수산물(KAMIS)에만 표시 */}
-      {product.category === "농수산물" && (
-        <AgriTraceLookup productName={product.name} />
-      )}
-
-      {/* 건강기능식품 정보 — 매칭 없고 일반 상품 카테고리면 자체적으로 미표시 */}
-      <HealthFunctionalPanel
-        productId={product.id}
-        productName={product.name}
-        productCategory={product.category}
-      />
-
-      {/* 쇠고기 이력추적 — 한우/쇠고기/소고기/정육 상품에서만 자체적으로 노출 */}
-      <CattleTracePanel
-        productCategory={product.category}
-        productName={product.name}
-      />
-
-      {/* 수산물 이력추적 — 수산물/해산물 카테고리 또는 어종 키워드 매칭 시 자체 노출 */}
-      <SeafoodTracePanel
-        productCategory={product.category}
-        productName={product.name}
-      />
-
+      {/* 가격 비교 — 핵심 가치, 헤더 바로 아래로 이동 */}
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
       {offlineRows.length === 0 && onlineRows.length === 0 ? (
         <EmptyState
@@ -343,6 +302,60 @@ export default async function ProductDetailPage({
           </section>
         </>
       )}
+
+      {/* 가격 추이 차트 — 가격 리스트 다음 우선순위 */}
+      <section>
+        <h2 className="font-bold mb-3 flex items-center gap-2">
+          📈 가격 추이
+          <span className="text-xs text-stone-500 font-normal">
+            (최근 60일, 매장별)
+          </span>
+        </h2>
+        <PriceHistoryChart history={history} />
+      </section>
+
+      {/* 부가 정보 패널 6종 — 기본 닫힘, 사용자가 클릭 시 펼침 */}
+      <details className="group">
+        <summary className="cursor-pointer p-4 bg-white border border-stone-200 rounded-xl font-semibold flex items-center justify-between hover:bg-stone-50">
+          <span>📋 상품 상세 정보 (원재료 · 영양 · 이력추적)</span>
+          <span className="text-stone-400 transition-transform group-open:rotate-180">
+            ▼
+          </span>
+        </summary>
+        <div className="mt-3 space-y-6">
+          {/* 원재료 정보 — 농수산물(KAMIS)은 C002에 데이터 없음 → 스킵 */}
+          {product.category !== "농수산물" && (
+            <IngredientsPanel productId={product.id} />
+          )}
+
+          {/* 영양 정보 — 식품영양성분DB는 가공식품/농수산물 모두 보유 → 모든 카테고리 표시 */}
+          <NutritionPanel productId={product.id} />
+
+          {/* 농산물이력추적 — 농수산물(KAMIS)에만 표시 */}
+          {product.category === "농수산물" && (
+            <AgriTraceLookup productName={product.name} />
+          )}
+
+          {/* 건강기능식품 정보 — 매칭 없고 일반 상품 카테고리면 자체적으로 미표시 */}
+          <HealthFunctionalPanel
+            productId={product.id}
+            productName={product.name}
+            productCategory={product.category}
+          />
+
+          {/* 쇠고기 이력추적 — 한우/쇠고기/소고기/정육 상품에서만 자체적으로 노출 */}
+          <CattleTracePanel
+            productCategory={product.category}
+            productName={product.name}
+          />
+
+          {/* 수산물 이력추적 — 수산물/해산물 카테고리 또는 어종 키워드 매칭 시 자체 노출 */}
+          <SeafoodTracePanel
+            productCategory={product.category}
+            productName={product.name}
+          />
+        </div>
+      </details>
     </div>
   );
 }
