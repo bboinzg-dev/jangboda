@@ -49,8 +49,13 @@ export async function POST(req: NextRequest) {
     where: { category: { not: "농수산물" } },
   });
 
+  // ParsaProduct만 enrich — 시드 7개는 식약처 SKU 없는 항목들이라 시간 낭비
+  const baseWhere = {
+    category: { not: "농수산물" },
+    externalId: { startsWith: "parsa:product:" },
+  };
   const products = await prisma.product.findMany({
-    where: { category: { not: "농수산물" } },
+    where: baseWhere,
     select: {
       id: true,
       name: true,
