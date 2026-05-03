@@ -488,8 +488,10 @@ export async function fetchParsaPriceByStore(
       return { rows: [], error: envErr };
     }
 
-    // 가격 응답은 <item> 래퍼 (단순 태그).
-    const ITEM_RE = /<item>([\s\S]*?)<\/item>/g;
+    // 가격 응답은 <iros.openapi.service.vo.goodPriceVO> 래퍼 — store와 동일 패턴
+    // (PDF의 <item> 표기는 단순화이고 실제 응답은 fully qualified VO 이름)
+    const ITEM_RE =
+      /<iros\.openapi\.service\.vo\.goodPriceVO>([\s\S]*?)<\/iros\.openapi\.service\.vo\.goodPriceVO>/g;
     const rows: ParsaPriceItem[] = [];
     let m: RegExpExecArray | null;
     while ((m = ITEM_RE.exec(xml)) !== null) {
