@@ -15,10 +15,47 @@ import { checkSyncAuth } from "@/lib/auth";
 
 export const maxDuration = 60;
 
-// 가상 chain 식별 — 한국소비자원에서 일괄 수집한 매장이라는 출처를 명확히 표시.
-// 사용자가 "이마트연수점"을 봤을 때 "한국소비자원 등록 매장 / [대형마트] 이마트연수점" 식으로 노출.
-const MIRROR_CHAIN_NAME = "한국소비자원 등록 매장";
-const MIRROR_CHAIN_CATEGORY = "public";
+// entpName에서 진짜 chain 추출 — "롯데슈퍼잠원점" → chain="롯데슈퍼"
+// 매칭 안 되는 매장은 "기타 매장" chain으로 fallback (출처는 source="parsa"로만 표시).
+// 우선순위: 더 구체적인 prefix를 먼저 (이마트트레이더스 > 이마트, 홈플러스익스프레스 > 홈플러스)
+const CHAIN_PATTERNS: Array<{ test: (n: string) => boolean; chain: string; category: string }> = [
+  // 대형마트
+  { test: (n) => n.includes("이마트트레이더스") || n.includes("트레이더스"), chain: "트레이더스", category: "mart" },
+  { test: (n) => n.includes("이마트에브리데이"), chain: "이마트에브리데이", category: "mart" },
+  { test: (n) => n.includes("이마트24"), chain: "이마트24", category: "convenience" },
+  { test: (n) => n.includes("이마트"), chain: "이마트", category: "mart" },
+  { test: (n) => n.includes("롯데마트"), chain: "롯데마트", category: "mart" },
+  { test: (n) => n.includes("롯데슈퍼"), chain: "롯데슈퍼", category: "mart" },
+  { test: (n) => n.includes("롯데백화점"), chain: "롯데백화점", category: "mart" },
+  { test: (n) => n.includes("홈플러스익스프레스") || n.includes("홈플러스 익스프레스") || n.includes("홈플익스"), chain: "홈플러스 익스프레스", category: "mart" },
+  { test: (n) => n.includes("홈플러스"), chain: "홈플러스", category: "mart" },
+  { test: (n) => n.includes("킴스클럽"), chain: "킴스클럽", category: "mart" },
+  { test: (n) => n.includes("코스트코") || n.toLowerCase().includes("costco"), chain: "코스트코", category: "mart" },
+  { test: (n) => n.includes("하나로마트") || n.includes("농협하나로") || n.includes("NH농협"), chain: "농협하나로마트", category: "mart" },
+  { test: (n) => n.includes("GS더프레시") || n.includes("GS프레시") || n.includes("GS THE FRESH"), chain: "GS더프레시", category: "mart" },
+  { test: (n) => n.includes("메가마트"), chain: "메가마트", category: "mart" },
+  { test: (n) => n.includes("탑마트"), chain: "탑마트", category: "mart" },
+  // 편의점
+  { test: (n) => n.includes("GS25"), chain: "GS25", category: "convenience" },
+  { test: (n) => n.toUpperCase().includes("CU") && !n.includes("PCU"), chain: "CU", category: "convenience" },
+  { test: (n) => n.includes("세븐일레븐") || n.includes("7-ELEVEN") || n.includes("7일레븐"), chain: "세븐일레븐", category: "convenience" },
+  { test: (n) => n.includes("미니스톱"), chain: "미니스톱", category: "convenience" },
+  // 백화점
+  { test: (n) => n.includes("현대백화점"), chain: "현대백화점", category: "mart" },
+  { test: (n) => n.includes("신세계백화점") || (n.includes("신세계") && !n.includes("이마트")), chain: "신세계백화점", category: "mart" },
+  { test: (n) => n.includes("AK플라자"), chain: "AK플라자", category: "mart" },
+  { test: (n) => n.includes("갤러리아"), chain: "갤러리아백화점", category: "mart" },
+];
+
+const FALLBACK_CHAIN_NAME = "기타 매장";
+const FALLBACK_CHAIN_CATEGORY = "mart";
+
+function extractChain(entpName: string): { chain: string; category: string } {
+  for (const p of CHAIN_PATTERNS) {
+    if (p.test(entpName)) return { chain: p.chain, category: p.category };
+  }
+  return { chain: FALLBACK_CHAIN_NAME, category: FALLBACK_CHAIN_CATEGORY };
+}
 
 export async function POST(req: NextRequest) {
   const authErr = checkSyncAuth(req);
@@ -26,24 +63,7 @@ export async function POST(req: NextRequest) {
 
   const startedAt = Date.now();
 
-  // 1) 가상 Chain upsert
-  const chain = await prisma.chain.upsert({
-    where: { name: MIRROR_CHAIN_NAME },
-    update: { category: MIRROR_CHAIN_CATEGORY },
-    create: { name: MIRROR_CHAIN_NAME, category: MIRROR_CHAIN_CATEGORY },
-  });
-
-  // 2) entpTypeCode → 한글 이름 룩업 테이블 (ParsaCategory의 BU 클래스).
-  //    예: LM → "대형마트", SM → "슈퍼마켓"
-  //    BU 데이터가 비어있을 수 있으므로 빈 Map이어도 fallback(코드 그대로) 처리.
-  const buRows = await prisma.parsaCategory.findMany({
-    where: { classCode: "BU" },
-    select: { code: true, codeName: true },
-  });
-  const typeNameMap = new Map<string, string>();
-  for (const r of buRows) typeNameMap.set(r.code, r.codeName);
-
-  // 3) ParsaStore 전체 조회
+  // 1) ParsaStore 전체 조회
   const parsaStores = await prisma.parsaStore.findMany({
     select: {
       entpId: true,
@@ -84,18 +104,30 @@ export async function POST(req: NextRequest) {
     hours: string | null;
   };
 
+  // 2) 매장별로 chain 추출 → 필요한 chain 미리 upsert
+  const chainCache = new Map<string, string>(); // chain name → chain.id
+  for (const p of parsaStores) {
+    const { chain: chainName, category } = extractChain(p.entpName);
+    if (chainCache.has(chainName)) continue;
+    const c = await prisma.chain.upsert({
+      where: { name: chainName },
+      update: {}, // 기존 chain category는 그대로 유지 (시드값 보존)
+      create: { name: chainName, category },
+    });
+    chainCache.set(chainName, c.id);
+  }
+
   const mirrorRows: MirrorRow[] = parsaStores.map((p) => {
-    const typeName = p.entpTypeCode
-      ? typeNameMap.get(p.entpTypeCode) ?? p.entpTypeCode
-      : null;
-    const name = typeName ? `[${typeName}] ${p.entpName}` : p.entpName;
+    const { chain: chainName } = extractChain(p.entpName);
+    const chainId = chainCache.get(chainName)!;
+    // store name은 entpName 그대로 — [업태] 접두사 제거
+    const name = p.entpName;
     const address = p.roadAddrBasic ?? p.addrBasic ?? "주소 미상";
     return {
       externalId: `parsa:${p.entpId}`,
-      chainId: chain.id,
+      chainId,
       name,
       address,
-      // 좌표 없는 매장은 0,0 (지도 표시 안 됨)
       lat: p.lat ?? 0,
       lng: p.lng ?? 0,
       phone: p.entpTelno,

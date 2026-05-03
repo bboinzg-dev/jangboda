@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category") ?? undefined;
   const sort = searchParams.get("sort") ?? undefined; // "popular" | undefined
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "30"), 500);
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "200"), 1000);
 
   const products = await prisma.product.findMany({
     where: {
