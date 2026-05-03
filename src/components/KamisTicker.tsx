@@ -1,0 +1,77 @@
+"use client";
+
+import Link from "next/link";
+
+type TickerItem = {
+  id: string;
+  productId: string;
+  productName: string;
+  productUnit: string;
+  price: number;
+};
+
+type Props = {
+  items: TickerItem[];
+};
+
+// 홈 "오늘의 시세" 위젯 — 카드들이 위로 자동 흐르는 ticker
+// - 모든 KAMIS 시세 노출 (4 cards visible viewport, 자동 vertical scroll)
+// - 마우스 오버 시 일시정지
+// - "전체 보기" 링크로 /kamis 페이지 이동
+// - 데이터 부족(< 5개)이면 ticker 효과 없이 grid로 노출
+export default function KamisTicker({ items }: Props) {
+  if (items.length === 0) return null;
+
+  // 5개 미만이면 흐름 효과 의미 없음 — 정적 grid
+  if (items.length < 5) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {items.map((p) => (
+          <ItemCard key={p.id} item={p} />
+        ))}
+      </div>
+    );
+  }
+
+  // 카드 한 그룹의 높이를 기반으로 애니메이션 길이 계산 — 카드당 4초
+  const duration = `${Math.max(20, items.length * 4)}s`;
+
+  return (
+    <div
+      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-border bg-white"
+      style={{ ["--ticker-duration" as string]: duration }}
+    >
+      {/* 위/아래 페이드 그라데이션 — 흐름의 시작/끝을 부드럽게 */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10" />
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10" />
+
+      {/* ticker track — 콘텐츠 두 번 복제로 끊김 없는 무한 loop */}
+      <div className="ticker-track flex flex-col gap-2 p-2">
+        {[...items, ...items].map((p, idx) => (
+          <ItemCard key={`${p.id}-${idx}`} item={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ItemCard({ item }: { item: TickerItem }) {
+  return (
+    <Link
+      href={`/products/${item.productId}`}
+      className="flex items-center justify-between px-3 py-2 bg-stone-50 hover:bg-brand-50 border border-border rounded-md transition"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-stone-900 truncate">
+          {item.productName}
+        </div>
+        <div className="text-[10px] text-stone-500">{item.productUnit}</div>
+      </div>
+      <div className="shrink-0 ml-2 text-right">
+        <div className="text-base font-bold text-brand-700">
+          {item.price.toLocaleString("ko-KR")}원
+        </div>
+      </div>
+    </Link>
+  );
+}

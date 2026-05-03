@@ -33,6 +33,18 @@ body {
   @apply text-brand-500;
 }
 
+/* 시세 ticker — 카드들이 위로 흐르는 자동 스크롤 (홈 KAMIS 위젯) */
+@keyframes ticker-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+.ticker-track {
+  animation: ticker-up var(--ticker-duration, 30s) linear infinite;
+}
+.ticker-container:hover .ticker-track {
+  animation-play-state: paused;
+}
+
 /* 재사용 가능한 유틸리티 컴포넌트 (reusable utility components) */
 @layer components {
   .btn-primary {

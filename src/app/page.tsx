@@ -4,6 +4,7 @@ import { formatWon } from "@/lib/format";
 import { unitPriceLabel } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
+import KamisTicker from "@/components/KamisTicker";
 
 // ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분.
 // 개인화 데이터는 OnboardingCard가 자체 client-side fetch (페이지 ISR 유지를 위해)
@@ -13,12 +14,11 @@ async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
   const [kamisPrices, products, productsCount, storesCount, pricesCount] =
     await Promise.all([
-      // KAMIS 시세 — 농수산물 가상 매장의 최신 가격 (홈 위젯용)
-      // distinct로 product당 1개씩, take 16으로 늘림 (KAMIS_TARGETS 12개 품목 모두 노출)
+      // KAMIS 시세 — 농수산물 가상 매장 — ticker용 충분히 가져옴
       prisma.price.findMany({
         where: { source: "kamis" },
         orderBy: { createdAt: "desc" },
-        take: 16,
+        take: 30,
         include: { product: true },
         distinct: ["productId"],
       }),
@@ -129,7 +129,7 @@ export default async function HomePage() {
       {/* 식약처 회수·판매중지 식품 배너 — 최근 7일, 안전 경고 */}
       <RecallBanner />
 
-      {/* KAMIS 실시간 시세 — 매일 갱신, 첫 방문자도 즉시 가치 */}
+      {/* KAMIS 실시간 시세 — 자동 ticker (위로 흐름 + 마우스오버 일시정지) */}
       {kamisPrices.length > 0 && (
         <section>
           <div className="flex items-baseline justify-between mb-3">
@@ -139,27 +139,22 @@ export default async function HomePage() {
                 KAMIS 공식 평균가
               </span>
             </h2>
-            <span className="text-[10px] text-stone-400">매일 갱신</span>
+            <Link
+              href="/kamis"
+              className="text-xs text-brand-600 hover:underline font-medium"
+            >
+              전체 보기 →
+            </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {kamisPrices.slice(0, 16).map((p) => (
-              <Link
-                key={p.id}
-                href={`/products/${p.product.id}`}
-                className="card-clickable relative bg-white border border-stone-200 rounded-lg p-3 pr-6"
-              >
-                <div className="text-xs text-stone-500 truncate">
-                  {p.product.name}
-                </div>
-                <div className="font-bold text-stone-900 mt-0.5">
-                  {formatWon(p.price)}
-                </div>
-                <div className="text-[10px] text-stone-400">
-                  {p.product.unit}
-                </div>
-              </Link>
-            ))}
-          </div>
+          <KamisTicker
+            items={kamisPrices.map((p) => ({
+              id: p.id,
+              productId: p.product.id,
+              productName: p.product.name,
+              productUnit: p.product.unit,
+              price: p.price,
+            }))}
+          />
         </section>
       )}
 
