@@ -116,29 +116,53 @@ export default async function KamisPage({
             총 {sorted.length}개 품목 시세 · 매일 갱신
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {sorted.map((p) => (
-              <Link
-                key={p.id}
-                href={`/products/${p.product.id}`}
-                className="card-clickable relative bg-white border border-border rounded-lg p-4 pr-8"
-              >
-                <div className="text-xs text-stone-500 mb-0.5">
-                  {p.product.category}
-                </div>
-                <div className="font-semibold text-stone-900 truncate">
-                  {p.product.name}
-                </div>
-                <div className="text-xs text-stone-400 mb-2">
-                  {p.product.unit}
-                </div>
-                <div className="text-lg font-bold text-brand-700">
-                  {formatWon(p.price)}
-                </div>
-                <div className="text-[10px] text-stone-400 mt-1">
-                  KAMIS · {formatRelativeDate(p.createdAt)}
-                </div>
-              </Link>
-            ))}
+            {sorted.map((p) => {
+              const m = ((p as { metadata?: unknown }).metadata ?? null) as
+                | { changeAmount?: number; changePct?: number }
+                | null;
+              const change = m?.changeAmount ?? null;
+              const pct = m?.changePct ?? null;
+              const isUp = change !== null && change > 0;
+              const isDown = change !== null && change < 0;
+              const colorClass = isUp
+                ? "text-rose-600"
+                : isDown
+                ? "text-blue-600"
+                : "text-stone-400";
+              return (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.product.id}`}
+                  className="card-clickable relative bg-white border border-border rounded-lg p-4 pr-8"
+                >
+                  <div className="text-xs text-stone-500 mb-0.5">
+                    {p.product.category}
+                  </div>
+                  <div className="font-semibold text-stone-900 truncate">
+                    {p.product.name}
+                  </div>
+                  <div className="text-xs text-stone-400 mb-2">
+                    {p.product.unit}
+                  </div>
+                  <div className="text-lg font-bold text-brand-700">
+                    {formatWon(p.price)}
+                  </div>
+                  {change !== null && pct !== null && (
+                    <div className={`text-xs font-medium mt-0.5 ${colorClass}`}>
+                      {isUp ? "▲" : isDown ? "▼" : "—"}{" "}
+                      {Math.abs(change).toLocaleString("ko-KR")}원
+                      <span className="ml-1">
+                        ({pct >= 0 ? "+" : ""}
+                        {pct.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                  <div className="text-[10px] text-stone-400 mt-1">
+                    KAMIS · {formatRelativeDate(p.createdAt)}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </>
       )}

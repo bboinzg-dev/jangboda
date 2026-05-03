@@ -8,6 +8,10 @@ type TickerItem = {
   productName: string;
   productUnit: string;
   price: number;
+  /** 전 조사일 대비 변동 금액 (없으면 표시 안 함) */
+  changeAmount?: number | null;
+  /** 전 조사일 대비 변동 퍼센트 */
+  changePct?: number | null;
 };
 
 type Props = {
@@ -56,6 +60,16 @@ export default function KamisTicker({ items }: Props) {
 }
 
 function ItemCard({ item }: { item: TickerItem }) {
+  const change = item.changeAmount ?? null;
+  const pct = item.changePct ?? null;
+  // 변동 색: 상승=red, 하락=blue (한국 관습), 동일=gray
+  const isUp = change !== null && change > 0;
+  const isDown = change !== null && change < 0;
+  const colorClass = isUp
+    ? "text-rose-600"
+    : isDown
+    ? "text-blue-600"
+    : "text-stone-400";
   return (
     <Link
       href={`/products/${item.productId}`}
@@ -71,6 +85,16 @@ function ItemCard({ item }: { item: TickerItem }) {
         <div className="text-base font-bold text-brand-700">
           {item.price.toLocaleString("ko-KR")}원
         </div>
+        {change !== null && pct !== null && (
+          <div className={`text-[11px] font-medium ${colorClass}`}>
+            {isUp ? "▲" : isDown ? "▼" : "—"}{" "}
+            {Math.abs(change).toLocaleString("ko-KR")}원
+            <span className="ml-1 opacity-80">
+              ({pct >= 0 ? "+" : ""}
+              {pct.toFixed(1)}%)
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );

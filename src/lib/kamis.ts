@@ -12,6 +12,12 @@ export type KamisPrice = {
   unit: string;
   retailPrice: number;
   date: string;
+  // 전 조사일 대비 변동 — 홈 ticker / /kamis 페이지 표시용
+  // KAMIS API의 dpr2(1일전), dpr3(1주전), dpr4(2주전), dpr6(전년) 응답 활용
+  previousPrice?: number;          // dpr2 — 직전 조사일 가격
+  changeAmount?: number;            // retailPrice - previousPrice
+  changePct?: number;               // (changeAmount / previousPrice) * 100
+  weeklyAverage?: number;           // dpr3 — 1주전 가격 (참고용)
   // KAMIS 응답에 등급/품종/원산지 일부 있음 — 농수산물 풍부화에 활용
   grade?: string;     // 등급 — "특품", "상품" 등 (rank/kind_name)
   kindName?: string;  // 품종 — "조생", "후지" 등
@@ -106,16 +112,31 @@ async function callKamisAll(
             (it.item_name === t.name || it.item_name.includes(t.name) || t.name.includes(it.item_name))
         );
         if (!target) continue;
-        // dpr1 = 당일 가격, 콤마/공백 제거
-        const priceStr = (it.dpr1 ?? "").replace(/[, \-]/g, "");
-        const price = parseInt(priceStr, 10);
-        if (!price || isNaN(price)) continue;
+        // dpr1 = 당일, dpr2 = 1일전, dpr3 = 1주전 — 콤마/공백/대시 제거 후 파싱
+        const parsePrice = (s: string | undefined): number | undefined => {
+          if (!s) return undefined;
+          const n = parseInt(s.replace(/[, \-]/g, ""), 10);
+          return Number.isFinite(n) && n > 0 ? n : undefined;
+        };
+        const price = parsePrice(it.dpr1);
+        if (!price) continue;
+        const previousPrice = parsePrice(it.dpr2);
+        const changeAmount =
+          previousPrice !== undefined ? price - previousPrice : undefined;
+        const changePct =
+          previousPrice && previousPrice > 0
+            ? ((price - previousPrice) / previousPrice) * 100
+            : undefined;
         out.push({
           productCode: target.itemCode,
           productName: target.name,
           unit: it.unit ? `1${it.unit}` : target.unit,
           retailPrice: price,
           date,
+          previousPrice,
+          changeAmount,
+          changePct,
+          weeklyAverage: parsePrice(it.dpr3),
           grade: it.rank || it.kind_name,  // 등급 (특품/상품 등)
           kindName: it.kind_name,          // 품종 (조생/후지 등)
           origin: it.country_name || it.local_name, // 원산지 (있으면)

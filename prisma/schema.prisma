@@ -101,6 +101,8 @@ model Price {
   receipt       Receipt? @relation(fields: [receiptId], references: [id])
   reports       PriceReport[]
   createdAt     DateTime @default(now())
+  // 부가 메타데이터 — KAMIS 가격 변동(previousPrice/changeAmount/changePct), parsa 할인 등
+  metadata      Json?
 
   @@index([productId, storeId, createdAt])
   @@index([storeId])

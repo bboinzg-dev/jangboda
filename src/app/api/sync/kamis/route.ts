@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fetchKamisPrices } from "@/lib/kamis";
 import { checkSyncAuth } from "@/lib/auth";
@@ -82,13 +83,24 @@ export async function POST(req: NextRequest) {
     await prisma.price.deleteMany({
       where: { productId: product.id, storeId: store.id, source: "kamis" },
     });
+    // 변동 정보(전 조사일 대비 금액/퍼센트)는 metadata에 저장 — UI에 빨간/파란 표시용
+    const metadata =
+      k.previousPrice !== undefined
+        ? {
+            previousPrice: k.previousPrice,
+            changeAmount: k.changeAmount ?? 0,
+            changePct: k.changePct ?? 0,
+            weeklyAverage: k.weeklyAverage,
+          }
+        : undefined;
     await prisma.price.create({
       data: {
         productId: product.id,
         storeId: store.id,
         price: k.retailPrice,
         source: "kamis",
-      },
+        ...(metadata ? { metadata: metadata as Prisma.InputJsonValue } : {}),
+      } as Prisma.PriceUncheckedCreateInput,
     });
     inserted++;
   }

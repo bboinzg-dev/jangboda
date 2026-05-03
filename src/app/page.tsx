@@ -147,13 +147,20 @@ export default async function HomePage() {
             </Link>
           </div>
           <KamisTicker
-            items={kamisPrices.map((p) => ({
-              id: p.id,
-              productId: p.product.id,
-              productName: p.product.name,
-              productUnit: p.product.unit,
-              price: p.price,
-            }))}
+            items={kamisPrices.map((p) => {
+              const m = ((p as { metadata?: unknown }).metadata ?? null) as
+                | { changeAmount?: number; changePct?: number }
+                | null;
+              return {
+                id: p.id,
+                productId: p.product.id,
+                productName: p.product.name,
+                productUnit: p.product.unit,
+                price: p.price,
+                changeAmount: m?.changeAmount ?? null,
+                changePct: m?.changePct ?? null,
+              };
+            })}
           />
         </section>
       )}
