@@ -47,7 +47,7 @@ function extractFreeText(rules: unknown): {
   return {
     지원대상: pick("지원대상", "trgetNm", "supportTarget", "trgterIndvdlArray", "target"),
     선정기준: pick("선정기준", "refrncNm", "selectionCriteria", "slctCritrCn", "criteria"),
-    지원내용: pick("지원내용", "sportCn", "pldirSportRealmLclasCodeNm", "hashtags", "supportContent", "content"),
+    지원내용: pick("지원내용", "사업개요", "사업내용", "sportCn", "pldirSportRealmLclasCodeNm", "hashtags", "supportContent", "content"),
     신청방법: pick("신청방법", "reqstMthPapersCn", "reqstBeginEndDe", "applicationMethod", "aplyMthdCn", "method"),
   };
 }

@@ -40,9 +40,39 @@ export default function UploadPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
 
-  function handleCameraCapture(dataUrl: string) {
-    setImagePreview(dataUrl);
-    setImageBase64(dataUrl.split(",")[1] ?? null);
+  // 이미지 max 1920px + JPEG 0.85 — Vercel body limit(4.5MB) + 우리 8MB 제한 통과
+  async function compressDataUrl(dataUrl: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 1920;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (Math.max(w, h) > maxSize) {
+          const ratio = maxSize / Math.max(w, h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(dataUrl); // canvas 못 쓰면 원본 그대로
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => reject(new Error("이미지를 읽을 수 없습니다"));
+      img.src = dataUrl;
+    });
+  }
+
+  async function handleCameraCapture(dataUrl: string) {
+    const compressed = await compressDataUrl(dataUrl).catch(() => dataUrl);
+    setImagePreview(compressed);
+    setImageBase64(compressed.split(",")[1] ?? null);
     setCameraOpen(false);
     setResult(null);
     setSubmitResult(null);
@@ -64,10 +94,12 @@ export default function UploadPage() {
 
   function handleFile(file: File) {
     const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setImageBase64(result.split(",")[1] ?? null);
-      setImagePreview(result);
+    reader.onload = async () => {
+      const original = reader.result as string;
+      // 갤러리 사진은 보통 4-12MB → 압축 필수
+      const compressed = await compressDataUrl(original).catch(() => original);
+      setImageBase64(compressed.split(",")[1] ?? null);
+      setImagePreview(compressed);
     };
     reader.readAsDataURL(file);
   }
@@ -192,41 +224,70 @@ export default function UploadPage() {
       {!result && (
         <section className="bg-white border border-line rounded-xl p-6 space-y-6">
           <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => setCameraOpen(true)}
-              className="w-[80%] flex flex-col items-center gap-3 py-10 border-2 border-dashed border-brand-200 hover:border-brand-400 hover:bg-brand-50 rounded-xl transition-colors text-brand-600"
-              aria-label="카메라로 영수증 촬영"
-            >
-              <IconCamera size={64} />
-              <span className="text-base font-bold text-ink-1">
-                카메라로 영수증 찍기
-              </span>
-              <span className="text-xs text-ink-3">탭하여 즉시 촬영</span>
-            </button>
+            {imagePreview ? (
+              // 사진 있으면 미리보기 + 다시 찍기/지우기 옵션
+              <div className="w-full sm:w-[80%] space-y-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt="업로드한 영수증"
+                  className="w-full max-h-[60vh] rounded-xl border border-line object-contain bg-surface-muted"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCameraOpen(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 border border-line-strong rounded-lg text-sm font-medium text-ink-2 hover:bg-surface-muted"
+                  >
+                    <IconCamera size={16} />
+                    다시 찍기
+                  </button>
+                  <label className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 border border-line-strong rounded-lg text-sm font-medium text-ink-2 hover:bg-surface-muted cursor-pointer">
+                    갤러리에서 선택
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleFile(f);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCameraOpen(true)}
+                  className="w-full sm:w-[80%] flex flex-col items-center gap-3 py-10 border-2 border-dashed border-brand-200 hover:border-brand-400 hover:bg-brand-50 rounded-xl transition-colors text-brand-600"
+                  aria-label="카메라로 영수증 촬영"
+                >
+                  <IconCamera size={64} />
+                  <span className="text-base font-bold text-ink-1">
+                    카메라로 영수증 찍기
+                  </span>
+                  <span className="text-xs text-ink-3">탭하여 즉시 촬영</span>
+                </button>
 
-            {/* 갤러리 — secondary 링크 */}
-            <label className="mt-3 text-xs text-ink-3 hover:text-ink-2 cursor-pointer underline underline-offset-2">
-              또는 갤러리에서 선택하기
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFile(f);
-                }}
-                aria-label="영수증 사진"
-                className="hidden"
-              />
-            </label>
+                {/* 갤러리 — secondary 링크 */}
+                <label className="mt-3 text-xs text-ink-3 hover:text-ink-2 cursor-pointer underline underline-offset-2">
+                  또는 갤러리에서 선택하기
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleFile(f);
+                    }}
+                    aria-label="영수증 사진"
+                    className="hidden"
+                  />
+                </label>
+              </>
+            )}
           </div>
-
-          {imagePreview && (
-            <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-              <IconCheck size={14} />
-              <span>사진 준비됨 — 아래 &quot;OCR 시작&quot; 버튼을 누르세요</span>
-            </div>
-          )}
 
           <div className="text-xs text-ink-3 text-center">
             이미지를 안 올려도 데모 데이터로 흐름을 확인할 수 있어요.

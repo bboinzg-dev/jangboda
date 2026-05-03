@@ -69,6 +69,8 @@ function extractFreeText(rules: unknown): {
     ),
     지원내용: pick(
       "지원내용",
+      "사업개요", // mssBiz enrich가 채운 본문
+      "사업내용",
       "sportCn", // bizinfo
       "pldirSportRealmLclasCodeNm", // 분류 (지원 분야)
       "hashtags", // 태그 — 추가 컨텍스트
