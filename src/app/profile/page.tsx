@@ -305,10 +305,10 @@ export default async function ProfilePage() {
         </div>
       </section>
 
-      {/* 📋 부가 정보 — 회수·이력·건강기능식품·레시피 등 보조 자료 */}
+      {/* 📋 부가 정보 — 회수·이력·건강기능식품·레시피·공공가격 등 보조 자료 */}
       <section>
         <h2 className="font-bold mb-3">📋 부가 정보</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Link
             href="/recalls"
             className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
@@ -355,6 +355,18 @@ export default async function ProfilePage() {
             </div>
             <small className="text-xs text-stone-500">
               재료 기반 추천 레시피
+            </small>
+          </Link>
+          <Link
+            href="/parsa"
+            className="card-clickable bg-white border border-stone-200 rounded-lg p-4 flex flex-col gap-1 hover:border-brand-300"
+          >
+            <div className="text-sm font-semibold flex items-center justify-between gap-2">
+              <span>📊 공공 가격</span>
+              <span className="text-stone-400">›</span>
+            </div>
+            <small className="text-xs text-stone-500">
+              한국소비자원 참가격 조사
             </small>
           </Link>
         </div>

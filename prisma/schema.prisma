@@ -439,3 +439,41 @@ model ParsaProduct {
   @@index([goodSmlclsCode])
   @@index([goodName])
 }
+
+// 한국소비자원 참가격 — 기준 데이터 (getStandardInfoSvc)
+// classCode: AL(소분류), BU(업태), AR(지역), UT(단위/용량)
+model ParsaCategory {
+  id         String   @id @default(cuid())
+  classCode  String   // AL/BU/AR/UT
+  code       String   // 코드값 (예: 030101001=계란, LM=대형마트, 020100000=서울특별시)
+  codeName   String   // 코드명 (예: 계란, 대형마트, 서울특별시)
+  highCode   String?  // 상위 코드 (트리 구조)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([classCode, code])
+  @@index([classCode])
+  @@index([highCode])
+}
+
+// 한국소비자원 참가격 — 가격 (getProductPriceInfoSvc)
+// goodInspectDay별 매장별 상품별 가격 1행
+model ParsaPrice {
+  id              String   @id @default(cuid())
+  entpId          String                            // 매장 ID
+  goodId          String                            // 상품 ID
+  inspectDay      String                            // YYYYMMDD (조사일)
+  price           Int                               // 원
+  plusoneYn       Boolean  @default(false)          // 1+1 여부
+  discountYn      Boolean  @default(false)          // 할인 여부
+  discountStart   String?                           // 할인 시작일 YYYYMMDD
+  discountEnd     String?                           // 할인 종료일 YYYYMMDD
+  inputDttm       String?                           // 입력 일시
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([entpId, goodId, inspectDay])
+  @@index([entpId, inspectDay])
+  @@index([goodId, inspectDay])
+  @@index([inspectDay])
+}
