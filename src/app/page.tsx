@@ -65,40 +65,61 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero — 앱 의도를 즉시 전달 */}
-      <section className="bg-gradient-to-br from-brand-50 to-orange-50 rounded-2xl p-6 md:p-8 border border-brand-100">
-        <h1 className="text-2xl md:text-3xl font-bold text-stone-900 mb-2">
-          오늘 뭐 사세요?
-        </h1>
-        <p className="text-stone-600 mb-5 leading-relaxed text-sm md:text-base">
-          살 물건들을 모아보면 어느 마트가 가장 싼지 알려드려요.
-          <br />
-          영수증 한 장으로 동네 이웃 모두가 절약합니다.
-        </p>
+      {/* Hero — 앱 의도를 즉시 전달 + 큰 일러스트로 첫 인상 강화 */}
+      <section className="bg-gradient-to-br from-brand-50 to-orange-50 rounded-2xl p-6 md:p-8 border border-brand-100 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-stone-900 mb-2">
+              오늘 뭐 사세요?
+            </h1>
+            <p className="text-stone-600 mb-5 leading-relaxed text-sm md:text-base">
+              살 물건들을 모아보면 어느 마트가 가장 싼지 알려드려요.
+              <br />
+              영수증 한 장으로 동네 이웃 모두가 절약합니다.
+            </p>
 
-        {/* 메인 CTA + 보조 액션 */}
-        <div className="space-y-2">
-          <Link
-            href="/cart"
-            className="block w-full md:inline-flex md:w-auto bg-brand-500 hover:bg-brand-600 text-white text-center px-6 py-3.5 rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-shadow"
-          >
-            🛒 장보기 비교 시작
-          </Link>
-          <div className="grid grid-cols-2 gap-2 md:flex md:gap-2">
-            <Link
-              href="/upload"
-              className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
-            >
-              📸 영수증 올리기
-            </Link>
-            <Link
-              href="/stores"
-              className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
-            >
-              📍 주변 마트
-            </Link>
+            {/* 메인 CTA + 보조 액션 */}
+            <div className="space-y-2">
+              <Link
+                href="/cart"
+                className="block w-full md:inline-flex md:w-auto bg-brand-500 hover:bg-brand-600 text-white text-center px-6 py-3.5 rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-shadow"
+              >
+                🛒 장보기 비교 시작
+              </Link>
+              <div className="grid grid-cols-2 gap-2 md:flex md:gap-2">
+                <Link
+                  href="/upload"
+                  className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                >
+                  📸 영수증 올리기
+                </Link>
+                <Link
+                  href="/stores"
+                  className="bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                >
+                  📍 주변 마트
+                </Link>
+              </div>
+            </div>
           </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/illustrations/home-hero.png"
+            alt=""
+            aria-hidden
+            className="hidden md:block w-44 lg:w-56 h-auto justify-self-end"
+            loading="eager"
+          />
         </div>
+        {/* 모바일 — 우측 일러스트 대신 하단 배너로 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/illustrations/home-hero.png"
+          alt=""
+          aria-hidden
+          className="md:hidden mt-4 w-32 h-32 mx-auto block"
+          loading="eager"
+        />
       </section>
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
