@@ -142,12 +142,12 @@ export default async function ProductDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/search" className="text-sm text-stone-500 hover:underline">
+        <Link href="/search" className="text-sm text-ink-3 hover:underline">
           ← 검색으로
         </Link>
       </div>
 
-      <header className="bg-white border border-stone-200 rounded-xl p-6">
+      <header className="bg-white border border-line rounded-xl p-6">
         {/* 좌측 큰 썸네일 + 우측 메타 — 모바일은 세로 스택 */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <ProductImage
@@ -157,20 +157,23 @@ export default async function ProductDetailPage({
             className="self-center sm:self-start"
           />
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-stone-500">{product.category}</div>
-            <h1 className="text-2xl font-bold mt-1 flex items-center gap-2 flex-wrap">
-              {product.name}
-              {product.hasHaccp && (
-                <span
-                  className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
-                  title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
-                >
-                  🏅 HACCP
-                </span>
-              )}
-            </h1>
-            <div className="text-stone-600 text-sm mt-1">
-              {product.brand} · {product.unit}
+            <div className="text-xs text-ink-3">{product.category}</div>
+            {/* 상품명 + 단위 + HACCP 배지 그룹 */}
+            <div className="mt-1 space-y-1">
+              <h1 className="text-2xl font-extrabold text-ink-1 tracking-tight flex items-center gap-2 flex-wrap">
+                <span>{product.name}</span>
+                {product.hasHaccp && (
+                  <span
+                    className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
+                    title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
+                  >
+                    🏅 HACCP
+                  </span>
+                )}
+              </h1>
+              <div className="text-ink-2 text-sm">
+                {product.brand} · {product.unit}
+              </div>
             </div>
           </div>
         </div>
@@ -182,17 +185,17 @@ export default async function ProductDetailPage({
           (product.certifications && product.certifications.length > 0)) && (
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             {product.manufacturer && (
-              <div className="bg-stone-50 rounded px-2 py-1.5">
-                <div className="text-[10px] text-stone-500">제조</div>
-                <div className="font-medium text-stone-700 truncate">
+              <div className="bg-surface-muted rounded px-2 py-1.5">
+                <div className="text-[10px] text-ink-3">제조</div>
+                <div className="font-medium text-ink-2 truncate">
                   {product.manufacturer}
                 </div>
               </div>
             )}
             {product.origin && (
-              <div className="bg-stone-50 rounded px-2 py-1.5">
-                <div className="text-[10px] text-stone-500">원산지</div>
-                <div className="font-medium text-stone-700 truncate">
+              <div className="bg-surface-muted rounded px-2 py-1.5">
+                <div className="text-[10px] text-ink-3">원산지</div>
+                <div className="font-medium text-ink-2 truncate">
                   {product.origin}
                 </div>
               </div>
@@ -216,7 +219,7 @@ export default async function ProductDetailPage({
           </div>
         )}
         {product.description && (
-          <div className="mt-2 text-xs text-stone-500">
+          <div className="mt-2 text-xs text-ink-3">
             {product.description}
           </div>
         )}
@@ -230,7 +233,7 @@ export default async function ProductDetailPage({
         )}
 
         {winnerSection && (
-          <div className="mt-4 text-sm bg-brand-50 border border-brand-200 rounded-lg p-3">
+          <div className="mt-4 text-sm bg-brand-50 border border-brand-200 rounded-xl p-3">
             💡{" "}
             {winnerSection === "offline"
               ? "오프라인 매장이 더 쌉니다 — 가까우면 직접 사러 가는 게 이득"
@@ -245,6 +248,17 @@ export default async function ProductDetailPage({
           />
         </div>
       </header>
+
+      {/* 가격 추이 차트 — hero 바로 아래 위치 (핸드오프 룰) */}
+      <section>
+        <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
+          📈 가격 추이
+          <span className="text-xs text-ink-3 font-normal">
+            (최근 60일, 매장별)
+          </span>
+        </h2>
+        <PriceHistoryChart history={history} />
+      </section>
 
       {/* 가격 비교 — 핵심 가치, 헤더 바로 아래로 이동 */}
       {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
@@ -268,9 +282,9 @@ export default async function ProductDetailPage({
       ) : (
         <>
           <section>
-            <h2 className="font-bold mb-3 flex items-center gap-2">
+            <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
               🛒 오프라인 매장
-              <span className="text-xs text-stone-500 font-normal">
+              <span className="text-xs text-ink-3 font-normal">
                 ({offlineRows.length}개 매장, 낮은 순)
               </span>
             </h2>
@@ -293,9 +307,9 @@ export default async function ProductDetailPage({
           </section>
 
           <section>
-            <h2 className="font-bold mb-3 flex items-center gap-2">
+            <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
               📦 온라인 쇼핑몰
-              <span className="text-xs text-stone-500 font-normal">
+              <span className="text-xs text-ink-3 font-normal">
                 ({onlineRows.length}개 몰, 낮은 순)
               </span>
             </h2>
@@ -320,22 +334,11 @@ export default async function ProductDetailPage({
         </>
       )}
 
-      {/* 가격 추이 차트 — 가격 리스트 다음 우선순위 */}
-      <section>
-        <h2 className="font-bold mb-3 flex items-center gap-2">
-          📈 가격 추이
-          <span className="text-xs text-stone-500 font-normal">
-            (최근 60일, 매장별)
-          </span>
-        </h2>
-        <PriceHistoryChart history={history} />
-      </section>
-
       {/* 부가 정보 패널 6종 — 기본 닫힘, 사용자가 클릭 시 펼침 */}
       <details className="group">
-        <summary className="cursor-pointer p-4 bg-white border border-stone-200 rounded-xl font-semibold flex items-center justify-between hover:bg-stone-50">
+        <summary className="cursor-pointer p-4 bg-white border border-line rounded-xl font-semibold text-ink-1 flex items-center justify-between hover:bg-surface-muted">
           <span>📋 상품 상세 정보 (원재료 · 영양 · 이력추적)</span>
-          <span className="text-stone-400 transition-transform group-open:rotate-180">
+          <span className="text-ink-3 transition-transform group-open:rotate-180">
             ▼
           </span>
         </summary>
@@ -388,14 +391,14 @@ function PriceStat({
 }) {
   return (
     <div
-      className={`rounded-lg p-3 ${
-        highlight ? "bg-brand-50 border border-brand-200" : "bg-stone-50"
+      className={`rounded-xl p-3 ${
+        highlight ? "bg-brand-50 border border-brand-200" : "bg-surface-muted"
       }`}
     >
-      <div className="text-xs text-stone-500">{label}</div>
+      <div className="text-xs text-ink-3">{label}</div>
       <div
-        className={`text-lg font-bold ${
-          highlight ? "text-brand-600" : "text-stone-700"
+        className={`text-2xl font-extrabold tabular-nums tracking-tight ${
+          highlight ? "text-brand-600" : "text-ink-1"
         }`}
       >
         {value}

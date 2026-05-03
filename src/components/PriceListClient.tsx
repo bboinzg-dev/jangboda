@@ -100,7 +100,7 @@ export default function PriceListClient({
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-border rounded-lg p-6 text-center text-stone-500 text-sm">
+      <div className="bg-white border border-line rounded-xl p-6 text-center text-ink-3 text-sm">
         {emptyHint}
       </div>
     );
@@ -109,7 +109,7 @@ export default function PriceListClient({
   return (
     <div>
       {showFavoriteFilter && authed && favoriteIds.size > 0 && (
-        <label className="inline-flex items-center gap-1.5 mb-2 text-xs text-stone-600 cursor-pointer">
+        <label className="inline-flex items-center gap-1.5 mb-2 text-xs text-ink-2 cursor-pointer">
           <input
             type="checkbox"
             checked={favoriteOnly}
@@ -121,7 +121,7 @@ export default function PriceListClient({
       )}
 
       {sorted.length === 0 ? (
-        <div className="bg-white border border-border rounded-lg p-4 text-center text-stone-500 text-sm">
+        <div className="bg-white border border-line rounded-xl p-4 text-center text-ink-3 text-sm">
           즐겨찾기 매장에는 이 상품이 등록되지 않았습니다
         </div>
       ) : (
@@ -137,17 +137,17 @@ export default function PriceListClient({
             return (
               <li
                 key={p.storeId}
-                className={`bg-white border rounded-lg p-4 flex items-center justify-between ${
+                className={`bg-white border border-line rounded-xl p-4 flex items-center justify-between gap-3 ${
                   i === 0
-                    ? "border-brand-400 bg-brand-50/30"
+                    ? "first:border-l-4 first:border-l-brand-500 first:bg-brand-50/30"
                     : isFav
                     ? "border-amber-200 bg-amber-50/30"
-                    : "border-border"
+                    : ""
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {i === 0 && (
-                    <span className="bg-brand-500 text-white text-xs px-2 py-0.5 rounded-full shrink-0">
+                    <span className="bg-brand-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
                       최저가
                     </span>
                   )}
@@ -155,7 +155,7 @@ export default function PriceListClient({
                     <FavoriteToggle storeId={p.storeId} size="sm" />
                   )}
                   <div className="min-w-0">
-                    <div className="font-semibold truncate flex items-center gap-1.5">
+                    <div className="font-semibold text-[15px] text-ink-1 truncate flex items-center gap-1.5">
                       <ChainLogo
                         src={p.chainLogoUrl}
                         name={p.chainName}
@@ -163,7 +163,7 @@ export default function PriceListClient({
                       />
                       <span className="truncate">{p.chainName}</span>
                     </div>
-                    <div className="text-xs text-stone-500 truncate">
+                    <div className="text-xs text-ink-3 truncate">
                       {p.storeName}
                     </div>
                     {showDirections && (
@@ -190,7 +190,7 @@ export default function PriceListClient({
                           </a>
                         )}
                         <span
-                          className="text-[10px] text-stone-500"
+                          className="text-[10px] text-ink-3"
                           title="온라인 가격은 배송비/묶음 수량에 따라 실제 부담이 다를 수 있어요"
                         >
                           📦 배송비 별도
@@ -200,13 +200,13 @@ export default function PriceListClient({
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-3">
-                  <div className="text-lg font-bold text-stone-900">
+                  <div className="text-[22px] font-extrabold tabular-nums tracking-tight text-ink-1">
                     {formatWon(p.price)}
                   </div>
                   {(() => {
                     const upl = unitPriceLabel(p.price, unit);
                     return upl ? (
-                      <div className="text-[11px] text-stone-500 -mt-0.5">
+                      <div className="text-[11px] text-ink-3 font-mono -mt-0.5">
                         {upl}
                       </div>
                     ) : null;
@@ -225,7 +225,7 @@ export default function PriceListClient({
                     >
                       {tag.label}
                     </span>
-                    <span className="text-xs text-stone-500">
+                    <span className="text-xs text-ink-3">
                       {formatRelativeDate(p.updatedAt)}
                     </span>
                     {savingsPct > 0 && (
@@ -242,7 +242,7 @@ export default function PriceListClient({
       )}
 
       {outliers.length > 0 && (
-        <details className="mt-3 border border-warning-soft bg-warning-soft/50 rounded-lg">
+        <details className="mt-3 border border-warning-soft bg-warning-soft/50 rounded-xl">
           <summary className="cursor-pointer p-3 text-xs text-warning-text font-medium select-none">
             ⚠️ 패키지가 다를 가능성이 있는 가격 {outliers.length}건 (펼쳐 보기)
           </summary>
@@ -259,7 +259,7 @@ export default function PriceListClient({
                   className="flex items-center justify-between gap-2 bg-white border border-warning-soft rounded p-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-stone-700 truncate flex items-center gap-1.5">
+                    <div className="text-sm font-medium text-ink-2 truncate flex items-center gap-1.5">
                       <ChainLogo
                         src={p.chainLogoUrl}
                         name={p.chainName}
@@ -269,13 +269,13 @@ export default function PriceListClient({
                         {p.chainName} · {p.storeName}
                       </span>
                     </div>
-                    <div className="text-[10px] text-stone-500 mt-0.5">
+                    <div className="text-[10px] text-ink-3 mt-0.5">
                       {unitPriceLabel(p.price, unit) ?? "단가 계산 불가"}
                       {" · "}
                       {tag.label} · {formatRelativeDate(p.updatedAt)}
                     </div>
                   </div>
-                  <div className="text-base font-bold text-stone-700 shrink-0">
+                  <div className="text-base font-bold text-ink-2 shrink-0">
                     {formatWon(p.price)}
                   </div>
                 </li>

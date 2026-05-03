@@ -75,15 +75,15 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="상품 검색해서 장바구니에 담기"
-          className="w-full px-4 py-3 text-base border-2 border-stone-300 rounded-xl focus:outline-none focus:border-brand-400 placeholder:text-stone-400"
+          placeholder="상품 검색"
+          className="w-full px-4 py-3 text-base border-2 border-line-strong rounded-xl focus:outline-none focus:border-brand-400 placeholder:text-ink-3"
           aria-label="상품 검색"
         />
         {query && (
           <button
             onClick={() => setQuery("")}
             aria-label="검색어 지우기"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-sm"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 text-sm"
           >
             ✕
           </button>
@@ -98,7 +98,7 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
             className={`px-3 py-1 rounded-full text-xs border ${
               !activeCategory
                 ? "bg-brand-500 text-white border-brand-500"
-                : "bg-white text-stone-600 border-stone-300 hover:border-stone-400"
+                : "bg-white text-ink-2 border-line-strong hover:border-ink-3"
             }`}
           >
             전체
@@ -112,7 +112,7 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
               className={`px-3 py-1 rounded-full text-xs border ${
                 activeCategory === c
                   ? "bg-brand-500 text-white border-brand-500"
-                  : "bg-white text-stone-600 border-stone-300 hover:border-stone-400"
+                  : "bg-white text-ink-2 border-line-strong hover:border-ink-3"
               }`}
             >
               {c}
@@ -124,11 +124,11 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
       {/* 결과 또는 인기 상품 */}
       <div>
         {showingPopular && popular.length > 0 && (
-          <div className="text-xs text-stone-500 mb-2">인기 상품</div>
+          <div className="text-xs text-ink-3 mb-2">인기 상품</div>
         )}
         {!showingPopular && results.length === 0 && (
-          <div className="text-sm text-stone-500 text-center py-6 border border-dashed border-stone-300 rounded-lg">
-            "{query || activeCategory}"에 맞는 상품이 없습니다
+          <div className="text-sm text-ink-3 text-center py-6 border border-dashed border-line-strong rounded-xl">
+            &quot;{query || activeCategory}&quot;에 맞는 상품이 없습니다
           </div>
         )}
         <ul className="space-y-2">
@@ -138,30 +138,30 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
             return (
               <li
                 key={p.id}
-                className={`flex items-center gap-3 p-3 border rounded-lg bg-white transition ${
+                className={`flex items-center gap-3 p-3 border rounded-xl bg-white transition ${
                   inCart
                     ? "border-success-soft bg-success-soft/40"
-                    : "border-border hover:border-brand-300"
+                    : "border-line hover:border-brand-300"
                 }`}
               >
                 {/* 좌측 썸네일 — imageUrl 없으면 폴백 아이콘 */}
                 <ProductImage src={p.imageUrl} alt={p.name} size={48} />
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate flex items-center gap-1.5">
+                  <div className="font-medium text-sm truncate flex items-center gap-1.5 text-ink-1">
                     <span className="truncate">{p.name}</span>
                     {p.hasHaccp && (
                       <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
-                        🏅 HACCP
+                        HACCP
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-stone-500 truncate">
+                  <div className="text-[11px] text-ink-3 truncate">
                     {p.category}
                     {p.brand ? ` · ${p.brand}` : ""}
                     {p.unit ? ` · ${p.unit}` : ""}
                   </div>
                   {minPrice > 0 && (
-                    <div className="text-[11px] text-stone-700 mt-0.5">
+                    <div className="text-[11px] text-ink-2 mt-0.5">
                       최저 <span className="font-semibold">{formatWon(minPrice)}</span>
                     </div>
                   )}

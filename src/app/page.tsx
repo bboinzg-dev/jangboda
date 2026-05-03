@@ -7,6 +7,13 @@ import OnboardingCard from "@/components/OnboardingCard";
 import RecallBanner from "@/components/RecallBanner";
 import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
+import {
+  IconCart,
+  IconCamera,
+  IconBarcode,
+  IconPin,
+  IconArrowRight,
+} from "@/components/icons";
 
 // ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분.
 // 개인화 데이터는 OnboardingCard가 자체 client-side fetch (페이지 ISR 유지를 위해)
@@ -115,13 +122,13 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       {/* Hero — 앱 의도를 즉시 전달 + 큰 일러스트로 첫 인상 강화 */}
-      <section className="bg-gradient-to-br from-brand-50 to-orange-50 rounded-2xl p-6 md:p-8 border border-brand-100 overflow-hidden">
+      <section className="bg-surface-muted rounded-2xl p-6 md:p-8 border border-line overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-stone-900 mb-2">
+            <h1 className="text-2xl md:text-[28px] font-extrabold tracking-tight text-ink-1 mb-2">
               오늘 뭐 사세요?
             </h1>
-            <p className="text-stone-600 mb-5 leading-relaxed text-sm md:text-base">
+            <p className="text-ink-2 mb-5 leading-relaxed text-sm md:text-base">
               살 물건들을 모아보면 어느 마트가 가장 싼지 알려드려요.
               <br />
               영수증 한 장으로 동네 이웃 모두가 절약합니다.
@@ -131,28 +138,32 @@ export default async function HomePage() {
             <div className="space-y-2">
               <Link
                 href="/cart"
-                className="block w-full md:inline-flex md:w-auto bg-brand-500 hover:bg-brand-600 text-white text-center px-6 py-3.5 rounded-xl font-bold text-base shadow-md hover:shadow-lg transition-shadow"
+                className="inline-flex w-full md:w-auto items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3.5 rounded-xl font-bold text-base transition-colors"
               >
-                🛒 장보기 비교 시작
+                <IconCart className="w-5 h-5" />
+                장보기 비교 시작
               </Link>
               <div className="grid grid-cols-3 gap-2 md:flex md:gap-2">
                 <Link
                   href="/upload"
-                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
                 >
-                  📸 영수증
+                  <IconCamera size={16} />
+                  영수증
                 </Link>
                 <Link
                   href="/scan"
-                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
                 >
-                  📷 바코드
+                  <IconBarcode size={16} />
+                  바코드
                 </Link>
                 <Link
                   href="/stores"
-                  className="bg-white hover:bg-stone-50 border border-stone-200 px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-center"
+                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
                 >
-                  📍 주변 마트
+                  <IconPin size={16} />
+                  주변 마트
                 </Link>
               </div>
             </div>
@@ -190,17 +201,18 @@ export default async function HomePage() {
       {tickerPrices.length > 0 && (
         <section>
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-base font-bold flex items-center gap-2">
+            <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
               📊 오늘의 시세
-              <span className="text-xs text-stone-500 font-normal">
+              <span className="text-xs text-ink-3 font-normal">
                 KAMIS · 통계청 공식 평균가
               </span>
             </h2>
             <Link
               href="/kamis"
-              className="text-xs text-brand-600 hover:underline font-medium"
+              className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
             >
-              전체 보기 →
+              전체 보기
+              <IconArrowRight size={12} />
             </Link>
           </div>
           <KamisTicker
@@ -225,10 +237,10 @@ export default async function HomePage() {
       {/* 가격차 큰 상품 — "여기서 사면 N원 절약" */}
       {priceCards.length > 0 && (
         <section>
-          <h2 className="text-base font-bold mb-3 flex items-center gap-2">
-            💸 가격차 큰 상품 TOP 6
+          <h2 className="text-base font-bold mb-3 flex items-center gap-2 text-ink-1">
+            가격차가 큰 상품
             <span
-              className="text-xs text-stone-500 font-normal"
+              className="text-xs text-ink-3 font-normal"
               title="단가 기준으로 다른 패키지(대용량 박스 등)는 비교에서 제외"
             >
               마트별 비교 효과 큼
@@ -241,14 +253,14 @@ export default async function HomePage() {
                 <Link
                   key={c.id}
                   href={`/products/${c.id}`}
-                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between items-center gap-3"
+                  className="card-clickable relative bg-white border border-line rounded-xl p-4 pr-8 flex justify-between items-center gap-3 hover:border-line-strong transition-colors"
                 >
                   {/* 카드 좌측 썸네일 — 네이버 쇼핑 동기화로 자동 채움 */}
                   <ProductImage src={c.imageUrl} alt={c.name} size={56} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-stone-500">{c.category}</div>
-                    <div className="font-semibold truncate">{c.name}</div>
-                    <div className="text-xs text-stone-500">{c.unit}</div>
+                    <div className="text-xs text-ink-3">{c.category}</div>
+                    <div className="font-semibold truncate text-ink-1">{c.name}</div>
+                    <div className="text-xs text-ink-3">{c.unit}</div>
                     {c.hasHaccp && (
                       <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium mt-1">
                         🏅 HACCP
@@ -256,15 +268,15 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    <div className="text-xs text-stone-500">최저</div>
-                    <div className="font-bold text-brand-600">
+                    <div className="text-xs text-ink-3">최저</div>
+                    <div className="text-[18px] font-extrabold tabular-nums text-ink-1">
                       {formatWon(c.min)}
                     </div>
                     {upl && (
-                      <div className="text-[10px] text-stone-500">{upl}</div>
+                      <div className="text-[11px] text-ink-3 font-mono">{upl}</div>
                     )}
-                    <div className="text-xs text-rose-600 mt-0.5">
-                      💰 최대 {formatWon(c.diff)} 절약
+                    <div className="text-xs text-danger-text mt-0.5 font-medium">
+                      최대 {formatWon(c.diff)} 절약
                     </div>
                   </div>
                 </Link>
@@ -276,70 +288,73 @@ export default async function HomePage() {
 
       {/* 가치 0건 안내 — 시드만 있을 때 */}
       {priceCards.length === 0 && tickerPrices.length === 0 && (
-        <section className="bg-white border border-stone-200 rounded-xl p-8 text-center">
-          <div className="text-4xl mb-3">🛒</div>
-          <h2 className="font-bold mb-1">아직 가격 데이터가 부족해요</h2>
-          <p className="text-sm text-stone-500 mb-4">
+        <section className="bg-white border border-line rounded-xl p-8 text-center">
+          <div className="flex justify-center mb-3 text-ink-2">
+            <IconCart size={40} />
+          </div>
+          <h2 className="font-bold mb-1 text-ink-1">아직 가격 데이터가 부족해요</h2>
+          <p className="text-sm text-ink-3 mb-4">
             첫 영수증을 올리면 비교가 시작됩니다.
           </p>
           <Link
             href="/upload"
-            className="inline-block bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm"
+            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm"
           >
-            📸 영수증 올리기
+            <IconCamera size={16} />
+            영수증 올리기
           </Link>
         </section>
       )}
 
       {/* 부가 서비스 — 장보기 외 함께 사용할 수 있는 서비스 */}
       <section>
-        <h2 className="text-base font-bold mb-1 flex items-center gap-2">
-          💡 부가 서비스
+        <h2 className="text-base font-bold mb-1 flex items-center gap-2 text-ink-1">
+          부가 서비스
         </h2>
-        <p className="text-xs text-stone-500 mb-3">
+        <p className="text-xs text-ink-3 mb-3">
           장보기 외에 함께 사용할 수 있는 서비스
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Link
             href="/benefits"
-            className="block bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border border-indigo-100 rounded-2xl p-5 transition"
+            className="block bg-surface-muted hover:bg-stone-100 border border-line hover:border-line-strong rounded-2xl p-5 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-indigo-700 mb-1">
+                <div className="text-[11px] font-medium text-ink-2 mb-1">
                   정부 혜택 추천
                 </div>
-                <h3 className="text-base font-bold text-stone-900 mb-1">
+                <h3 className="text-base font-bold text-ink-1 mb-1">
                   받을 수 있는 정부 지원금, 한 번에
                 </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
+                <p className="text-xs text-ink-2 leading-relaxed">
                   중앙정부·구청·시청의 혜택을 통합 매칭.
                 </p>
               </div>
-              <div className="shrink-0 text-indigo-700 text-xl leading-none mt-1">
-                ›
+              <div className="shrink-0 text-ink-2 mt-1">
+                <IconArrowRight size={18} />
               </div>
             </div>
           </Link>
 
           <Link
             href="/idphoto"
-            className="block bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-100 rounded-2xl p-5 transition"
+            className="block bg-surface-muted hover:bg-stone-100 border border-line hover:border-line-strong rounded-2xl p-5 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-amber-700 mb-1">
+                <div className="text-[11px] font-medium text-ink-2 mb-1">
                   AI 증명사진 · 비밀번호 필요
                 </div>
-                <h3 className="text-base font-bold text-stone-900 mb-1">
+                <h3 className="text-base font-bold text-ink-1 mb-1">
                   AI 증명사진, 30초 만에
                 </h3>
-                <p className="text-xs text-stone-600 leading-relaxed">
+                <p className="text-xs text-ink-2 leading-relaxed">
                   여권·주민증·비자 등 10가지 규격을 자동 보정.
                 </p>
               </div>
-              <div className="shrink-0 text-amber-700 text-xl leading-none mt-1">
-                ›
+              <div className="shrink-0 text-ink-2 mt-1">
+                <IconArrowRight size={18} />
               </div>
             </div>
           </Link>
@@ -347,7 +362,7 @@ export default async function HomePage() {
       </section>
 
       {/* 미니 통계 — 신뢰감 */}
-      <section className="text-center text-xs text-stone-400 pt-2">
+      <section className="text-center text-xs text-ink-3 pt-2">
         등록 상품 {stats.products.toLocaleString()} · 매장{" "}
         {stats.stores.toLocaleString()} · 가격 데이터{" "}
         {stats.prices.toLocaleString()}건

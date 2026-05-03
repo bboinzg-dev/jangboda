@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import CameraCapture from "@/components/CameraCapture";
+import { IconCamera, IconCheck, IconReceipt } from "@/components/icons";
 
 type ParsedItem = {
   rawName: string;
@@ -142,53 +143,50 @@ export default function UploadPage() {
       )}
 
       {/* breadcrumb */}
-      <nav className="text-xs text-stone-500" aria-label="breadcrumb">
+      <nav className="text-xs text-ink-3" aria-label="breadcrumb">
         <Link href="/" className="hover:text-brand-600">
           홈
         </Link>
         <span className="mx-1.5">/</span>
-        <span className="text-stone-700">영수증 올리기</span>
+        <span className="text-ink-2">영수증 올리기</span>
       </nav>
 
-      <h1 className="text-2xl font-bold">📸 영수증 올리기</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink-1 inline-flex items-center gap-2">
+        <IconReceipt size={24} />
+        영수증 올리기
+      </h1>
 
       {/* 진행 단계 인디케이터 */}
       <StepIndicator current={currentStep} />
 
-      <p className="text-stone-600">
+      <p className="text-ink-2">
         영수증 사진을 올리면 자동으로 품목을 인식해 가격을 등록합니다.
         <br />
-        <span className="text-xs text-stone-500">
+        <span className="text-xs text-ink-3">
           (CLOVA OCR 키 미설정 시 데모 데이터로 작동합니다)
         </span>
       </p>
 
-      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            영수증 이미지 (선택)
-          </label>
-
-          {/* 두 가지 입력 방법 */}
-          <div className="grid grid-cols-2 gap-2">
+      {/* 큰 카메라 CTA — 화면 중앙, 80% 너비 */}
+      {!result && (
+        <section className="bg-white border border-line rounded-xl p-6 space-y-6">
+          <div className="flex flex-col items-center">
             <button
               type="button"
               onClick={() => setCameraOpen(true)}
-              className="flex flex-col items-center gap-1 py-4 border-2 border-brand-200 hover:border-brand-400 hover:bg-brand-50 rounded-lg transition-colors"
+              className="w-[80%] flex flex-col items-center gap-3 py-10 border-2 border-dashed border-brand-200 hover:border-brand-400 hover:bg-brand-50 rounded-xl transition-colors text-brand-600"
+              aria-label="카메라로 영수증 촬영"
             >
-              <span className="text-2xl">📸</span>
-              <span className="text-sm font-medium text-brand-700">
-                카메라로 찍기
+              <IconCamera size={64} />
+              <span className="text-base font-bold text-ink-1">
+                카메라로 영수증 찍기
               </span>
-              <span className="text-[10px] text-stone-500">즉시 촬영</span>
+              <span className="text-xs text-ink-3">탭하여 즉시 촬영</span>
             </button>
 
-            <label className="flex flex-col items-center gap-1 py-4 border-2 border-stone-200 hover:border-stone-400 hover:bg-stone-50 rounded-lg cursor-pointer transition-colors">
-              <span className="text-2xl">🖼️</span>
-              <span className="text-sm font-medium text-stone-700">
-                갤러리에서 선택
-              </span>
-              <span className="text-[10px] text-stone-500">기존 사진</span>
+            {/* 갤러리 — secondary 링크 */}
+            <label className="mt-3 text-xs text-ink-3 hover:text-ink-2 cursor-pointer underline underline-offset-2">
+              또는 갤러리에서 선택하기
               <input
                 type="file"
                 accept="image/*"
@@ -203,46 +201,89 @@ export default function UploadPage() {
           </div>
 
           {imagePreview && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-              <span>✓</span>
-              <span>사진 준비됨 — 아래 "OCR 시작" 버튼을 누르세요</span>
+            <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+              <IconCheck size={14} />
+              <span>사진 준비됨 — 아래 &quot;OCR 시작&quot; 버튼을 누르세요</span>
             </div>
           )}
-          <div className="text-xs text-stone-500 mt-1">
+
+          <div className="text-xs text-ink-3 text-center">
             이미지를 안 올려도 데모 데이터로 흐름을 확인할 수 있어요.
           </div>
-        </div>
 
-        <button
-          onClick={parse}
-          disabled={parsing}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
-        >
-          {parsing && (
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-              <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" />
-            </svg>
-          )}
-          {parsing ? "OCR 처리 중... (5~10초)" : "OCR 시작"}
-        </button>
-      </section>
+          <button
+            onClick={parse}
+            disabled={parsing}
+            className="w-full bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-lg font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            {parsing && (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+                <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" />
+              </svg>
+            )}
+            {parsing ? "OCR 처리 중... (5~10초)" : "OCR 시작"}
+          </button>
+
+          {/* 가치 제안 — 왜 영수증을 올리나요? */}
+          <div className="pt-4 border-t border-line">
+            <h3 className="text-sm font-bold text-ink-1 mb-3">
+              왜 영수증을 올리나요?
+            </h3>
+            <ul className="space-y-2.5">
+              <li className="flex items-start gap-2.5">
+                <span className="shrink-0 text-emerald-600 mt-0.5">
+                  <IconCheck size={18} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink-1">이웃 절약</div>
+                  <div className="text-xs text-ink-3">
+                    내가 올린 가격이 동네 이웃의 장보기를 도와줘요.
+                  </div>
+                </div>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="shrink-0 text-emerald-600 mt-0.5">
+                  <IconCheck size={18} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink-1">데이터 누적</div>
+                  <div className="text-xs text-ink-3">
+                    실제 영수증이 쌓일수록 비교 정확도가 높아져요.
+                  </div>
+                </div>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="shrink-0 text-emerald-600 mt-0.5">
+                  <IconCheck size={18} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-ink-1">0원 비용</div>
+                  <div className="text-xs text-ink-3">
+                    완전 무료 · 광고 없음. 포인트도 자동 적립.
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </section>
+      )}
 
       {result && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 왼쪽 — 이미지 미리보기 */}
-          <div className="bg-white border border-stone-200 rounded-xl p-4">
-            <h2 className="font-bold mb-3 text-sm text-stone-700">영수증 이미지</h2>
+          <div className="bg-white border border-line rounded-xl p-4">
+            <h2 className="font-bold mb-3 text-sm text-ink-2">영수증 이미지</h2>
             {imagePreview ? (
               // 단순 img 태그 — Next/Image 안 씀 (data URL이라 외부 도메인 설정 불필요)
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imagePreview}
                 alt="영수증 미리보기"
-                className="w-full rounded-md border border-stone-100 object-contain max-h-[640px]"
+                className="w-full rounded-md border border-line object-contain max-h-[640px]"
               />
             ) : (
-              <div className="aspect-[3/4] bg-stone-50 border border-dashed border-stone-200 rounded-md flex items-center justify-center text-sm text-stone-400">
+              <div className="aspect-[3/4] bg-surface-muted border border-dashed border-line rounded-md flex items-center justify-center text-sm text-ink-3">
                 이미지 미리보기가 여기 표시됩니다
                 <br />
                 (데모 모드는 이미지 없음)
@@ -251,9 +292,9 @@ export default function UploadPage() {
           </div>
 
           {/* 오른쪽 — OCR 결과 */}
-          <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
+          <div className="bg-white border border-line rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="font-bold">파싱 결과</h2>
+              <h2 className="font-bold text-ink-1">파싱 결과</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
                 result.source === "clova" ? "bg-emerald-100 text-emerald-700"
                 : result.source === "google_vision" ? "bg-blue-100 text-blue-700"
@@ -283,11 +324,11 @@ export default function UploadPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">매장 확인</label>
+              <label className="block text-sm font-medium mb-1 text-ink-1">매장 확인</label>
               <select
                 value={storeId}
                 onChange={(e) => setStoreId(e.target.value)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-md"
+                className="w-full px-3 py-2 border border-line-strong rounded-md"
               >
                 <option value="">매장 선택...</option>
                 {stores.map((s) => (
@@ -299,7 +340,7 @@ export default function UploadPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-ink-1">
                 품목 매칭 ({matchedCount}/{items.length}건 자동 매칭)
               </label>
               <div className="space-y-2">
@@ -327,8 +368,8 @@ export default function UploadPage() {
                           )}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-stone-600 truncate text-xs mb-1">
-                            <span className="text-stone-400">원본: </span>
+                          <div className="text-ink-2 truncate text-xs mb-1">
+                            <span className="text-ink-3">원본: </span>
                             {it.rawName}
                           </div>
                           <select
@@ -356,10 +397,10 @@ export default function UploadPage() {
                             ))}
                           </select>
                           <div className="flex justify-between items-center mt-1 text-xs">
-                            <span className="text-stone-500">
+                            <span className="text-ink-3">
                               x{it.quantity}
                             </span>
-                            <span className="font-medium text-stone-800">
+                            <span className="font-semibold tabular-nums text-ink-1">
                               {formatWon(it.price)}
                             </span>
                           </div>
@@ -380,7 +421,7 @@ export default function UploadPage() {
             </button>
 
             {submitResult && (
-              <div className="text-center text-sm pt-2">
+              <div className="text-center text-sm pt-2 text-ink-1">
                 {submitResult}
                 <div className="mt-2">
                   <Link
@@ -422,7 +463,7 @@ function StepIndicator({ current }: { current: number }) {
                   ? "text-emerald-700"
                   : active
                     ? "text-brand-700"
-                    : "text-stone-400"
+                    : "text-ink-3"
               }`}
             >
               <span
@@ -431,7 +472,7 @@ function StepIndicator({ current }: { current: number }) {
                     ? "bg-emerald-50 border-emerald-300"
                     : active
                       ? "bg-brand-50 border-brand-400"
-                      : "bg-stone-50 border-stone-200"
+                      : "bg-surface-muted border-line"
                 }`}
                 aria-hidden
               >
@@ -444,7 +485,7 @@ function StepIndicator({ current }: { current: number }) {
             {i < steps.length - 1 && (
               <span
                 className={`shrink-0 w-2 md:w-4 h-px ${
-                  done ? "bg-emerald-300" : "bg-stone-200"
+                  done ? "bg-emerald-300" : "bg-line"
                 }`}
                 aria-hidden
               />
@@ -468,13 +509,13 @@ function SummaryCard({
   return (
     <div
       className={`rounded-md p-2 ${
-        highlight ? "bg-brand-50 border border-brand-200" : "bg-stone-50 border border-stone-200"
+        highlight ? "bg-brand-50 border border-brand-200" : "bg-surface-muted border border-line"
       }`}
     >
-      <div className="text-[10px] text-stone-500">{label}</div>
+      <div className="text-[10px] text-ink-3">{label}</div>
       <div
         className={`text-sm font-semibold truncate ${
-          highlight ? "text-brand-700" : "text-stone-800"
+          highlight ? "text-brand-700" : "text-ink-1"
         }`}
         title={value}
       >

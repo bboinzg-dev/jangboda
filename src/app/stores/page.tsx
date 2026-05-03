@@ -16,6 +16,7 @@ import { useFavorites } from "@/components/FavoritesProvider";
 import EmptyState from "@/components/EmptyState";
 import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
+import { IconPin } from "@/components/icons";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -28,7 +29,7 @@ const StoresMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[400px] bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm">
+      <div className="h-[400px] bg-surface-muted rounded-xl flex items-center justify-center text-ink-3 text-sm">
         지도 로딩 중...
       </div>
     ),
@@ -258,25 +259,26 @@ export default function StoresPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">주변 마트</h1>
+        <h1 className="text-2xl font-bold text-ink-1">주변 마트</h1>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleSearchByLocation}
-            className="text-sm bg-brand-500 hover:bg-brand-600 text-white border border-brand-600 px-4 py-2 rounded-md font-semibold"
+            className="text-sm bg-brand-500 hover:bg-brand-600 text-white border border-brand-600 px-4 py-2 rounded-xl font-semibold inline-flex items-center gap-1.5"
           >
-            📍 내 위치 보기
+            <IconPin size={16} className="text-white" />
+            내 위치 보기
           </button>
         </div>
       </div>
 
       {(loc || regionLabel) && (
-        <div className="text-xs text-stone-500">
+        <div className="text-xs text-ink-3">
           {regionLabel ?? `${loc?.lat.toFixed(4)}, ${loc?.lng.toFixed(4)}`}
         </div>
       )}
 
       {discoverMsg && (
-        <div className="text-sm bg-stone-50 border border-stone-200 rounded-md px-3 py-2 text-stone-700">
+        <div className="text-sm bg-surface-muted border border-line rounded-xl px-3 py-2 text-ink-2">
           {discoverMsg}
         </div>
       )}
@@ -292,7 +294,7 @@ export default function StoresPage() {
               className={`text-xs px-3 py-1 rounded-full border ${
                 filter === c
                   ? "bg-brand-600 text-white border-brand-700"
-                  : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+                  : "bg-white text-ink-2 border-line-strong hover:bg-surface-muted"
               }`}
             >
               {c === "all"
@@ -310,8 +312,8 @@ export default function StoresPage() {
       <StoresMap stores={filtered} myLocation={loc} height="380px" />
 
       {/* 지역 검색 — 평소엔 접혀있고, 필요한 사람만 펼침 */}
-      <details className="bg-white border border-stone-200 rounded-lg">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 select-none">
+      <details className="bg-white border border-line rounded-xl">
+        <summary className="cursor-pointer px-4 py-2.5 text-sm text-ink-2 hover:bg-surface-muted select-none">
           🔎 다른 지역 검색하기
         </summary>
         <form
@@ -325,12 +327,12 @@ export default function StoresPage() {
             value={regionQuery}
             onChange={(e) => setRegionQuery(e.target.value)}
             placeholder="예: 강남역, 잠실, 서울 송파구"
-            className="flex-1 px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:border-brand-400"
+            className="w-full h-11 px-4 rounded-xl bg-white border-line border text-sm focus:outline-none focus:border-brand-400"
             aria-label="지역 검색"
           />
           <button
             type="submit"
-            className="bg-stone-700 hover:bg-stone-800 text-white px-4 py-2 rounded-md text-sm"
+            className="bg-ink-1 hover:opacity-90 text-white px-4 h-11 rounded-xl text-sm font-medium"
           >
             검색
           </button>
@@ -339,7 +341,7 @@ export default function StoresPage() {
 
       {/* 리스트 */}
       {loading ? (
-        <div className="text-center py-8 text-stone-500">로딩 중...</div>
+        <div className="text-center py-8 text-ink-3">로딩 중...</div>
       ) : stores.length === 0 ? (
         // 매장 데이터 자체가 0건 — 첫 방문/자동 발견 미수행
         <EmptyState
@@ -365,15 +367,16 @@ export default function StoresPage() {
             <button
               onClick={handleDiscoverNearby}
               disabled={discovering}
-              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg font-medium text-sm shadow-sm"
+              className="bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-sm"
             >
               🔍 주변 매장 자동 추가
             </button>
             <button
               onClick={handleSearchByLocation}
-              className="bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-5 py-2.5 rounded-lg font-medium text-sm"
+              className="bg-white hover:bg-surface-muted text-ink-2 border border-line-strong px-5 py-2.5 rounded-xl font-medium text-sm inline-flex items-center justify-center gap-1.5"
             >
-              📍 내 위치로 검색
+              <IconPin size={16} className="text-ink-2" />
+              내 위치로 검색
             </button>
           </div>
         </EmptyState>
@@ -409,7 +412,7 @@ export default function StoresPage() {
           );
           return (
             <div>
-              <div className="text-xs text-stone-500 mb-2">
+              <div className="text-xs text-ink-3 mb-2">
                 총 {visibleStores.length}개 매장
               </div>
               <CollapsibleList
@@ -426,7 +429,7 @@ export default function StoresPage() {
                   return (
                     <li
                       key={s.id}
-                      className="card-clickable relative bg-white border border-stone-200 rounded-lg p-4 pr-8 flex justify-between"
+                      className="card-clickable relative bg-white border border-line rounded-xl p-4 pr-8 flex justify-between hover:border-line-strong"
                     >
                       <Link
                         href={`/stores/${s.id}`}
@@ -443,11 +446,11 @@ export default function StoresPage() {
                           <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
                             <span>{icon}</span>
                             <span>{label}</span>
-                            <span className="text-stone-300">·</span>
+                            <span className="text-ink-3">·</span>
                             <span>{s.chainName}</span>
                           </div>
-                          <div className="font-semibold">{s.name}</div>
-                          <div className="text-xs text-stone-500">{s.address}</div>
+                          <div className="font-semibold text-ink-1">{s.name}</div>
+                          <div className="text-xs text-ink-3">{s.address}</div>
                         </div>
                       </div>
                       <div className="relative z-10 mr-2 self-center pointer-events-auto">
@@ -455,19 +458,19 @@ export default function StoresPage() {
                       </div>
                       <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
                         {s.distanceKm !== null && s.distanceKm !== undefined && (
-                          <div className="text-sm font-bold pointer-events-none">
+                          <div className="text-sm font-bold tabular-nums pointer-events-none text-ink-1">
                             {s.distanceKm.toFixed(1)}km
                           </div>
                         )}
-                        <div className="text-xs text-stone-500 pointer-events-none">
+                        <div className="text-xs text-ink-3 pointer-events-none">
                           {s.priceCount && s.priceCount > 0 ? (
                             <>{s.priceCount}건 가격</>
                           ) : s.chainPriceCount && s.chainPriceCount > 0 ? (
-                            <span className="text-stone-400">
+                            <span className="text-ink-3">
                               같은 {s.chainName} {s.chainPriceCount}건
                             </span>
                           ) : (
-                            <span className="text-stone-400">가격 정보 없음</span>
+                            <span className="text-ink-3">가격 정보 없음</span>
                           )}
                         </div>
                         {s.lat > 0 && s.lng > 0 && (

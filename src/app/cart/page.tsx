@@ -12,6 +12,13 @@ import RecipeRecommendations from "@/components/RecipeRecommendations";
 import ShoppingMode, { type ShoppingItem } from "@/components/ShoppingMode";
 import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
+import {
+  IconCart,
+  IconStar,
+  IconPin,
+  IconStore,
+  IconArrowRight,
+} from "@/components/icons";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -402,19 +409,101 @@ export default function CartPage() {
   // 거리 필터를 보여줄지 — 카트가 비어있지 않고, 결과가 있을 때만 의미 있음
   const showDistanceFilter = cart.length > 0 && results !== null;
 
+  // Hero용 합계/절약 — results 있을 때 첫 매장(최저가) 기준
+  // results가 정렬되지 않았을 수 있어 complete 우선으로 cheapest를 다시 계산
+  const heroData = useMemo(() => {
+    if (!results || results.length === 0) return null;
+    const completes = results.filter((r) => r.complete);
+    const sorted = (completes.length > 0 ? completes : [...results]).sort(
+      (a, b) => a.total - b.total
+    );
+    if (sorted.length === 0) return null;
+    const cheapest = sorted[0];
+    const mostExpensive = sorted[sorted.length - 1];
+    const heroSavings = sorted.length >= 2 ? mostExpensive.total - cheapest.total : 0;
+    return { cheapestTotal: cheapest.total, savings: heroSavings };
+  }, [results]);
+
+  // 매장 비교 결과 상위 3개 — 가로 스크롤 카드용
+  const top3Stores = useMemo(() => {
+    if (!results || results.length === 0) return [];
+    const completes = results.filter((r) => r.complete);
+    const list = completes.length > 0 ? completes : results;
+    return [...list].sort((a, b) => a.total - b.total).slice(0, 3);
+  }, [results]);
+
   return (
     <div className="space-y-4 pb-24 md:pb-6">
       <div>
-        <h1 className="text-2xl font-bold">장보기 비교</h1>
-        <p className="text-stone-600 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-ink-1">장보기 비교</h1>
+        <p className="text-ink-2 text-sm mt-1">
           살 물건을 담으면 어느 마트가 가장 싼지 알려드려요.
         </p>
       </div>
 
+      {/* Cart hero — 합계 + 절약 강조 (results 있을 때만 노출) */}
+      {heroData && (
+        <section className="bg-white border border-line rounded-2xl p-5">
+          <div className="text-xs text-ink-3 mb-1">장바구니 {cart.length}개</div>
+          <div className="flex items-baseline gap-3">
+            <div className="text-[28px] font-extrabold tabular-nums tracking-tight text-ink-1">
+              {formatWon(heroData.cheapestTotal)}
+            </div>
+            {heroData.savings > 0 && (
+              <div className="text-sm text-success-text font-semibold">
+                −{formatWon(heroData.savings)}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-ink-3 mt-1">최저가 매장 합산 기준</p>
+        </section>
+      )}
+
+      {/* 매장 비교 결과 — 상위 3개 가로 스크롤 카드 */}
+      {top3Stores.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-ink-1 text-sm">최저가 TOP 3</h2>
+            <span className="text-xs text-ink-3">합계 낮은 순</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory">
+            {top3Stores.map((r, i) => (
+              <div
+                key={r.storeId}
+                className={`shrink-0 w-[220px] snap-start bg-white border rounded-xl p-4 ${
+                  i === 0 ? "border-brand-400" : "border-line"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  {i === 0 && (
+                    <span className="bg-brand-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                      최저가
+                    </span>
+                  )}
+                  <ChainLogo src={r.chainLogoUrl} name={r.chainName} size={20} />
+                  <span className="text-sm font-bold text-ink-1 truncate">
+                    {r.chainName}
+                  </span>
+                </div>
+                <div className="text-xs text-ink-3 truncate mb-2">
+                  {r.storeName}
+                </div>
+                <div className="text-[28px] font-extrabold tabular-nums tracking-tight text-ink-1">
+                  {formatWon(r.total)}
+                </div>
+                <div className="text-xs text-ink-3 mt-1">
+                  {r.availableCount}/{r.totalItems}개 보유
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="grid md:grid-cols-2 gap-4">
         {/* ── 왼쪽: 검색 + 결과 ── */}
-        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
-          <h2 className="font-bold mb-3">상품 찾기</h2>
+        <section className="bg-white border border-line rounded-xl p-4 md:p-5">
+          <h2 className="font-bold text-ink-1 mb-3">상품 찾기</h2>
           <CartProductSearch
             products={products}
             onAdd={addToCart}
@@ -423,12 +512,12 @@ export default function CartPage() {
         </section>
 
         {/* ── 오른쪽: 누적 장바구니 ── */}
-        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+        <section className="bg-white border border-line rounded-xl p-4 md:p-5">
           <div className="flex items-center justify-between mb-3 gap-2">
-            <h2 className="font-bold">
+            <h2 className="font-bold text-ink-1">
               장바구니{" "}
               {cart.length > 0 && (
-                <span className="text-xs text-stone-500 font-normal">
+                <span className="text-xs text-ink-3 font-normal">
                   ({cart.length}종 · 총 {cartCount}개)
                 </span>
               )}
@@ -437,29 +526,30 @@ export default function CartPage() {
               {cart.length > 0 && (
                 <button
                   onClick={() => setShoppingOpen(true)}
-                  className="text-xs px-2.5 py-1 bg-brand-500 hover:bg-brand-600 text-white rounded font-semibold"
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-brand-500 hover:bg-brand-600 text-white rounded font-semibold"
                   title="마트에서 보면서 체크할 수 있는 큰 화면"
                 >
-                  🛒 장보기 시작
+                  <IconCart size={14} className="text-white" />
+                  장보기 시작
                 </button>
               )}
               {cart.length > 0 && (
                 <button
                   onClick={shareShoppingList}
-                  className="text-xs px-2 py-1 border border-stone-300 rounded hover:bg-stone-50 text-stone-700"
+                  className="text-xs px-2 py-1 border border-line-strong rounded hover:bg-surface-muted text-ink-2"
                   title="장보기 리스트를 가족·친구에게 공유"
                 >
                   {copied === "shared"
-                    ? "✓ 보냈어요!"
+                    ? "보냈어요!"
                     : copied === "copied"
-                    ? "✓ 복사됨!"
-                    : "📤 친구한테 보내기"}
+                    ? "복사됨!"
+                    : "친구한테 보내기"}
                 </button>
               )}
               {cart.length > 0 && (
                 <button
                   onClick={clearCart}
-                  className="text-xs text-stone-400 hover:text-rose-500"
+                  className="text-xs text-ink-3 hover:text-rose-500"
                 >
                   비우기
                 </button>
@@ -468,24 +558,25 @@ export default function CartPage() {
           </div>
 
           {cart.length === 0 ? (
-            <div className="text-sm text-stone-500 text-center py-10 border border-dashed border-stone-300 rounded-lg">
+            <div className="text-sm text-ink-3 text-center py-10 border border-dashed border-line-strong rounded-xl">
               왼쪽에서 상품을 검색해서 추가하세요
             </div>
           ) : (
             <ul className="space-y-2">
               {cart.map((item) => {
                 const p = productMap.get(item.productId);
+                if (!p && !item.productId) return null;
                 return (
                   <li
                     key={item.productId}
-                    className="flex items-center gap-2 p-2 border border-stone-200 rounded-lg"
+                    className="flex items-center gap-2 p-2 border border-line rounded-xl"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-medium truncate text-ink-1">
                         {p?.name ?? "(미확인)"}
                       </div>
                       {p?.unit && (
-                        <div className="text-[11px] text-stone-500 truncate">
+                        <div className="text-[11px] text-ink-3 truncate">
                           {p.unit}
                         </div>
                       )}
@@ -500,13 +591,13 @@ export default function CartPage() {
                           parseInt(e.target.value) || 1
                         )
                       }
-                      className="w-14 px-2 py-1.5 border border-stone-300 rounded text-center text-sm shrink-0"
+                      className="w-14 px-2 py-1.5 border border-line-strong rounded text-center text-sm shrink-0"
                       aria-label="수량"
                     />
                     <button
                       onClick={() => removeItem(item.productId)}
                       aria-label="삭제"
-                      className="w-7 h-7 shrink-0 text-stone-400 hover:text-rose-500"
+                      className="w-7 h-7 shrink-0 text-ink-3 hover:text-rose-500"
                     >
                       ✕
                     </button>
@@ -536,15 +627,16 @@ export default function CartPage() {
       {filteredResults && filteredResults.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <h2 className="font-bold">비교 결과</h2>
+            <h2 className="font-bold text-ink-1">비교 결과</h2>
             {favoriteIds.size > 0 && (
-              <label className="inline-flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer">
+              <label className="inline-flex items-center gap-1.5 text-xs text-ink-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={favoriteOnly}
                   onChange={(e) => setFavoriteOnly(e.target.checked)}
                 />
-                ★ 즐겨찾기 매장만 ({favoriteIds.size})
+                <IconStar size={12} className="text-amber-500" />
+                즐겨찾기 매장만 ({favoriteIds.size})
               </label>
             )}
           </div>
@@ -554,9 +646,10 @@ export default function CartPage() {
             <>
               {/* 권한 받기 전: 안내 카드 + 단일 버튼 (60대 사용자도 명확) */}
               {(geo.status === "idle" || geo.status === "loading") && (
-                <div className="mb-3 flex items-center gap-3 flex-wrap bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
-                  <span className="text-sm text-stone-700 flex-1 min-w-[200px]">
-                    📍 가까운 마트만 보고 싶다면 오른쪽 버튼을 눌러주세요
+                <div className="mb-3 flex items-center gap-3 flex-wrap bg-surface-muted border border-line rounded-xl px-3 py-2.5">
+                  <span className="text-sm text-ink-2 flex-1 min-w-[200px] inline-flex items-center gap-1.5">
+                    <IconPin size={16} className="text-ink-3" />
+                    가까운 마트만 보고 싶다면 오른쪽 버튼을 눌러주세요
                   </span>
                   <button
                     onClick={requestGeolocation}
@@ -571,7 +664,10 @@ export default function CartPage() {
               {/* 권한 받은 후: 거리 칩 노출 */}
               {geo.status === "ready" && (
                 <div className="mb-3 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-stone-500">📍 거리</span>
+                  <span className="text-xs text-ink-3 inline-flex items-center gap-1">
+                    <IconPin size={12} className="text-ink-3" />
+                    거리
+                  </span>
                   <div className="flex gap-1.5 flex-wrap">
                     {DISTANCE_OPTIONS.map((opt) => {
                       const active = distanceFilter === opt.value;
@@ -582,7 +678,7 @@ export default function CartPage() {
                           className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                             active
                               ? "bg-brand-500 border-brand-500 text-white"
-                              : "bg-white border-stone-300 text-stone-700 hover:bg-stone-50"
+                              : "bg-white border-line-strong text-ink-2 hover:bg-surface-muted"
                           }`}
                         >
                           {opt.label}
@@ -595,7 +691,7 @@ export default function CartPage() {
 
               {/* 권한 거부/오류: 안내 메시지만 */}
               {(geo.status === "denied" || geo.status === "error") && (
-                <div className="mb-3 text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2">
+                <div className="mb-3 text-xs text-ink-3 bg-surface-muted border border-line rounded-xl px-3 py-2">
                   {geo.status === "denied"
                     ? "위치 권한이 없어 거리 필터를 사용할 수 없습니다"
                     : "위치를 가져올 수 없어 거리 필터를 사용할 수 없습니다"}
@@ -606,7 +702,7 @@ export default function CartPage() {
 
           {/* 절약 하이라이트 */}
           {savings && savings.diff > 0 && (
-            <div className="bg-brand-50 border border-brand-200 rounded-lg px-4 py-3 mb-3 text-sm">
+            <div className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 mb-3 text-sm text-ink-2">
               <span className="font-semibold text-brand-700">
                 {savings.cheapestName}
               </span>
@@ -618,8 +714,9 @@ export default function CartPage() {
             </div>
           )}
           {favoriteSavings && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-3 text-sm">
-              ★ 즐겨찾기 매장{" "}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3 text-sm text-ink-2 inline-flex items-center gap-1 w-full">
+              <IconStar size={14} className="text-amber-500" filled />
+              즐겨찾기 매장{" "}
               <span className="font-semibold">{favoriteSavings.name}</span>에서{" "}
               <span className="font-bold text-amber-700">
                 {formatWon(favoriteSavings.diff)}
@@ -629,9 +726,9 @@ export default function CartPage() {
           )}
 
           {filteredResults && filteredResults.length === 0 && results && results.length > 0 && (
-            <div className="bg-stone-50 border border-stone-200 rounded-lg px-4 py-6 text-center text-sm text-stone-600">
+            <div className="bg-surface-muted border border-line rounded-xl px-4 py-6 text-center text-sm text-ink-2">
               {favoriteOnly
-                ? "★ 즐겨찾기 매장에는 이 상품들이 등록되지 않았어요"
+                ? "즐겨찾기 매장에는 이 상품들이 등록되지 않았어요"
                 : "비교할 매장이 없어요"}
               <br />
               {favoriteOnly && (
@@ -639,7 +736,7 @@ export default function CartPage() {
                   onClick={() => setFavoriteOnly(false)}
                   className="text-xs text-brand-600 hover:underline mt-2 inline-block"
                 >
-                  ★ 즐겨찾기 필터 해제하고 전체 보기
+                  즐겨찾기 필터 해제하고 전체 보기
                 </button>
               )}
             </div>
@@ -647,14 +744,15 @@ export default function CartPage() {
 
           {/* 오프라인 매장 섹션 */}
           <div className="mb-5">
-            <h3 className="font-bold text-sm mb-2 text-stone-700">
-              🏪 오프라인 매장 ({offlineResults.length}개)
+            <h3 className="font-bold text-sm mb-2 text-ink-2 inline-flex items-center gap-1.5">
+              <IconStore size={16} className="text-ink-2" />
+              오프라인 매장 ({offlineResults.length}개)
             </h3>
             {offlineResults.length === 0 ? (
-              <div className="bg-stone-50 border border-stone-200 rounded-lg px-4 py-5 text-center text-sm text-stone-600">
+              <div className="bg-surface-muted border border-line rounded-xl px-4 py-5 text-center text-sm text-ink-2">
                 {geo.status === "ready" && distanceFilter !== null ? (
                   <>
-                    🚶 {distanceFilter}km 이내 매장에는 등록되지 않았습니다.{" "}
+                    {distanceFilter}km 이내 매장에는 등록되지 않았습니다.{" "}
                     거리를 더 넓혀 보세요.
                     <br />
                     <button
@@ -685,11 +783,12 @@ export default function CartPage() {
 
           {/* 온라인 매장 섹션 */}
           <div>
-            <h3 className="font-bold text-sm mb-2 text-stone-700">
-              🛒 온라인 매장 ({onlineResults.length}개)
+            <h3 className="font-bold text-sm mb-2 text-ink-2 inline-flex items-center gap-1.5">
+              <IconCart size={16} className="text-ink-2" />
+              온라인 매장 ({onlineResults.length}개)
             </h3>
             {onlineResults.length === 0 ? (
-              <div className="bg-stone-50 border border-stone-200 rounded-lg px-4 py-5 text-center text-sm text-stone-600">
+              <div className="bg-surface-muted border border-line rounded-xl px-4 py-5 text-center text-sm text-ink-2">
                 온라인 매장 결과가 없어요
               </div>
             ) : (
@@ -712,11 +811,13 @@ export default function CartPage() {
             <div className="mt-5">
               <button
                 onClick={() => setShoppingOpen(true)}
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl text-base font-bold shadow-sm"
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-xl text-base font-bold shadow-sm inline-flex items-center justify-center gap-2"
               >
-                🛒 장보기 시작 — 큰 글씨로 체크하기
+                <IconCart size={20} className="text-white" />
+                장보기 시작 — 큰 글씨로 체크하기
+                <IconArrowRight size={18} className="text-white" />
               </button>
-              <p className="text-xs text-stone-500 text-center mt-1.5">
+              <p className="text-xs text-ink-3 text-center mt-1.5">
                 마트에서 보면서 한 줄씩 체크할 수 있어요
               </p>
             </div>
@@ -725,13 +826,13 @@ export default function CartPage() {
       )}
 
       {filteredResults && filteredResults.length === 0 && (
-        <div className="text-sm text-stone-500 text-center py-6">
+        <div className="text-sm text-ink-3 text-center py-6">
           조건에 맞는 매장이 없습니다.
         </div>
       )}
 
       {!results && (
-        <div className="text-xs text-stone-500 text-center pt-2">
+        <div className="text-xs text-ink-3 text-center pt-2">
           가격이 부족하다면{" "}
           <Link href="/upload" className="text-brand-600 hover:underline">
             영수증을 올려주세요
@@ -780,7 +881,7 @@ function ComparisonCard({
   return (
     <div
       className={`bg-white border rounded-xl p-4 ${
-        isCheapest ? "border-brand-400 bg-brand-50/30" : "border-stone-200"
+        isCheapest ? "border-brand-400 bg-brand-50/30" : "border-line"
       }`}
     >
       <div className="flex justify-between items-center">
@@ -791,12 +892,14 @@ function ComparisonCard({
                 최저가
               </span>
             )}
-            {isFavorite && <span className="text-amber-500 text-xs">★</span>}
+            {isFavorite && (
+              <IconStar size={14} className="text-amber-500" filled />
+            )}
             <ChainLogo src={r.chainLogoUrl} name={r.chainName} size={24} />
-            <span className="font-bold">{r.chainName}</span>
-            <span className="text-xs text-stone-500">{r.storeName}</span>
+            <span className="font-bold text-ink-1">{r.chainName}</span>
+            <span className="text-xs text-ink-3">{r.storeName}</span>
             {distanceKm !== null && (
-              <span className="text-[11px] text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded">
+              <span className="text-[11px] text-ink-3 bg-surface-muted px-1.5 py-0.5 rounded">
                 {distanceKm < 10
                   ? distanceKm.toFixed(1)
                   : distanceKm.toFixed(0)}
@@ -804,28 +907,28 @@ function ComparisonCard({
               </span>
             )}
           </div>
-          <div className="text-xs text-stone-500 mt-1">
+          <div className="text-xs text-ink-3 mt-1">
             {r.availableCount}/{r.totalItems}개 품목 보유
             {!r.complete && " (일부 미보유)"}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-stone-500">합계</div>
-          <div className="text-xl font-bold text-stone-900">
+          <div className="text-xs text-ink-3">합계</div>
+          <div className="text-[28px] font-extrabold tabular-nums tracking-tight text-ink-1">
             {formatWon(r.total)}
           </div>
         </div>
       </div>
 
       <details className="mt-3">
-        <summary className="text-xs text-stone-500 cursor-pointer hover:text-stone-700">
+        <summary className="text-xs text-ink-3 cursor-pointer hover:text-ink-2">
           품목별 가격 보기
         </summary>
         <ul className="mt-2 text-xs space-y-1">
           {r.lines.map((l) => (
             <li
               key={l.productId}
-              className="flex justify-between border-t border-stone-100 pt-1"
+              className="flex justify-between border-t border-line pt-1 text-ink-2"
             >
               <span>
                 {l.productName} × {l.quantity}

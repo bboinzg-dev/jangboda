@@ -6,6 +6,7 @@ import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import EmptyState from "@/components/EmptyState";
 import ProductImage from "@/components/ProductImage";
+import { IconSearch } from "@/components/icons";
 
 // search는 client에서 /api/products로 fetch — 페이지 자체는 정적
 export const dynamic = "force-static";
@@ -103,65 +104,75 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">상품 검색</h1>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          run(q, category);
-        }}
-        className="flex gap-2"
-      >
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="예: 신라면, 우유, 햇반"
-          className="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:outline-none focus:border-brand-500"
-        />
-        <button
-          type="submit"
-          className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
-        >
-          검색
-        </button>
-      </form>
+      <h1 className="text-2xl font-extrabold text-ink-1 tracking-tight">상품 검색</h1>
 
-      {/* 카테고리 칩 — 모바일은 가로 스크롤, 데스크톱은 자유 줄바꿈 */}
-      {allCategories.length > 0 && (
-        <div className="relative">
-          <div className="flex md:flex-wrap flex-nowrap gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 scrollbar-thin">
-            <CategoryChip
-              label="전체"
-              active={category === ALL}
-              onClick={() => setCategory(ALL)}
+      {/* sticky 헤더 — 검색 입력 + 카테고리 칩 */}
+      <div className="sticky top-0 z-10 bg-page/95 backdrop-blur-sm pb-2 -mx-4 px-4 space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            run(q, category);
+          }}
+          className="flex gap-2"
+        >
+          <div className="relative flex-1">
+            <IconSearch
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"
             />
-            {allCategories.map((c) => (
-              <CategoryChip
-                key={c}
-                label={c}
-                active={category === c}
-                onClick={() => setCategory(c)}
-              />
-            ))}
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="예: 신라면, 우유, 햇반"
+              className="w-full pl-9 pr-4 py-2 border border-line-strong rounded-xl focus:outline-none focus:border-brand-500"
+            />
           </div>
-          {/* 모바일에서 오른쪽 끝 페이드 — 더 있다는 시각 힌트 */}
-          <div className="md:hidden pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent" />
-        </div>
-      )}
+          <button
+            type="submit"
+            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl"
+          >
+            검색
+          </button>
+        </form>
+
+        {/* 카테고리 칩 — 모바일은 가로 스크롤, 데스크톱은 자유 줄바꿈 */}
+        {allCategories.length > 0 && (
+          <div className="relative">
+            <div className="flex md:flex-wrap flex-nowrap gap-2 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 scrollbar-thin">
+              <CategoryChip
+                label="전체"
+                active={category === ALL}
+                onClick={() => setCategory(ALL)}
+              />
+              {allCategories.map((c) => (
+                <CategoryChip
+                  key={c}
+                  label={c}
+                  active={category === c}
+                  onClick={() => setCategory(c)}
+                />
+              ))}
+            </div>
+            {/* 모바일에서 오른쪽 끝 페이드 — 더 있다는 시각 힌트 */}
+            <div className="md:hidden pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-page to-transparent" />
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 text-xs">
-        <span className="text-stone-500">정렬:</span>
+        <span className="text-ink-3">정렬:</span>
         <button
           onClick={() => setSortBy("min")}
-          className={`px-2 py-1 rounded ${sortBy === "min" ? "bg-brand-100 text-brand-700 font-medium" : "text-stone-600 hover:bg-stone-100"}`}
+          className={`px-2 py-1 rounded ${sortBy === "min" ? "bg-brand-100 text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
           최저가
         </button>
         <button
           onClick={() => setSortBy("unit")}
           title="같은 용량으로 환산했을 때 더 싼 상품이 위로 (예: 100g당 가격, 1L당 가격)"
-          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-100 text-brand-700 font-medium" : "text-stone-600 hover:bg-stone-100"}`}
+          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-100 text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
-          용량 대비 가격
+          단가순
           <span
             aria-hidden
             className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-current text-[9px] font-semibold leading-none"
@@ -172,7 +183,7 @@ export default function SearchPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-stone-500">검색 중...</div>
+        <div className="text-center py-8 text-ink-3">검색 중...</div>
       ) : products.length === 0 ? (
         q ? (
           // 검색어가 있는데 결과 0건
@@ -247,7 +258,7 @@ export default function SearchPage() {
       ) : (
         <>
           {/* 결과 카운트 + 페이지 표시 */}
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-ink-3">
             총 {sorted.length}개 상품 · 페이지 {currentPage}/{totalPages}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -257,21 +268,21 @@ export default function SearchPage() {
                 <Link
                   key={p.id}
                   href={`/products/${p.id}`}
-                  className="card-clickable relative bg-white border border-stone-200 rounded-lg p-3 pr-7 flex gap-3 items-start"
+                  className="card-clickable relative bg-white border border-line rounded-xl p-3 pr-7 flex gap-3 items-start"
                 >
                   <ProductImage
                     src={p.imageUrl}
                     alt={p.name}
                     size={64}
-                    className="shrink-0 rounded-md overflow-hidden bg-stone-50"
+                    className="shrink-0 rounded-md overflow-hidden bg-surface-muted"
                   />
                   <div className="min-w-0 flex-1 flex justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-xs text-stone-500">
+                      <div className="text-xs text-ink-3">
                         {p.category}
                         {p.brand ? ` · ${p.brand}` : ""}
                       </div>
-                      <div className="font-semibold truncate flex items-center gap-1.5">
+                      <div className="font-semibold text-ink-1 truncate flex items-center gap-1.5">
                         <span className="truncate">{p.name}</span>
                         {p.hasHaccp && (
                           <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
@@ -279,24 +290,24 @@ export default function SearchPage() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-stone-500">{p.unit}</div>
+                      <div className="text-xs text-ink-3">{p.unit}</div>
                     </div>
                     <div className="text-right shrink-0">
                       {p.stats && p.stats.count > 0 ? (
                         <>
-                          <div className="text-xs text-stone-500">최저가</div>
-                          <div className="font-bold text-brand-600">
+                          <div className="text-xs text-ink-3">최저가</div>
+                          <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
                             {formatWon(p.stats.min)}
                           </div>
                           {upl && (
-                            <div className="text-[11px] text-stone-500">{upl}</div>
+                            <div className="text-[11px] text-ink-3 font-mono">{upl}</div>
                           )}
-                          <div className="text-xs text-stone-500">
+                          <div className="text-xs text-ink-3">
                             {p.stats.count}개 매장
                           </div>
                         </>
                       ) : (
-                        <div className="text-xs text-stone-400">가격 정보 없음</div>
+                        <div className="text-xs text-ink-3">가격 정보 없음</div>
                       )}
                     </div>
                   </div>
@@ -315,11 +326,11 @@ export default function SearchPage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-md border border-stone-300 bg-white text-sm text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-md border border-line-strong bg-white text-sm text-ink-2 hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 ← 이전
               </button>
-              <div className="text-sm text-stone-600 tabular-nums">
+              <div className="text-sm text-ink-2 tabular-nums">
                 {currentPage} / {totalPages}
               </div>
               <button
@@ -328,7 +339,7 @@ export default function SearchPage() {
                   setPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-md border border-stone-300 bg-white text-sm text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-md border border-line-strong bg-white text-sm text-ink-2 hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 다음 →
               </button>
@@ -354,8 +365,8 @@ function CategoryChip({
       onClick={onClick}
       className={`shrink-0 whitespace-nowrap text-[11px] md:text-xs px-3 py-1.5 rounded-full border transition-colors ${
         active
-          ? "bg-brand-500 text-white border-brand-500"
-          : "bg-white text-stone-700 border-stone-200 hover:border-brand-300"
+          ? "bg-ink-1 text-white border-ink-1"
+          : "bg-white text-ink-2 border-line hover:border-line-strong"
       }`}
     >
       {label}

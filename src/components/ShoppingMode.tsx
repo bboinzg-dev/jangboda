@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IconCheck, IconCart, IconStore } from "@/components/icons";
 
 export type ShoppingItem = {
   productId: string;
@@ -8,6 +9,8 @@ export type ShoppingItem = {
   brand?: string | null;
   unit?: string | null;
   quantity: number;
+  /** 매장 그룹화 — 같은 storeName끼리 묶어서 보여줌 */
+  storeName?: string | null;
 };
 
 type Props = {
@@ -107,8 +110,66 @@ export default function ShoppingMode({ items, onClose }: Props) {
 
   const done = checked.size;
   const total = items.length;
+  // 0/0 NaN guard — 빈 카트일 때 분모가 0
   const allDone = total > 0 && done === total;
   const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  // 매장 그룹화 — storeName 있을 때만 묶음, 없으면 단일 그룹
+  const groups = useMemo(() => {
+    const map = new Map<string, ShoppingItem[]>();
+    for (const it of items) {
+      const key = it.storeName ?? "";
+      const arr = map.get(key);
+      if (arr) arr.push(it);
+      else map.set(key, [it]);
+    }
+    return Array.from(map.entries()).map(([storeName, list]) => ({
+      storeName,
+      list,
+    }));
+  }, [items]);
+
+  // 빈 카트 가드 — 모달 자체는 띄워주지만 emptystate 안내
+  if (total === 0) {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-stone-900 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="장보기 진행"
+      >
+        <div className="sticky top-0 bg-stone-900/95 backdrop-blur border-b border-stone-700 px-4 py-3">
+          <div className="flex items-center justify-between gap-2 max-w-xl mx-auto">
+            <div className="text-white text-base font-bold inline-flex items-center gap-2">
+              <IconCart size={20} className="text-white" />
+              장보기 진행
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white/70 hover:text-white text-3xl px-2 -mr-2 leading-none"
+              aria-label="장보기 종료"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div className="max-w-xl mx-auto px-4 py-16 text-center">
+          <div className="text-white text-lg font-bold mb-2">
+            장바구니가 비어 있어요
+          </div>
+          <p className="text-stone-400 text-sm mb-6">
+            상품을 먼저 담은 뒤 장보기 모드를 시작하세요
+          </p>
+          <button
+            onClick={onClose}
+            className="bg-white text-stone-900 px-6 py-3 rounded-full text-base font-bold"
+          >
+            돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -117,87 +178,134 @@ export default function ShoppingMode({ items, onClose }: Props) {
       aria-modal="true"
       aria-label="장보기 진행"
     >
-      {/* 상단 sticky 헤더 — 진행률 + 닫기 */}
-      <div className="sticky top-0 bg-stone-900/95 backdrop-blur border-b border-stone-700 px-4 py-3">
-        <div className="flex items-center justify-between gap-2 mb-2 max-w-xl mx-auto">
-          <div className="text-white text-base font-bold">
-            🛒 장보기 진행 ({done}/{total})
+      {/* 상단 sticky 헤더 — 큰 진행률 + 닫기 */}
+      <div className="sticky top-0 bg-stone-900/95 backdrop-blur border-b border-stone-700 px-4 py-4">
+        <div className="flex items-start justify-between gap-3 max-w-xl mx-auto">
+          <div className="min-w-0 flex-1">
+            <div className="text-white/60 text-xs mb-0.5 inline-flex items-center gap-1">
+              <IconCart size={12} className="text-white/60" />
+              장보기 진행
+            </div>
+            {/* "X / Y 완료" 큰 숫자 hero */}
+            <div className="flex items-baseline gap-2">
+              <span className="text-[28px] font-extrabold tabular-nums tracking-tight text-white leading-none">
+                {done}
+              </span>
+              <span className="text-white/60 text-base font-semibold tabular-nums">
+                / {total}
+              </span>
+              <span className="text-white/60 text-sm ml-1">완료</span>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white/70 hover:text-white text-3xl px-2 -mr-2 leading-none"
+            className="text-white/70 hover:text-white text-3xl px-2 -mr-2 leading-none shrink-0"
             aria-label="장보기 종료"
           >
             ×
           </button>
         </div>
-        <div className="w-full bg-stone-700 rounded-full h-2 max-w-xl mx-auto overflow-hidden">
-          <div
-            className="bg-success h-full rounded-full transition-all duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
+        {/* 큰 진행 바 */}
+        <div className="mt-3 max-w-xl mx-auto">
+          <div className="w-full bg-stone-700 rounded-full h-3 overflow-hidden">
+            <div
+              className="bg-success h-full rounded-full transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <div className="mt-1 text-right text-[11px] text-white/50 tabular-nums">
+            {progressPct}%
+          </div>
         </div>
       </div>
 
-      {/* 항목 리스트 — 큰 카드 */}
-      <ul className="p-4 max-w-xl mx-auto space-y-3 pb-32">
-        {items.map((it) => {
-          const isChecked = checked.has(it.productId);
+      {/* 항목 리스트 — 매장 그룹화 + 큰 카드 */}
+      <div className="p-4 max-w-xl mx-auto space-y-5 pb-32">
+        {groups.map((group, gi) => {
+          const groupDone = group.list.filter((it) =>
+            checked.has(it.productId)
+          ).length;
           return (
-            <li key={it.productId}>
-              <button
-                type="button"
-                onClick={() => toggle(it.productId)}
-                className={`w-full text-left rounded-2xl p-5 flex items-center gap-4 transition active:scale-[0.98] ${
-                  isChecked
-                    ? "bg-stone-800 border border-stone-700"
-                    : "bg-white border border-border shadow-sm"
-                }`}
-              >
-                <span
-                  className={`shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-3xl transition ${
-                    isChecked
-                      ? "bg-success text-white"
-                      : "bg-stone-100 border-2 border-stone-300 text-transparent"
-                  }`}
-                >
-                  ✓
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div
-                    className={`text-xl font-bold leading-tight ${
-                      isChecked ? "text-stone-500 line-through" : "text-stone-900"
-                    }`}
-                  >
-                    {it.name}
-                  </div>
-                  {(it.brand || it.unit) && (
-                    <div
-                      className={`text-sm mt-1 ${
-                        isChecked ? "text-stone-600" : "text-stone-500"
-                      }`}
-                    >
-                      {[it.brand, it.unit].filter(Boolean).join(" · ")}
-                    </div>
-                  )}
+            <div key={`${group.storeName}-${gi}`} className="space-y-3">
+              {group.storeName && (
+                <div className="flex items-center gap-2 text-white/80 text-sm font-bold px-1">
+                  <IconStore size={16} className="text-white/80" />
+                  <span>
+                    {group.storeName}에서 살 것 {group.list.length}개
+                  </span>
+                  <span className="text-white/50 font-normal text-xs ml-auto tabular-nums">
+                    {groupDone}/{group.list.length}
+                  </span>
                 </div>
-                <div
-                  className={`shrink-0 text-2xl font-bold ${
-                    isChecked ? "text-stone-500" : "text-stone-700"
-                  }`}
-                >
-                  ×{it.quantity}
-                </div>
-              </button>
-            </li>
+              )}
+              <ul className="space-y-3">
+                {group.list.map((it) => {
+                  const isChecked = checked.has(it.productId);
+                  return (
+                    <li key={it.productId}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(it.productId)}
+                        className={`w-full text-left rounded-2xl p-5 flex items-center gap-4 transition active:scale-[0.98] ${
+                          isChecked
+                            ? "bg-stone-800 border border-stone-700"
+                            : "bg-white border border-line shadow-sm"
+                        }`}
+                      >
+                        <span
+                          className={`shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                            isChecked
+                              ? "bg-success border-2 border-success scale-110"
+                              : "bg-stone-100 border-2 border-line-strong"
+                          }`}
+                        >
+                          {isChecked && (
+                            <IconCheck size={32} className="text-white" />
+                          )}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className={`text-xl font-bold leading-tight ${
+                              isChecked
+                                ? "text-stone-500 line-through"
+                                : "text-ink-1"
+                            }`}
+                          >
+                            {it.name}
+                          </div>
+                          {(it.brand || it.unit) && (
+                            <div
+                              className={`text-sm mt-1 ${
+                                isChecked ? "text-stone-600" : "text-ink-3"
+                              }`}
+                            >
+                              {[it.brand, it.unit].filter(Boolean).join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                        <div
+                          className={`shrink-0 text-2xl font-bold tabular-nums ${
+                            isChecked ? "text-stone-500" : "text-ink-2"
+                          }`}
+                        >
+                          ×{it.quantity}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
       {/* 완료 시 축하 + 종료 */}
       {allDone && (
         <div className="fixed bottom-0 left-0 right-0 bg-stone-900 border-t border-stone-700 p-4 pb-6 text-center">
-          <div className="text-4xl mb-1">🎉</div>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-success mb-2">
+            <IconCheck size={32} className="text-white" />
+          </div>
           <div className="text-white text-lg font-bold mb-3">
             장보기 완료! 수고하셨어요
           </div>
