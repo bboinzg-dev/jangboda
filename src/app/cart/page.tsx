@@ -9,6 +9,7 @@ import CartProductSearch, {
 } from "@/components/CartProductSearch";
 import { useFavorites } from "@/components/FavoritesProvider";
 import RecipeRecommendations from "@/components/RecipeRecommendations";
+import ShoppingMode, { type ShoppingItem } from "@/components/ShoppingMode";
 
 type CartItem = { productId: string; quantity: number };
 type CompareLine = {
@@ -74,6 +75,9 @@ export default function CartPage() {
   // 복사 토스트
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 장보기 모드 (풀스크린 체크리스트)
+  const [shoppingOpen, setShoppingOpen] = useState(false);
 
   // 인기 정렬로 fetch — priceCount 많은 순
   useEffect(() => {
@@ -266,6 +270,22 @@ export default function CartPage() {
     [cart, productMap]
   );
 
+  // 장보기 모드용 데이터 — productMap에서 메타 합쳐서 전달
+  const shoppingItems = useMemo<ShoppingItem[]>(
+    () =>
+      cart.map((c) => {
+        const p = productMap.get(c.productId);
+        return {
+          productId: c.productId,
+          name: p?.name ?? "상품",
+          brand: p?.brand ?? null,
+          unit: p?.unit ?? null,
+          quantity: c.quantity,
+        };
+      }),
+    [cart, productMap]
+  );
+
   // 장보기 리스트 텍스트 생성
   function buildShoppingListText(): string {
     const lines: string[] = [];
@@ -368,11 +388,20 @@ export default function CartPage() {
             <div className="flex items-center gap-2">
               {cart.length > 0 && (
                 <button
+                  onClick={() => setShoppingOpen(true)}
+                  className="text-xs px-2.5 py-1 bg-brand-500 hover:bg-brand-600 text-white rounded font-semibold"
+                  title="마트에서 보면서 체크할 수 있는 큰 화면"
+                >
+                  🛒 장보기 시작
+                </button>
+              )}
+              {cart.length > 0 && (
+                <button
                   onClick={copyShoppingList}
                   className="text-xs px-2 py-1 border border-stone-300 rounded hover:bg-stone-50 text-stone-700"
                   title="장보기 리스트를 클립보드에 복사"
                 >
-                  {copied ? "✓ 복사됨!" : "📋 장보기 리스트 복사"}
+                  {copied ? "✓" : "📋 복사"}
                 </button>
               )}
               {cart.length > 0 && (
@@ -380,7 +409,7 @@ export default function CartPage() {
                   onClick={clearCart}
                   className="text-xs text-stone-400 hover:text-rose-500"
                 >
-                  전체 비우기
+                  비우기
                 </button>
               )}
             </div>
@@ -654,6 +683,13 @@ export default function CartPage() {
             : `마트별 비교 (${cart.length}종)`}
         </button>
       </div>
+
+      {shoppingOpen && cart.length > 0 && (
+        <ShoppingMode
+          items={shoppingItems}
+          onClose={() => setShoppingOpen(false)}
+        />
+      )}
     </div>
   );
 }
