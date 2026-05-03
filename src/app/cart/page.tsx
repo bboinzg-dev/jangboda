@@ -89,6 +89,29 @@ export default function CartPage() {
       .then((d) => setProducts(d.products ?? []));
   }, []);
 
+  // 첫 진입 시 자동 위치 요청 (사용자가 매번 버튼 눌러야 하는 거 회피)
+  // 거부/실패 시 전체 비교 모드로 폴백
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+    setGeo({ status: "loading" });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeo({
+          status: "ready",
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setDistanceFilter(5); // 위치 확보 시 기본 5km
+      },
+      (err) => {
+        setGeo({
+          status: err.code === err.PERMISSION_DENIED ? "denied" : "error",
+        });
+      },
+      { timeout: 6000, maximumAge: 5 * 60 * 1000 }
+    );
+  }, []);
+
   useEffect(() => {
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);

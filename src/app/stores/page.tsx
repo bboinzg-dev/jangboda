@@ -88,8 +88,38 @@ export default function StoresPage() {
     setLoading(false);
   }
 
+  // 첫 진입 시 자동으로 내 위치 요청 (silent — 권한 요청만 할 뿐 강제 X)
+  // 권한 거부 / 위치 실패 시 전체 보기로 폴백
   useEffect(() => {
-    load();
+    let mounted = true;
+    (async () => {
+      try {
+        if (!navigator.geolocation) {
+          await load();
+          return;
+        }
+        const { lat, lng } = await new Promise<{ lat: number; lng: number }>(
+          (resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              (pos) =>
+                resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              (err) => reject(err),
+              { timeout: 6000, maximumAge: 5 * 60 * 1000 }
+            );
+          }
+        );
+        if (!mounted) return;
+        setLoc({ lat, lng });
+        setRegionLabel("📍 내 위치");
+        await load(lat, lng);
+      } catch {
+        // 권한 거부 또는 timeout — 전체 보기 fallback
+        if (mounted) await load();
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   function getLocation(): Promise<{ lat: number; lng: number }> {
