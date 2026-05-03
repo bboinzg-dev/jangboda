@@ -2,10 +2,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { stripHtml } from "@/lib/benefits/sanitize";
-import { sourceLabel } from "@/lib/benefits/types";
-import { categoryGroup } from "@/lib/benefits/categories";
 import BackButton from "@/components/benefits/BackButton";
+import BenefitCard from "@/components/benefits/BenefitCard";
 
 export const dynamic = "force-dynamic";
 
@@ -94,70 +92,18 @@ async function SavedList({ userId }: { userId: string }) {
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      {matches.map((m) => {
-        const dDays = m.benefit.applyEndAt
-          ? Math.ceil(
-              (m.benefit.applyEndAt.getTime() - Date.now()) /
-                (24 * 60 * 60 * 1000),
-            )
-          : null;
-        const catLabel = m.benefit.category
-          ? categoryGroup(m.benefit.category)
-          : null;
-        return (
-          <Link
-            key={m.id}
-            href={`/benefits/${m.benefit.id}`}
-            className="block bg-white border border-stone-200 hover:border-indigo-300 hover:shadow-sm rounded-lg p-4 transition"
-          >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 text-xs text-stone-500 mb-1 flex-wrap">
-                  <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
-                    {sourceLabel(m.benefit.sourceCode)}
-                  </span>
-                  {catLabel && (
-                    <span className="bg-stone-100 px-2 py-0.5 rounded">
-                      {catLabel}
-                    </span>
-                  )}
-                  {m.benefit.agency && (
-                    <span className="truncate">{m.benefit.agency}</span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-stone-900 leading-snug line-clamp-2">
-                  {stripHtml(m.benefit.title)}
-                </h3>
-              </div>
-              <span className="shrink-0 text-amber-500 text-lg leading-none">
-                ★
-              </span>
-            </div>
-            {m.benefit.summary && (
-              <p className="text-sm text-stone-600 line-clamp-2 mb-2">
-                {stripHtml(m.benefit.summary)}
-              </p>
-            )}
-            <div className="flex items-center gap-3 text-xs text-stone-500">
-              {dDays !== null && (
-                <span
-                  className={
-                    dDays < 0
-                      ? "text-stone-400"
-                      : dDays <= 7
-                      ? "text-rose-600 font-medium"
-                      : dDays <= 30
-                      ? "text-amber-600"
-                      : ""
-                  }
-                >
-                  {dDays >= 0 ? `D-${dDays}` : "마감"}
-                </span>
-              )}
-            </div>
-          </Link>
-        );
-      })}
+      {matches.map((m) => (
+        <BenefitCard
+          key={m.id}
+          href={`/benefits/${m.benefit.id}`}
+          title={m.benefit.title}
+          summary={m.benefit.summary}
+          agency={m.benefit.agency}
+          category={m.benefit.category}
+          sourceCode={m.benefit.sourceCode}
+          applyEndAt={m.benefit.applyEndAt}
+        />
+      ))}
     </div>
   );
 }

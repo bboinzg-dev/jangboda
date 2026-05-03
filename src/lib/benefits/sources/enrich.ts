@@ -190,18 +190,110 @@ export async function enrichBizinfo(item: BenefitRaw): Promise<BenefitRaw> {
   return applyExtract(item, extract);
 }
 
-// 중기부 사업공고: viewUrl이 게시판 글 상세 페이지. HTML에서 본문을 그대로 발췌.
-// list 응답의 dataContents에 이미 일부 본문이 들어있을 수 있어, 그게 충분하면 패스.
+// 중기부 사업공고 상세 페이지에서 hwpEditorBoardContent div의 본문 텍스트를 추출.
+// mss.go.kr 게시판은 본문을 <div id="hwpEditorBoardContent" data-jsonlen="...">...</div>에 담는다.
+// 실제로는 이 div가 비어있는(`&nbsp;`만 들어있는) 글이 많아 — 그땐 첨부파일명을 사업개요로 fallback.
+function extractMssEditorBody(html: string): string | undefined {
+  // div 시작 태그 매칭 (속성 순서/공백 모두 허용)
+  const re = /<div[^>]*\bid=["']hwpEditorBoardContent["'][^>]*>([\s\S]*?)<\/div>/i;
+  const m = html.match(re);
+  if (!m) return undefined;
+  const inner = stripHtml(m[1]).trim();
+  // &nbsp;만 있거나 너무 짧은 경우는 의미 없는 본문으로 간주
+  if (inner.length < 30) return undefined;
+  return inner;
+}
+
+// 상세 페이지의 메타 테이블(공고번호/신청기간/담당부서/등록일)에서 보강 정보 추출.
+// label → key 매핑을 따로 둔다 (정부 사이트의 메타 테이블은 board_view 안 별도 표).
+const MSS_META_LABEL_TO_KEY: Record<string, string> = {
+  공고번호: "공고번호",
+  담당부서: "담당부서",
+  등록일: "등록일",
+};
+
+function extractMssMetaTable(html: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const re = /<th\b[^>]*>([\s\S]*?)<\/th>\s*<td\b[^>]*>([\s\S]*?)<\/td>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const label = stripHtml(m[1]).replace(/[\s·ㆍ\.:,()\[\]]/g, "");
+    const value = stripHtml(m[2]).trim();
+    if (!label || !value) continue;
+    const key = MSS_META_LABEL_TO_KEY[label];
+    if (key && !out[key]) out[key] = value;
+  }
+  return out;
+}
+
+// 중기부 사업공고: viewUrl이 게시판 글 상세 페이지.
+// 1) hwpEditorBoardContent div에서 본문 텍스트 추출 → 사업개요
+// 2) 메타 테이블에서 공고번호/담당부서/등록일 추출 → eligibilityRules에 보존
+// 3) 본문이 비어있으면 fileName(이미 list 응답에 있음)을 사업개요 fallback으로 사용
+//    — LLM 정형화 단계가 파일명에서 사업 성격을 추론할 수 있도록.
 export async function enrichMssBiz(item: BenefitRaw): Promise<BenefitRaw> {
   if (item.sourceCode !== SOURCE_CODES.MSS_BIZ) return item;
-  if (!item.detailUrl) return item;
-  // dataContents가 200자 이상이면 본문이 충분 — 추가 크롤링 생략
+
+  // 이미 충분한 summary가 있으면 detailUrl 없이도 fileName fallback만 처리
   const sumLen = (item.summary ?? "").trim().length;
-  if (sumLen >= 200) return item;
-  const html = await safeFetch(item.detailUrl);
-  if (!html) return item;
-  const extract = extractFromHtml(html);
-  return applyExtract(item, extract);
+
+  let body: string | undefined;
+  let meta: Record<string, string> = {};
+
+  // detailUrl이 있고 summary가 부족할 때만 상세 페이지 fetch (rate limit 절약)
+  if (item.detailUrl && sumLen < 200) {
+    const html = await safeFetch(item.detailUrl);
+    if (html) {
+      body = extractMssEditorBody(html);
+      meta = extractMssMetaTable(html);
+    }
+  }
+
+  // 보강할 키-값 모음
+  const rules = { ...(item.eligibilityRules ?? {}) } as Record<string, unknown>;
+  let touched = false;
+
+  // 사업개요 우선순위: 본문 → 기존 summary → fileName fallback
+  if (rules["사업개요"] == null || rules["사업개요"] === "") {
+    let gaeyo: string | undefined;
+    if (body && body.length >= 30) {
+      gaeyo = body;
+    } else if (sumLen >= 30) {
+      gaeyo = (item.summary ?? "").trim();
+    } else {
+      // fileName을 사업개요 fallback으로 — 파일명만 있어도 LLM 정형화가 단서로 사용
+      const fname = typeof rules.fileName === "string" ? rules.fileName : undefined;
+      if (fname && fname.trim().length >= 5) {
+        gaeyo = `첨부파일: ${fname.trim()}`;
+      }
+    }
+    if (gaeyo) {
+      rules["사업개요"] = gaeyo;
+      touched = true;
+    }
+  }
+
+  // 메타 테이블 키들
+  for (const [k, v] of Object.entries(meta)) {
+    if (rules[k] == null || rules[k] === "") {
+      rules[k] = v;
+      touched = true;
+    }
+  }
+
+  // 문의처: writerName + writerPhone 조합 (이미 list 응답에 있음)
+  if (rules["문의처"] == null || rules["문의처"] === "") {
+    const wn = typeof rules.writerName === "string" ? rules.writerName.trim() : "";
+    const wp = typeof rules.writerPhone === "string" ? rules.writerPhone.trim() : "";
+    const munui = [wn, wp].filter(Boolean).join(" ");
+    if (munui) {
+      rules["문의처"] = munui;
+      touched = true;
+    }
+  }
+
+  if (!touched) return item;
+  return { ...item, eligibilityRules: rules };
 }
 
 // 중기부 지원사업(pblancBsnsService): pblancUrl(detailUrl)이 기업마당 상세페이지를 가리킴.

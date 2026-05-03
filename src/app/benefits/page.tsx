@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { CATEGORIES } from "@/lib/benefits/types";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { RematchButton } from "./_components/RematchButton";
-import { stripHtml } from "@/lib/benefits/sanitize";
+import BenefitCard from "@/components/benefits/BenefitCard";
 
 export const dynamic = "force-dynamic";
 
@@ -133,63 +133,20 @@ export default async function BenefitsHomePage() {
             </div>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {matchInfo.matches.map((m) => {
-                const dDays = m.benefit.applyEndAt
-                  ? Math.ceil(
-                      (m.benefit.applyEndAt.getTime() - Date.now()) /
-                        (24 * 60 * 60 * 1000),
-                    )
-                  : null;
-                return (
-                  <Link
-                    key={m.id}
-                    href={`/benefits/${m.benefit.id}`}
-                    className="block bg-white border border-stone-200 hover:border-indigo-300 hover:shadow-sm rounded-lg p-4 transition"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
-                          {m.benefit.category && (
-                            <span className="bg-stone-100 px-2 py-0.5 rounded">
-                              {m.benefit.category}
-                            </span>
-                          )}
-                          {m.benefit.agency && (
-                            <span className="truncate">{m.benefit.agency}</span>
-                          )}
-                        </div>
-                        <h3 className="font-semibold text-stone-900 leading-snug line-clamp-2">
-                          {stripHtml(m.benefit.title)}
-                        </h3>
-                      </div>
-                      <ScoreBadge score={m.score} status={m.status} />
-                    </div>
-                    {m.benefit.summary && (
-                      <p className="text-sm text-stone-600 line-clamp-2 mb-2">
-                        {stripHtml(m.benefit.summary)}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-stone-500">
-                      {dDays !== null && (
-                        <span
-                          className={
-                            dDays <= 7
-                              ? "text-rose-600 font-medium"
-                              : dDays <= 30
-                              ? "text-amber-600"
-                              : ""
-                          }
-                        >
-                          {dDays >= 0 ? `D-${dDays}` : "마감"}
-                        </span>
-                      )}
-                      {m.missingFields.length > 0 && (
-                        <span>입력 보강 시 {m.missingFields.length}개 추가 평가</span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
+              {matchInfo.matches.map((m) => (
+                <BenefitCard
+                  key={m.id}
+                  href={`/benefits/${m.benefit.id}`}
+                  title={m.benefit.title}
+                  summary={m.benefit.summary}
+                  agency={m.benefit.agency}
+                  category={m.benefit.category}
+                  applyEndAt={m.benefit.applyEndAt}
+                  score={m.score}
+                  status={m.status as "matched" | "uncertain" | "notEligible"}
+                  missingFields={m.missingFields}
+                />
+              ))}
             </div>
           )}
         </section>
@@ -247,18 +204,3 @@ function StatCard({
   );
 }
 
-function ScoreBadge({ score, status }: { score: number; status: string }) {
-  const color =
-    status === "matched"
-      ? score >= 70
-        ? "bg-indigo-100 text-indigo-700"
-        : "bg-blue-100 text-blue-700"
-      : "bg-stone-100 text-stone-600";
-  const label = status === "matched" ? "매칭" : "검토";
-  return (
-    <div className={`shrink-0 text-center rounded px-2 py-1 ${color}`}>
-      <div className="text-base font-bold leading-none">{score}</div>
-      <div className="text-[10px] mt-0.5">{label}</div>
-    </div>
-  );
-}

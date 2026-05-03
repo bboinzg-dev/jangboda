@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
+import { unitPriceValue } from "@/lib/units";
 import { notFound } from "next/navigation";
 import { isOnlineStore } from "@/components/SourceBadge";
 import PriceAlertButton from "@/components/PriceAlertButton";
@@ -131,10 +132,39 @@ export default async function ProductDetailPage({
   const allPrices = prices.map((p) => p.price).filter((x) => x > 0);
   const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0;
+  // winner 계산 — 시세(KAMIS) + 단가 outlier(박스/멀티팩 가능성) 제외
+  // 시세 source: kamis, stats_official
+  const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
+
+  // 단가 outlier 판정 — 단가 median ±50% 벗어난 가격은 winner 비교 제외
+  // (PriceListClient의 분리 로직과 동일 기준)
+  const validUnitPrices = prices
+    .map((p) => unitPriceValue(p.price, product.unit))
+    .filter((v): v is number => v !== null && v > 0)
+    .sort((a, b) => a - b);
+  const upMedian =
+    validUnitPrices.length >= 3
+      ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
+      : null;
+  const lowBound = upMedian !== null ? upMedian * 0.5 : null;
+  const highBound = upMedian !== null ? upMedian * 1.5 : null;
+  const isUnitOutlier = (price: number): boolean => {
+    if (lowBound === null || highBound === null) return false;
+    const u = unitPriceValue(price, product.unit);
+    if (u === null) return false;
+    return u < lowBound || u > highBound;
+  };
+
+  const offlineMarket = offlineRows.filter(
+    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price)
+  );
+  const onlineMarket = onlineRows.filter(
+    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price)
+  );
   const winnerSection =
-    offlineRows.length > 0 && onlineRows.length > 0
-      ? Math.min(...offlineRows.map((r) => r.price)) <
-        Math.min(...onlineRows.map((r) => r.price))
+    offlineMarket.length > 0 && onlineMarket.length > 0
+      ? Math.min(...offlineMarket.map((r) => r.price)) <
+        Math.min(...onlineMarket.map((r) => r.price))
         ? "offline"
         : "online"
       : null;

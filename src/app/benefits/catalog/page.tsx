@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
-import { SIDO_FILTER_OPTIONS, regionCodesLabel } from "@/lib/benefits/regions";
-import { sourceLabel } from "@/lib/benefits/types";
+import { SIDO_FILTER_OPTIONS } from "@/lib/benefits/regions";
 import {
   CATEGORY_GROUP_KEYS,
-  categoryGroup,
   originalsForGroup,
 } from "@/lib/benefits/categories";
-import { stripHtml } from "@/lib/benefits/sanitize";
 import BackButton from "@/components/benefits/BackButton";
+import BenefitCard from "@/components/benefits/BenefitCard";
 
 export const dynamic = "force-dynamic";
 
@@ -103,19 +101,6 @@ async function getBenefits(f: ReturnType<typeof parseSearchParams>) {
     }),
   ]);
   return { total, items };
-}
-
-function formatDateOnly(d: Date | null | undefined): string {
-  if (!d) return "상시";
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}.${mm}.${dd}`;
-}
-
-function daysUntil(end: Date | null | undefined): number | null {
-  if (!end) return null;
-  return Math.floor((end.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
 }
 
 // 현재 필터 + override를 반영한 쿼리 문자열 생성 (페이지네이션용)
@@ -282,56 +267,21 @@ export default async function BenefitsCatalogPage({
           </div>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map((b) => {
-            const remain = daysUntil(b.applyEndAt);
-            const isClosingSoon = remain !== null && remain >= 0 && remain <= 30;
-            // 출처 코드 → 한국어 라벨 (types.ts 단일 소스)
-            const srcLabel = sourceLabel(b.sourceCode);
-            // 원본 카테고리 → 그룹명 (필터 기준과 일치)
-            const catLabel = b.category ? categoryGroup(b.category) : null;
-            return (
-              <li
-                key={b.id}
-                className="card-clickable relative bg-white border border-stone-200 rounded-xl p-5 hover:border-indigo-300 hover:shadow-sm transition"
-              >
-                <Link
-                  href={`/benefits/${b.id}`}
-                  className="absolute inset-0"
-                  aria-label={`${b.title} 상세 보기`}
-                />
-                <div className="flex flex-wrap items-center gap-1.5 mb-2 relative pointer-events-none">
-                  <span className="text-[11px] font-medium bg-indigo-600 text-white px-1.5 py-0.5 rounded">
-                    {srcLabel}
-                  </span>
-                  {catLabel && (
-                    <span className="text-[11px] font-medium bg-indigo-50 border border-indigo-200 text-indigo-700 px-1.5 py-0.5 rounded">
-                      {catLabel}
-                    </span>
-                  )}
-                  {isClosingSoon && (
-                    <span className="text-[11px] font-bold bg-rose-600 text-white px-1.5 py-0.5 rounded">
-                      D-{remain}
-                    </span>
-                  )}
-                </div>
-                <div className="font-semibold text-stone-900 leading-snug pointer-events-none">
-                  {stripHtml(b.title)}
-                </div>
-                {b.summary && (
-                  <div className="text-xs text-stone-600 mt-1 line-clamp-2 pointer-events-none">
-                    {stripHtml(b.summary)}
-                  </div>
-                )}
-                <div className="text-xs text-stone-500 mt-3 flex flex-wrap gap-x-3 gap-y-1 pointer-events-none">
-                  {b.agency && <span>{b.agency}</span>}
-                  <span>마감 {formatDateOnly(b.applyEndAt)}</span>
-                  <span>{regionCodesLabel(b.regionCodes)}</span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="grid gap-3 md:grid-cols-2">
+          {items.map((b) => (
+            <BenefitCard
+              key={b.id}
+              href={`/benefits/${b.id}`}
+              title={b.title}
+              summary={b.summary}
+              agency={b.agency}
+              category={b.category}
+              sourceCode={b.sourceCode}
+              applyEndAt={b.applyEndAt}
+              variant="compact"
+            />
+          ))}
+        </div>
       )}
 
       {/* 페이지네이션 */}
