@@ -164,7 +164,13 @@ export async function findBestMatchForProduct(
   // brand가 없으면 첫 단어를 brand 추정 (점수 부여용 — 매칭에는 영향 없음)
   const guessedBrand = brand ?? tokens[0];
 
-  const candidates = [tokens[0], tokens.slice(0, 2).join(" "), productName].filter(Boolean);
+  // 검색 정확도 위해 더 구체적인 검색어부터 시도
+  // (이전엔 tokens[0]=brand만으로 검색해서 광범위 결과 + 매칭 score 부족)
+  const candidates = [
+    cleaned,                            // "팔도 왕뚜껑 110g" — 가장 정확
+    tokens.slice(0, 2).join(" "),       // "팔도 왕뚜껑"
+    tokens[0],                          // "팔도" — brand fallback
+  ].filter(Boolean);
   let rows: FoodSafetyItem[] = [];
   for (const q of candidates) {
     rows = await searchByName(q, 15);
