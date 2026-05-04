@@ -83,10 +83,15 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
 }
 
 // CLOVA General/Custom OCR 응답에서 평문 텍스트 추출
-// 응답 구조:
-//   { images: [{ inferText?, fields?: [{ inferText, boundingPoly... }] }] }
+// 영수증은 column layout (품목명 | 수량 | 가격)이라 lineBreak 기반 합치기는
+// column별로 끊겨버림. y좌표 기반 row 그룹화로 시각적 같은 행을 합침.
 function extractClovaPlainText(json: unknown): string {
-  type Field = { inferText?: string; lineBreak?: boolean };
+  type Vertex = { x?: number; y?: number };
+  type Field = {
+    inferText?: string;
+    lineBreak?: boolean;
+    boundingPoly?: { vertices?: Vertex[] };
+  };
   type Image = { inferText?: string; fields?: Field[] };
   type Resp = { images?: Image[] };
 
@@ -94,26 +99,54 @@ function extractClovaPlainText(json: unknown): string {
   const img = r?.images?.[0];
   if (!img) return "";
 
-  // inferText가 있으면 그대로
-  if (img.inferText && img.inferText.trim()) return img.inferText;
-
-  // 없으면 fields[]를 줄 단위로 합침
-  if (Array.isArray(img.fields)) {
-    const lines: string[] = [];
-    let current = "";
+  // fields[]에 boundingPoly 있으면 y좌표 기반 row 그룹화 (영수증 layout 정확)
+  if (Array.isArray(img.fields) && img.fields.length > 0) {
+    type RowEntry = { text: string; yMid: number; xMin: number };
+    const entries: RowEntry[] = [];
     for (const f of img.fields) {
       const t = (f.inferText ?? "").trim();
       if (!t) continue;
-      current = current ? `${current} ${t}` : t;
-      if (f.lineBreak) {
-        lines.push(current);
-        current = "";
+      const verts = f.boundingPoly?.vertices ?? [];
+      const ys = verts.map((v) => v.y ?? 0);
+      const xs = verts.map((v) => v.x ?? 0);
+      const yMid = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0;
+      const xMin = xs.length ? Math.min(...xs) : 0;
+      entries.push({ text: t, yMid, xMin });
+    }
+
+    if (entries.length === 0) {
+      return img.inferText?.trim() ?? "";
+    }
+
+    // y좌표 작은 순(위→아래) 정렬, 비슷한 y는 같은 row로 묶기
+    entries.sort((a, b) => a.yMid - b.yMid);
+    const ROW_TOLERANCE = 12; // 영수증 글씨 12px 이내면 같은 row
+    type Row = { yMid: number; items: RowEntry[] };
+    const rows: Row[] = [];
+    for (const e of entries) {
+      const last = rows[rows.length - 1];
+      if (last && Math.abs(e.yMid - last.yMid) <= ROW_TOLERANCE) {
+        last.items.push(e);
+        last.yMid =
+          last.items.reduce((s, x) => s + x.yMid, 0) / last.items.length;
+      } else {
+        rows.push({ yMid: e.yMid, items: [e] });
       }
     }
-    if (current) lines.push(current);
-    return lines.join("\n");
+
+    // 각 row 안에서 x 좌측→우측 정렬 후 합침
+    return rows
+      .map((row) =>
+        row.items
+          .sort((a, b) => a.xMin - b.xMin)
+          .map((x) => x.text)
+          .join(" ")
+      )
+      .join("\n");
   }
 
+  // boundingPoly 없으면 inferText fallback
+  if (img.inferText && img.inferText.trim()) return img.inferText;
   return "";
 }
 
