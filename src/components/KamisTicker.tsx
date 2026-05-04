@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import ProductImage from "./ProductImage";
 
 type TickerItem = {
   id: string;
   productId: string;
   productName: string;
   productUnit: string;
+  productImageUrl?: string | null;
   price: number;
   /** 전 조사일 대비 변동 금액 (없으면 표시 안 함) */
   changeAmount?: number | null;
@@ -73,16 +75,24 @@ function ItemCard({ item }: { item: TickerItem }) {
   return (
     <Link
       href={`/products/${item.productId}`}
-      className="flex items-center justify-between px-3 py-2 bg-stone-50 hover:bg-brand-50 border border-border rounded-md transition"
+      className="flex items-center gap-2 px-3 py-2 bg-stone-50 hover:bg-brand-50 border border-border rounded-md transition"
     >
+      <ProductImage
+        src={item.productImageUrl}
+        alt={item.productName}
+        size={36}
+        className="shrink-0"
+      />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-stone-900 truncate">
           {item.productName}
         </div>
-        <div className="text-[10px] text-stone-500">{item.productUnit}</div>
+        <div className="text-[10px] text-stone-500 truncate">
+          {item.productUnit}
+        </div>
       </div>
-      <div className="shrink-0 ml-2 text-right">
-        <div className="text-base font-bold text-brand-700">
+      <div className="shrink-0 ml-1 text-right">
+        <div className="text-sm font-bold text-brand-700 tabular-nums">
           {item.price.toLocaleString("ko-KR")}원
         </div>
         {change !== null && pct !== null && (

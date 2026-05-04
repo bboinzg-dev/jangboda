@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceParts, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
-import RecallBanner from "@/components/RecallBanner";
+import RecallTicker from "@/components/RecallTicker";
 import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
 import {
@@ -21,8 +21,16 @@ export const revalidate = 60;
 
 async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
-  const [kamisPrices, statsPrices, products, productsCount, storesCount, pricesCount] =
-    await Promise.all([
+  const sevenDaysAgo = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7);
+  const [
+    kamisPrices,
+    statsPrices,
+    recalls,
+    products,
+    productsCount,
+    storesCount,
+    pricesCount,
+  ] = await Promise.all([
       // KAMIS 시세 — 농수산물 가상 매장 — ticker용 충분히 가져옴
       prisma.price.findMany({
         where: { source: "kamis" },
@@ -38,6 +46,12 @@ async function getHomeData() {
         take: 30,
         include: { product: true },
         distinct: ["productId"],
+      }),
+      // 회수·판매중지 (최근 7일)
+      prisma.recall.findMany({
+        where: { registeredAt: { gte: sevenDaysAgo } },
+        orderBy: { registeredAt: "desc" },
+        take: 10,
       }),
       // 가격차 큰 상품 (최저가 vs 최고가 차이 큰 순) — 시세 가격 제외
       prisma.product.findMany({
@@ -118,14 +132,31 @@ async function getHomeData() {
 
   const stats = { products: productsCount, stores: storesCount, prices: pricesCount };
 
-  // 오늘의 시세 = KAMIS(농수산물) + 통계청(가공식품) 병합
-  const tickerPrices = [...kamisPrices, ...statsPrices];
+  // 시세 ticker = KAMIS + 통계청 합쳐서 흘림
+  const tickerData = [...kamisPrices, ...statsPrices].map((p) => ({
+    id: p.id,
+    productId: p.product.id,
+    productName: p.product.name,
+    productUnit: p.product.unit,
+    productImageUrl: p.product.imageUrl,
+    price: p.price,
+  }));
 
-  return { tickerPrices, priceCards, stats };
+  // 회수 ticker
+  const recallTickerData = recalls.map((r) => ({
+    id: r.id,
+    productName: r.productName,
+    manufacturer: r.manufacturer,
+    reason: r.reason,
+    grade: r.grade,
+  }));
+
+  // 오늘의 시세 = KAMIS(농수산물) + 통계청(가공식품) 병합
+  return { tickerData, recallTickerData, priceCards, stats };
 }
 
 export default async function HomePage() {
-  const { tickerPrices, priceCards, stats } = await getHomeData();
+  const { tickerData, recallTickerData, priceCards, stats } = await getHomeData();
 
   return (
     <div className="space-y-8">
@@ -202,45 +233,52 @@ export default async function HomePage() {
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
 
-      {/* 식약처 회수·판매중지 식품 배너 — 최근 7일, 안전 경고 */}
-      <RecallBanner />
+      {/* 시세 + 회수·판매중지 — 좌우 2칼럼 (모바일은 세로 스택) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 오늘의 시세 — KAMIS(농수산물) + 통계청(가공식품) ticker */}
+        {tickerData.length > 0 && (
+          <section>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
+                📊 오늘의 시세
+                <span className="hidden md:inline text-xs text-ink-3 font-normal">
+                  KAMIS · 통계청
+                </span>
+              </h2>
+              <Link
+                href="/kamis"
+                className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
+              >
+                전체 보기
+                <IconArrowRight size={12} />
+              </Link>
+            </div>
+            <KamisTicker items={tickerData} />
+          </section>
+        )}
 
-      {/* 실시간 시세 — KAMIS(농수산물) + 통계청(가공식품) ticker */}
-      {tickerPrices.length > 0 && (
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
-              📊 오늘의 시세
-              <span className="text-xs text-ink-3 font-normal">
-                KAMIS · 통계청 공식 평균가
-              </span>
-            </h2>
-            <Link
-              href="/kamis"
-              className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
-            >
-              전체 보기
-              <IconArrowRight size={12} />
-            </Link>
-          </div>
-          <KamisTicker
-            items={tickerPrices.map((p) => {
-              const m = ((p as { metadata?: unknown }).metadata ?? null) as
-                | { changeAmount?: number; changePct?: number }
-                | null;
-              return {
-                id: p.id,
-                productId: p.product.id,
-                productName: p.product.name,
-                productUnit: p.product.unit,
-                price: p.price,
-                changeAmount: m?.changeAmount ?? null,
-                changePct: m?.changePct ?? null,
-              };
-            })}
-          />
-        </section>
-      )}
+        {/* 회수·판매중지 식품 — 최근 7일 ticker */}
+        {recallTickerData.length > 0 && (
+          <section>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2 text-danger-text">
+                🚨 회수·판매중지
+                <span className="hidden md:inline text-xs text-ink-3 font-normal">
+                  최근 7일
+                </span>
+              </h2>
+              <Link
+                href="/recalls"
+                className="text-xs text-danger-text hover:opacity-80 font-medium inline-flex items-center gap-0.5"
+              >
+                전체보기
+                <IconArrowRight size={12} />
+              </Link>
+            </div>
+            <RecallTicker items={recallTickerData} />
+          </section>
+        )}
+      </div>
 
       {/* 가격차 큰 상품 — "여기서 사면 N원 절약" */}
       {priceCards.length > 0 && (
@@ -312,7 +350,7 @@ export default async function HomePage() {
       )}
 
       {/* 가치 0건 안내 — 시드만 있을 때 */}
-      {priceCards.length === 0 && tickerPrices.length === 0 && (
+      {priceCards.length === 0 && tickerData.length === 0 && (
         <section className="bg-white border border-line rounded-xl p-8 text-center">
           <div className="flex justify-center mb-3 text-ink-2">
             <IconCart size={40} />
