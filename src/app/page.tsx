@@ -223,27 +223,50 @@ export default async function HomePage() {
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
 
-      {/* 오늘의 시세 — hero 직후 풀폭으로 강조 (가격비교 앱의 핵심 공익정보) */}
-      {tickerData.length > 0 && (
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
-              📊 오늘의 시세
-              <span className="text-xs text-ink-3 font-normal">
-                KAMIS · 통계청 공식 평균가
-              </span>
-            </h2>
-            <Link
-              href="/kamis"
-              className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
-            >
-              전체 보기
-              <IconArrowRight size={12} />
-            </Link>
-          </div>
-          <KamisTicker items={tickerData} />
-        </section>
-      )}
+      {/* 시세 + 회수 — 좌우 2칼럼 (모바일은 세로 스택) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {tickerData.length > 0 && (
+          <section>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
+                📊 오늘의 시세
+                <span className="hidden md:inline text-xs text-ink-3 font-normal">
+                  KAMIS · 통계청
+                </span>
+              </h2>
+              <Link
+                href="/kamis"
+                className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
+              >
+                전체 보기
+                <IconArrowRight size={12} />
+              </Link>
+            </div>
+            <KamisTicker items={tickerData} />
+          </section>
+        )}
+
+        {recallTickerData.length > 0 && (
+          <section>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2 text-danger-text">
+                🚨 회수·판매중지
+                <span className="hidden md:inline text-xs text-ink-3 font-normal">
+                  최근 7일
+                </span>
+              </h2>
+              <Link
+                href="/recalls"
+                className="text-xs text-danger-text hover:opacity-80 font-medium inline-flex items-center gap-0.5"
+              >
+                전체보기
+                <IconArrowRight size={12} />
+              </Link>
+            </div>
+            <RecallTicker items={recallTickerData} />
+          </section>
+        )}
+      </div>
 
       {/* 가격차 큰 상품 — "여기서 사면 N원 절약" */}
       {priceCards.length > 0 && (
@@ -388,26 +411,6 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
-
-      {/* 회수·판매중지 — 안전 정보, 페이지 하단 (부정적 정보가 hero 가까이는 부적절) */}
-      {recallTickerData.length > 0 && (
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-base font-bold flex items-center gap-2 text-danger-text">
-              🚨 회수·판매중지 식품
-              <span className="text-xs text-ink-3 font-normal">최근 7일</span>
-            </h2>
-            <Link
-              href="/recalls"
-              className="text-xs text-danger-text hover:opacity-80 font-medium inline-flex items-center gap-0.5"
-            >
-              전체보기
-              <IconArrowRight size={12} />
-            </Link>
-          </div>
-          <RecallTicker items={recallTickerData} />
-        </section>
-      )}
 
       {/* 미니 통계 — 신뢰감 */}
       <section className="text-center text-xs text-ink-3 pt-2">
