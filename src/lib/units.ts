@@ -27,9 +27,9 @@ const G_PATTERN = /(\d+(?:\.\d+)?)\s*(?:g|그램)/i;
 const KG_PATTERN = /(\d+(?:\.\d+)?)\s*kg/i;
 const ML_PATTERN = /(\d+(?:\.\d+)?)\s*ml/i;
 const L_PATTERN = /(\d+(?:\.\d+)?)\s*[lL](?![a-z])/;
-const COUNT_PATTERN = /(\d+)\s*(?:개|입|개입|구|봉|병|캔|팩)/;
+const COUNT_PATTERN = /(\d+)\s*(?:개|입|개입|구|봉|병|캔|팩|매|롤|장|EA|ea)/;
 
-const MULTIPLIER_PATTERN = /(\d+)\s*(?:개입|개|입|봉|병|캔|팩)/;
+const MULTIPLIER_PATTERN = /(\d+)\s*(?:개입|개|입|봉|병|캔|팩|매|롤|장|EA|ea)/;
 
 function extractWeight(unit: string): number | null {
   const kg = unit.match(KG_PATTERN);
