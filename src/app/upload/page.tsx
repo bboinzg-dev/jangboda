@@ -243,6 +243,13 @@ export default function UploadPage() {
       {/* 진행 단계 인디케이터 */}
       <StepIndicator current={currentStep} />
 
+      {/* OCR/등록 결과 메시지 — result 유무 무관하게 항상 표시 (실패 메시지가 보이게) */}
+      {submitResult && submitResult.startsWith("❌") && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl px-4 py-3 text-sm whitespace-pre-line">
+          {submitResult}
+        </div>
+      )}
+
       <p className="text-ink-2">
         영수증 사진을 올리면 자동으로 품목을 인식해 가격을 등록합니다.
         <br />
