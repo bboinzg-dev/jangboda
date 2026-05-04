@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import ProductImage from "./ProductImage";
 
 type RecallItem = {
   id: string;
   productName: string;
+  productImageUrl?: string | null;
   manufacturer?: string | null;
   reason?: string | null;
   grade?: string | null;
@@ -15,12 +17,11 @@ type Props = {
 };
 
 // 회수·판매중지 ticker — KamisTicker 패턴과 동일한 자동 vertical scroll
-// 3개 viewport, 마우스오버 일시정지
 export default function RecallTicker({ items }: Props) {
   if (items.length === 0) return null;
 
-  // 5개 미만이면 ticker 의미 없음 — 정적 list
-  if (items.length < 5) {
+  // 2건 이하면 ticker 의미 없음 — 정적 list로
+  if (items.length <= 2) {
     return (
       <ul className="space-y-2">
         {items.map((r) => (
@@ -30,6 +31,7 @@ export default function RecallTicker({ items }: Props) {
     );
   }
 
+  // 3건 이상은 항상 ticker로 흐름
   const duration = `${Math.max(20, items.length * 4)}s`;
 
   return (
@@ -60,28 +62,38 @@ function ItemCard({ item }: { item: RecallItem }) {
   return (
     <Link
       href="/recalls"
-      className="block bg-white border border-danger-soft rounded-md px-3 py-2 hover:bg-rose-50 transition"
+      className="flex items-center gap-2 px-3 py-2 bg-white border border-danger-soft rounded-md hover:bg-rose-50 transition"
     >
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-semibold text-ink-1 truncate text-sm">
-          {item.productName}
-        </span>
-        {item.grade && (
-          <span
-            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${gradeClass}`}
-          >
-            {item.grade}
+      <ProductImage
+        src={item.productImageUrl}
+        alt={item.productName}
+        size={36}
+        className="shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-semibold text-ink-1 truncate text-sm">
+            {item.productName}
           </span>
+          {item.grade && (
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${gradeClass}`}
+            >
+              {item.grade}
+            </span>
+          )}
+        </div>
+        {item.manufacturer && (
+          <div className="text-[11px] text-ink-3 truncate">
+            {item.manufacturer}
+          </div>
+        )}
+        {item.reason && (
+          <div className="text-[11px] text-danger-text line-clamp-1">
+            {item.reason}
+          </div>
         )}
       </div>
-      {item.manufacturer && (
-        <div className="text-[11px] text-ink-3 truncate">{item.manufacturer}</div>
-      )}
-      {item.reason && (
-        <div className="text-[11px] text-danger-text line-clamp-1">
-          {item.reason}
-        </div>
-      )}
     </Link>
   );
 }
