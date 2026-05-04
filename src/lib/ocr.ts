@@ -364,7 +364,9 @@ export type OcrSource = "clova" | "google_vision" | "mock";
 export async function parseReceipt(
   imageBase64: string | null
 ): Promise<{ receipt: ParsedReceipt; usedMock: boolean; source: OcrSource }> {
-  let lastError: string | null = null;
+  // 각 OCR의 실패 사유를 따로 보관 → 마지막에 종합해서 사용자에게
+  let clovaError: string | null = null;
+  let visionError: string | null = null;
 
   // 1순위: CLOVA Receipt OCR
   const hasClova = !!process.env.CLOVA_OCR_URL && !!process.env.CLOVA_OCR_SECRET;
@@ -374,12 +376,14 @@ export async function parseReceipt(
       if (receipt.items.length > 0 || receipt.storeHint) {
         return { receipt, usedMock: false, source: "clova" };
       }
-      lastError = "CLOVA가 글씨를 인식하지 못했습니다.";
+      clovaError = "CLOVA가 글씨를 인식하지 못했습니다.";
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn("[OCR] CLOVA 실패:", msg);
-      lastError = `CLOVA OCR 호출 실패: ${msg.slice(0, 100)}`;
+      clovaError = `CLOVA: ${msg.slice(0, 200)}`;
     }
+  } else if (!hasClova) {
+    clovaError = "CLOVA 환경변수 미설정";
   }
 
   // 2순위: Google Vision
@@ -390,23 +394,24 @@ export async function parseReceipt(
       if (receipt.items.length > 0 || receipt.storeHint) {
         return { receipt, usedMock: false, source: "google_vision" };
       }
-      lastError = "Vision OCR이 글씨를 인식하지 못했습니다.";
+      visionError = "Vision이 글씨를 인식하지 못했습니다.";
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn("[OCR] Vision 실패:", msg);
-      lastError = `Vision OCR 호출 실패: ${msg.slice(0, 100)}`;
+      visionError = `Vision: ${msg.slice(0, 200)}`;
     }
+  } else if (!hasVision) {
+    visionError = "Vision 환경변수 미설정";
   }
 
-  // 이미지가 있는데 OCR 다 실패한 경우 — mock 노이즈 대신 명확한 에러로
-  // (demo용 mock은 imageBase64가 null인 흐름에만 사용)
+  // 이미지가 있는데 OCR 다 실패 → 두 에러 모두 표시
   if (imageBase64) {
-    throw new Error(
-      lastError ??
-        "OCR 서비스가 설정되지 않았습니다. 영수증 사진 처리에 실패했습니다."
-    );
+    const parts: string[] = [];
+    if (clovaError) parts.push(clovaError);
+    if (visionError) parts.push(visionError);
+    throw new Error(parts.join("\n\n"));
   }
 
-  // 이미지 없는 demo 흐름만 mock
+  // demo 흐름만 mock
   return { receipt: mockOcr(), usedMock: true, source: "mock" };
 }
