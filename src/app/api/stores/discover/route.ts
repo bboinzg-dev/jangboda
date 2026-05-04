@@ -126,6 +126,24 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    // 정규화된 이름+주소 매칭 (공백/특수문자 차이로 중복되는 케이스 방지)
+    // ex: "GS25 힐데스하임점" vs "GS25힐데스하임점" 같은 케이스
+    const normName = s.name.replace(/\s+/g, "").toLowerCase();
+    const normAddr = s.address.replace(/\s+/g, "").toLowerCase();
+    const sameChainStores = await prisma.store.findMany({
+      where: { chainId: chain.id },
+      select: { id: true, name: true, address: true },
+    });
+    const normMatch = sameChainStores.find(
+      (st) =>
+        st.name.replace(/\s+/g, "").toLowerCase() === normName &&
+        st.address.replace(/\s+/g, "").toLowerCase() === normAddr
+    );
+    if (normMatch) {
+      existing++;
+      continue;
+    }
+
     // 3. 신규 생성
     await prisma.store.create({
       data: {

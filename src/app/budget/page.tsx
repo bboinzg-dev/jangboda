@@ -35,6 +35,14 @@ type BudgetData = {
     minPrice: number;
     diff: number;
   }[];
+  receipts: {
+    id: string;
+    storeName: string;
+    chainName: string;
+    date: Date;
+    total: number;
+    items: { productId: string; name: string; price: number; quantity: number }[];
+  }[];
   totalCount: number;
 };
 
@@ -151,12 +159,50 @@ async function getBudget(userId: string): Promise<BudgetData> {
     .sort((a, b) => b.diff - a.diff)
     .slice(0, 5);
 
+  // 영수증별 거래 내역 — 본인 영수증 + 그 안의 prices, 거래일(createdAt) 기준 정렬
+  const myReceipts = await prisma.receipt.findMany({
+    where: {
+      uploaderId: userId,
+      status: "verified",
+      storeId: { not: null },
+    },
+    include: {
+      store: { include: { chain: true } },
+      prices: {
+        include: { product: { select: { id: true, name: true } } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50, // 최근 50건
+  });
+
+  const receipts = myReceipts.map((r) => {
+    const items = r.prices.map((p) => ({
+      productId: p.productId,
+      name: p.product?.name ?? "(이름 없음)",
+      price: p.price,
+      quantity: 1,
+    }));
+    const total = items.reduce((s, it) => s + it.price, 0);
+    // 영수증 거래일은 첫 Price.createdAt 사용 (영수증 거래일이 그곳에 저장됨)
+    const date = r.prices[0]?.createdAt ?? r.createdAt;
+    return {
+      id: r.id,
+      storeName: r.store?.name ?? "(매장 없음)",
+      chainName: r.store?.chain?.name ?? "",
+      date,
+      total,
+      items,
+    };
+  });
+
   return {
     thisMonthTotal,
     monthly,
     byCategory,
     byStore,
     overpaid,
+    receipts,
     totalCount: valid.length,
   };
 }
@@ -308,6 +354,77 @@ export default async function BudgetPage() {
             );
           })}
         </ul>
+      </section>
+
+      {/* 영수증별 거래 내역 — 언제·어디서·무엇 */}
+      <section className="bg-white border border-stone-200 rounded-xl p-5">
+        <h2 className="font-bold mb-3">🧾 영수증별 거래 내역</h2>
+        {data.receipts.length === 0 ? (
+          <div className="text-sm text-stone-500">
+            영수증 등록 내역이 없어요.
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {data.receipts.map((r) => {
+              const dateStr = r.date.toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                weekday: "short",
+              });
+              return (
+                <li
+                  key={r.id}
+                  className="border border-stone-200 rounded-lg overflow-hidden"
+                >
+                  <details className="group">
+                    <summary className="flex items-center justify-between gap-3 px-3 py-2.5 cursor-pointer hover:bg-stone-50 list-none">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs text-stone-500">{dateStr}</div>
+                        <div className="font-semibold text-ink-1 truncate">
+                          {r.chainName ? `${r.chainName} · ` : ""}
+                          {r.storeName}
+                        </div>
+                        <div className="text-xs text-stone-500">
+                          {r.items.length}개 품목
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-bold tabular-nums text-ink-1">
+                          {formatWon(r.total)}
+                        </div>
+                        <div className="text-[10px] text-stone-400 group-open:hidden">
+                          ▼ 펼치기
+                        </div>
+                        <div className="text-[10px] text-stone-400 hidden group-open:block">
+                          ▲ 접기
+                        </div>
+                      </div>
+                    </summary>
+                    <ul className="border-t border-stone-100 bg-stone-50/40">
+                      {r.items.map((it, i) => (
+                        <li
+                          key={`${r.id}-${i}`}
+                          className="flex items-center justify-between px-3 py-1.5 text-sm border-b border-stone-100 last:border-0"
+                        >
+                          <Link
+                            href={`/products/${it.productId}`}
+                            className="hover:underline truncate min-w-0 text-ink-2"
+                          >
+                            {it.name}
+                          </Link>
+                          <span className="font-medium tabular-nums text-ink-1 shrink-0 ml-3">
+                            {formatWon(it.price)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       {/* 매장별 Top 5 */}

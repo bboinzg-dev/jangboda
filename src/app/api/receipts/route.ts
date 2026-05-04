@@ -125,16 +125,26 @@ export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser();
   const uploaderId = user?.id;
 
-  // 영수증 소유자 검증
+  // 영수증 소유자 검증 + 중복 등록 방지
   const receipt = await prisma.receipt.findUnique({
     where: { id: receiptId },
-    select: { uploaderId: true },
+    select: { uploaderId: true, status: true },
   });
   if (!receipt) {
     return NextResponse.json({ error: "영수증을 찾을 수 없음" }, { status: 404 });
   }
   if (receipt.uploaderId && receipt.uploaderId !== uploaderId) {
     return NextResponse.json({ error: "권한 없음" }, { status: 403 });
+  }
+  // 이미 verified 상태면 재등록 거부 (같은 영수증 두 번 등록 방지)
+  if (receipt.status === "verified") {
+    return NextResponse.json(
+      {
+        error: "이미 등록된 영수증입니다",
+        hint: "같은 영수증은 한 번만 등록할 수 있어요. 가계부에서 거래 내역을 확인해보세요.",
+      },
+      { status: 409 }
+    );
   }
 
   // valid 분류:
@@ -166,6 +176,10 @@ export async function PATCH(req: NextRequest) {
       where: { id: receiptId },
       data: { storeId, status: "verified" },
     });
+
+    // idempotent: 같은 receiptId의 기존 Price 모두 제거 후 재등록
+    // (사용자가 같은 영수증 두 번 등록해도 중복 안 생김)
+    await tx.price.deleteMany({ where: { receiptId } });
 
     // 1) 기존 매칭 항목 → Price 추가
     for (const it of validMatched) {
