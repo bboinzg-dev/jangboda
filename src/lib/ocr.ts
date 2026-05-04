@@ -276,34 +276,56 @@ function parseReceiptText(text: string): ParsedReceipt {
     }
   }
 
-  // 품목 줄 추출
-  // 휴리스틱: 한 줄에 한국어/영문 텍스트 + 가격 패턴이 함께 있고, "합계"/"총" 키워드 없으면 품목으로 간주
+  // 영수증 메타정보 키워드 — 품목이 아니므로 제외
+  // (주소/연락처/카드정보/결제정보/광고문구 등)
+  const META_KEYWORDS_FILTER = [
+    "주소", "전화", "TEL", "Tel", "사업자",
+    "카드번호", "카드사", "매입사", "가맹점", "발행",
+    "사용금액", "할부", "승인", "응답", "거래일시",
+    "매출", "부가세", "결제금액", "현금영수증", "신용카드",
+    "포인트", "적립", "쿠폰",
+    "버는법", "이벤트", "당첨", "응모",
+    "교환/환불", "교환", "환불",
+    "NO:", "NO :", "수량/금액", "고객용", "송장",
+  ];
+
+  // 카드번호 패턴 (4-4-4-4 또는 마스킹 *)
+  const CARD_NUM_RE = /\d{4}[-\s]\d{2,4}[-*]+/;
+  // 길이 큰 숫자만 (10자리+) — 승인번호/영수증번호 등
+  const LARGE_NUM_RE = /^\D*\d{8,}\D*$/;
+
+  // 품목 줄 추출 — 보수적으로
   const items: ParsedReceiptItem[] = [];
   for (const l of lines) {
     if (TOTAL_KEYWORDS.some((k) => l.includes(k))) continue;
+    if (META_KEYWORDS_FILTER.some((k) => l.includes(k))) continue;
     if (storeHint && l === storeHint) continue;
     if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) continue;
+    if (CARD_NUM_RE.test(l)) continue;
+    if (LARGE_NUM_RE.test(l)) continue;
+    // 한글 글자가 2자 이상 들어있어야 (한글 없는 라인은 메타정보일 가능성 ↑)
+    const hangul = l.match(/[가-힣]/g)?.length ?? 0;
+    if (hangul < 2) continue;
 
     // 가격 매칭
     const matches = [...l.matchAll(PRICE_RE)];
     if (matches.length === 0) continue;
 
-    // 줄 끝 가격 (가장 오른쪽) 우선
     const lastMatch = matches[matches.length - 1];
     const priceStr = lastMatch[1];
     const price = parseInt(priceStr.replace(/,/g, ""), 10);
-    if (!price || price < 100 || price > 10_000_000) continue;
+    // 가격 sanity — 마트 영수증 SKU는 보통 100~200,000원
+    if (!price || price < 100 || price > 200_000) continue;
 
-    // 품목명: 줄에서 가격 부분 제거 + 좌우 trim
+    // 품목명 추출
     let name = l.replace(lastMatch[0], "").trim();
-    // 흔히 있는 잡음 제거
-    name = name.replace(/^\d+\s+/, ""); // 앞쪽 일련번호
-    name = name.replace(/\s+x?\s*\d+$/i, ""); // "x 1" 같은 수량 제거
+    name = name.replace(/^\d+\s+/, "");
+    name = name.replace(/\s+x?\s*\d+$/i, "");
     name = name.replace(/[*#]+$/, "").trim();
+    // 한글 핵심 토큰 추출 — 영문/숫자만 남으면 메타정보
+    const nameHangul = name.match(/[가-힣]/g)?.length ?? 0;
+    if (nameHangul < 2) continue;
     if (name.length < 2) continue;
-    if (/^\d+$/.test(name)) continue; // 숫자만은 패스
-    // 너무 짧고 가격만 있는 줄 (예: "포인트 100") 같은 잡음 필터
-    if (name.length < 3 && !/[가-힣]/.test(name)) continue;
 
     items.push({ rawName: name, price, quantity: 1 });
   }
