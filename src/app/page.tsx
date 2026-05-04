@@ -161,110 +161,89 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero — 짧은 메시지 + 4개 동급 액션 카드 (1탭에 어디든) */}
+      {/* Hero — 1 메인 CTA 강조 + 3 보조 액션 (위계 명확) */}
       <section className="bg-surface-muted rounded-2xl px-5 py-6 md:px-8 md:py-7 border border-line">
-        <div className="flex items-center gap-4 md:gap-6 mb-5">
+        <div className="md:grid md:grid-cols-[1fr_auto] md:gap-8 md:items-center">
+          <div>
+            <h1 className="text-[26px] md:text-[32px] font-extrabold tracking-tight text-ink-1 leading-tight">
+              오늘 뭐 사세요?
+            </h1>
+            <p className="text-ink-2 text-sm md:text-base mt-2 leading-snug">
+              영수증 한 장이면 동네에서 가장 싼 마트가 보입니다.
+            </p>
+
+            {/* 메인 CTA — 풀폭 큰 버튼 */}
+            <Link
+              href="/cart"
+              className="mt-5 flex items-center justify-center gap-2 w-full md:max-w-md bg-brand-500 hover:bg-brand-600 text-white py-4 rounded-xl font-bold text-base shadow-[0_2px_4px_rgba(217,83,30,0.15)] transition-colors"
+            >
+              <IconCart size={22} />
+              장보기 비교 시작
+              <IconArrowRight size={18} />
+            </Link>
+
+            {/* 보조 액션 3개 — 작게 */}
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <Link
+                href="/upload"
+                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-lg text-sm font-medium"
+              >
+                <IconCamera size={16} />
+                영수증
+              </Link>
+              <Link
+                href="/scan"
+                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-lg text-sm font-medium"
+              >
+                <IconBarcode size={16} />
+                바코드
+              </Link>
+              <Link
+                href="/stores"
+                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-lg text-sm font-medium"
+              >
+                <IconPin size={16} />
+                주변매장
+              </Link>
+            </div>
+          </div>
+          {/* 일러스트 — 데스크톱만 (모바일은 정보 밀도 우선) */}
           <Image
             src="/illustrations/home-hero.png"
             alt=""
             aria-hidden
-            width={120}
-            height={120}
+            width={180}
+            height={180}
             priority
-            className="w-20 h-20 md:w-28 md:h-28 shrink-0"
+            className="hidden md:block w-40 lg:w-48 h-auto justify-self-end"
           />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl md:text-[28px] font-extrabold tracking-tight text-ink-1 leading-tight">
-              오늘 뭐 사세요?
-            </h1>
-            <p className="text-ink-2 text-sm md:text-base mt-1.5 leading-snug">
-              영수증 한 장이면 동네에서 가장 싼 마트가 보입니다.
-            </p>
-          </div>
-        </div>
-
-        {/* 4개 동급 액션 — 어떤 시작점이든 1탭 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-          <Link
-            href="/cart"
-            className="flex flex-col items-center justify-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white px-4 py-3.5 rounded-xl font-semibold text-sm transition-colors min-h-[64px]"
-          >
-            <IconCart size={22} />
-            장보기 비교
-          </Link>
-          <Link
-            href="/upload"
-            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
-          >
-            <IconCamera size={22} />
-            영수증 올리기
-          </Link>
-          <Link
-            href="/scan"
-            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
-          >
-            <IconBarcode size={22} />
-            바코드 스캔
-          </Link>
-          <Link
-            href="/stores"
-            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
-          >
-            <IconPin size={22} />
-            주변 매장
-          </Link>
         </div>
       </section>
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
 
-      {/* 시세 + 회수·판매중지 — 좌우 2칼럼 (모바일은 세로 스택) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 오늘의 시세 — KAMIS(농수산물) + 통계청(가공식품) ticker */}
-        {tickerData.length > 0 && (
-          <section>
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
-                📊 오늘의 시세
-                <span className="hidden md:inline text-xs text-ink-3 font-normal">
-                  KAMIS · 통계청
-                </span>
-              </h2>
-              <Link
-                href="/kamis"
-                className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
-              >
-                전체 보기
-                <IconArrowRight size={12} />
-              </Link>
-            </div>
-            <KamisTicker items={tickerData} />
-          </section>
-        )}
-
-        {/* 회수·판매중지 식품 — 최근 7일 ticker */}
-        {recallTickerData.length > 0 && (
-          <section>
-            <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-base font-bold flex items-center gap-2 text-danger-text">
-                🚨 회수·판매중지
-                <span className="hidden md:inline text-xs text-ink-3 font-normal">
-                  최근 7일
-                </span>
-              </h2>
-              <Link
-                href="/recalls"
-                className="text-xs text-danger-text hover:opacity-80 font-medium inline-flex items-center gap-0.5"
-              >
-                전체보기
-                <IconArrowRight size={12} />
-              </Link>
-            </div>
-            <RecallTicker items={recallTickerData} />
-          </section>
-        )}
-      </div>
+      {/* 오늘의 시세 — hero 직후 풀폭으로 강조 (가격비교 앱의 핵심 공익정보) */}
+      {tickerData.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-base font-bold flex items-center gap-2 text-ink-1">
+              📊 오늘의 시세
+              <span className="text-xs text-ink-3 font-normal">
+                KAMIS · 통계청 공식 평균가
+              </span>
+            </h2>
+            <Link
+              href="/kamis"
+              className="text-xs text-brand-600 hover:underline font-medium inline-flex items-center gap-0.5"
+            >
+              전체 보기
+              <IconArrowRight size={12} />
+            </Link>
+          </div>
+          <KamisTicker items={tickerData} />
+        </section>
+      )}
 
       {/* 가격차 큰 상품 — "여기서 사면 N원 절약" */}
       {priceCards.length > 0 && (
@@ -409,6 +388,26 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* 회수·판매중지 — 안전 정보, 페이지 하단 (부정적 정보가 hero 가까이는 부적절) */}
+      {recallTickerData.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-base font-bold flex items-center gap-2 text-danger-text">
+              🚨 회수·판매중지 식품
+              <span className="text-xs text-ink-3 font-normal">최근 7일</span>
+            </h2>
+            <Link
+              href="/recalls"
+              className="text-xs text-danger-text hover:opacity-80 font-medium inline-flex items-center gap-0.5"
+            >
+              전체보기
+              <IconArrowRight size={12} />
+            </Link>
+          </div>
+          <RecallTicker items={recallTickerData} />
+        </section>
+      )}
 
       {/* 미니 통계 — 신뢰감 */}
       <section className="text-center text-xs text-ink-3 pt-2">
