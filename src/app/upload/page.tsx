@@ -61,7 +61,9 @@ export default function UploadPage() {
       bitmap = await createImageBitmap(blob);
     }
 
-    const maxSize = 1920;
+    // 1280px로 압축 — Vercel body limit(4.5MB) 안전 + OCR이 충분히 인식 가능
+    // (영수증 글씨 ~12-18px → 1280에서도 cleartype)
+    const maxSize = 1280;
     let w = bitmap.width;
     let h = bitmap.height;
     if (Math.max(w, h) > maxSize) {
@@ -84,7 +86,7 @@ export default function UploadPage() {
     ctx.rotate(rad);
     ctx.drawImage(bitmap, -w / 2, -h / 2, w, h);
     bitmap.close();
-    return canvas.toDataURL("image/jpeg", 0.85);
+    return canvas.toDataURL("image/jpeg", 0.78);
   }
 
   // 사용자가 회전 버튼 눌렀을 때
