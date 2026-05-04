@@ -209,7 +209,7 @@ export default async function HomePage() {
           </div>
           {/* 일러스트 — 데스크톱만 (모바일은 정보 밀도 우선) */}
           <Image
-            src="/illustrations/home-hero.png"
+            src="/illustrations/home-hero-gemini.jpg"
             alt=""
             aria-hidden
             width={180}
