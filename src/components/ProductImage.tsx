@@ -29,7 +29,7 @@ export default function ProductImage({ src, alt, size = 64, className }: Props) 
       style={{ width: size, height: size }}
     >
       <Image
-        src={src}
+        src={src.replace(/^http:\/\//i, "https://")}
         alt={alt}
         width={size}
         height={size}

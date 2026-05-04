@@ -5,6 +5,8 @@ import { formatWon, formatRelativeDate, freshnessTag } from "@/lib/format";
 import { unitPriceLabel } from "@/lib/units";
 import SourceBadge from "@/components/SourceBadge";
 import DirectionsButton from "@/components/DirectionsButton";
+import ChainLogo from "@/components/ChainLogo";
+import ProductImage from "@/components/ProductImage";
 
 export const revalidate = 60;
 
@@ -101,14 +103,23 @@ export default async function StoreDetailPage({
       </div>
 
       <header className="bg-white border border-stone-200 rounded-xl p-6">
-        <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
-          <span>{icon}</span>
-          <span>{label}</span>
-          <span className="text-stone-300">·</span>
-          <span>{store.chain.name}</span>
+        <div className="flex items-start gap-3">
+          <ChainLogo
+            src={store.chain.logoUrl}
+            name={store.chain.name}
+            size={48}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
+              <span>{icon}</span>
+              <span>{label}</span>
+              <span className="text-stone-300">·</span>
+              <span>{store.chain.name}</span>
+            </div>
+            <h1 className="text-2xl font-bold mt-1">{store.name}</h1>
+            <div className="text-stone-600 text-sm mt-1">{store.address}</div>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold mt-1">{store.name}</h1>
-        <div className="text-stone-600 text-sm mt-1">{store.address}</div>
         {store.hours && (
           <div className="text-stone-500 text-xs mt-1">영업시간: {store.hours}</div>
         )}
@@ -163,13 +174,21 @@ export default async function StoreDetailPage({
                     >
                       <Link
                         href={`/products/${p.product.id}`}
-                        className="min-w-0 flex-1 hover:underline"
+                        className="min-w-0 flex-1 hover:underline flex items-center gap-3"
                       >
-                        {/* 긴 상품명도 2줄까지 — 어떤 상품인지 명확히 */}
-                        <div className="font-medium leading-snug line-clamp-2 text-ink-1">{p.product.name}</div>
-                        <div className="text-xs text-stone-500 truncate mt-0.5">
-                          {p.product.unit}
-                          {p.product.brand ? ` · ${p.product.brand}` : ""}
+                        <ProductImage
+                          src={p.product.imageUrl}
+                          alt={p.product.name}
+                          size={48}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium leading-snug line-clamp-2 text-ink-1">
+                            {p.product.name}
+                          </div>
+                          <div className="text-xs text-stone-500 truncate mt-0.5">
+                            {p.product.unit}
+                            {p.product.brand ? ` · ${p.product.brand}` : ""}
+                          </div>
                         </div>
                       </Link>
                       <div className="text-right shrink-0">
