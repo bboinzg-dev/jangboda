@@ -261,20 +261,46 @@ function parseReceiptText(text: string): ParsedReceipt {
   // 영수증에서 의미있는 가격은 보통 100원 이상
   const PRICE_RE = /([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*원?/g;
 
-  // 첫 줄(또는 처음 5줄 안)에서 마트 이름 찾기
+  // 첫 줄(또는 처음 8줄 안)에서 마트 이름 찾기
+  // GS25 같은 특정 chain은 보통 캐치프레이즈("재미있는 일상 플랫폼") 옆에 같이 나옴 →
+  // 그 라인 통째로 쓰면 "재미있는 일상 플랫폼 GS25"가 매장명이 됨. 다음 라인에서 더
+  // 구체적인 매장명("GS25힐데스하임점")이 나오는 경우가 많아서 그걸 우선.
   const STORE_KEYWORDS = [
     "롯데마트", "이마트", "홈플러스", "킴스클럽", "코스트코",
     "GS더프레시", "GS25", "CU", "세븐일레븐", "마트", "백화점",
   ];
+  const SLOGAN_KEYWORDS = [
+    "재미있는", "행복한", "즐거운", "신선한", "감사", "환영",
+    "플랫폼", "라이프스타일",
+  ];
+  const isSlogan = (line: string) =>
+    SLOGAN_KEYWORDS.some((k) => line.includes(k));
+
   let storeHint: string | undefined;
+  // 1순위: store keyword + slogan 아닌 짧은 라인 (지점명까지 포함된 라인)
   for (const l of lines.slice(0, 8)) {
-    if (STORE_KEYWORDS.some((k) => l.includes(k))) {
+    if (STORE_KEYWORDS.some((k) => l.includes(k)) && !isSlogan(l) && l.length <= 25) {
       storeHint = l;
       break;
     }
   }
+  // 2순위: store keyword 포함된 모든 라인
   if (!storeHint) {
-    // 첫 줄이 짧고 한글 위주면 매장명 추정
+    for (const l of lines.slice(0, 8)) {
+      if (STORE_KEYWORDS.some((k) => l.includes(k))) {
+        // 슬로건이면 keyword만 추출
+        if (isSlogan(l)) {
+          const found = STORE_KEYWORDS.find((k) => l.includes(k));
+          storeHint = found;
+        } else {
+          storeHint = l;
+        }
+        break;
+      }
+    }
+  }
+  // 3순위: 첫 줄이 짧고 한글 위주면 매장명 추정
+  if (!storeHint) {
     const first = lines[0];
     if (first && first.length <= 20 && /[가-힣]/.test(first)) storeHint = first;
   }
@@ -292,11 +318,15 @@ function parseReceiptText(text: string): ParsedReceipt {
     }
   }
 
-  // 합계 찾기
+  // 합계 찾기 — 공백 무시 (CLOVA가 "합 계" 분리해 보낼 수 있음)
   let totalAmount: number | undefined;
   const TOTAL_KEYWORDS = ["합계", "총", "TOTAL", "Total", "결제금액", "구매금액"];
+  const containsTotal = (line: string) => {
+    const noSpace = line.replace(/\s/g, "");
+    return TOTAL_KEYWORDS.some((k) => noSpace.includes(k.replace(/\s/g, "")));
+  };
   for (const l of lines) {
-    if (TOTAL_KEYWORDS.some((k) => l.includes(k))) {
+    if (containsTotal(l)) {
       const matches = [...l.matchAll(PRICE_RE)];
       if (matches.length > 0) {
         const last = matches[matches.length - 1][1];
@@ -315,12 +345,21 @@ function parseReceiptText(text: string): ParsedReceipt {
     "주소", "전화", "TEL", "Tel", "사업자",
     "카드번호", "카드사", "매입사", "가맹점", "발행",
     "사용금액", "할부", "승인", "응답", "거래일시",
-    "매출", "부가세", "결제금액", "현금영수증", "신용카드",
+    "매출", "부가세", "결제금액", "현금영수증",
     "포인트", "적립", "쿠폰",
     "버는법", "이벤트", "당첨", "응모",
     "교환/환불", "교환", "환불",
     "NO:", "NO :", "수량/금액", "고객용", "송장",
+    // 영수증 헤더 (구매자 표시)
+    "외 1명", "외 2명", "외 3명", "외 4명", "외 5명",
+    // 결제 수단
+    "신용", "체크", "현금", "GSPAY", "삼성페이", "카카오페이", "네이버페이",
+    // 행정구역 (주소 라인)
+    "동", "구", "시", "도", // "서울/강동구/천호동" 같은 행정구역
   ];
+
+  // 행정구역 키워드는 너무 흔해서 단독으로 쓰면 over-filter — 주소 패턴(번지 포함)일 때만
+  const ADDRESS_RE = /\d+\s*-\s*\d+\s*번지|\d+\s*번지|\d+\s*번길/;
 
   // 카드번호 패턴 (4-4-4-4 또는 마스킹 *)
   const CARD_NUM_RE = /\d{4}[-\s]\d{2,4}[-*]+/;
@@ -330,12 +369,13 @@ function parseReceiptText(text: string): ParsedReceipt {
   // 품목 줄 추출 — 보수적으로
   const items: ParsedReceiptItem[] = [];
   for (const l of lines) {
-    if (TOTAL_KEYWORDS.some((k) => l.includes(k))) continue;
+    if (containsTotal(l)) continue; // 합계/소계 (공백 무시)
     if (META_KEYWORDS_FILTER.some((k) => l.includes(k))) continue;
     if (storeHint && l === storeHint) continue;
     if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) continue;
     if (CARD_NUM_RE.test(l)) continue;
     if (LARGE_NUM_RE.test(l)) continue;
+    if (ADDRESS_RE.test(l)) continue; // 주소 (~번지/~번길)
     // 한글 글자가 2자 이상 들어있어야 (한글 없는 라인은 메타정보일 가능성 ↑)
     const hangul = l.match(/[가-힣]/g)?.length ?? 0;
     if (hangul < 2) continue;
