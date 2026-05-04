@@ -161,74 +161,59 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Hero — 앱 의도를 즉시 전달 + 큰 일러스트로 첫 인상 강화 */}
-      <section className="bg-surface-muted rounded-2xl p-6 md:p-8 border border-line overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
-          <div>
-            <h1 className="text-2xl md:text-[28px] font-extrabold tracking-tight text-ink-1 mb-2">
-              오늘 뭐 사세요?
-            </h1>
-            <p className="text-ink-2 mb-5 leading-relaxed text-sm md:text-base">
-              살 물건들을 모아보면 어느 마트가 가장 싼지 알려드려요.
-              <br />
-              영수증 한 장으로 동네 이웃 모두가 절약합니다.
-            </p>
-
-            {/* 메인 CTA + 보조 액션 */}
-            <div className="space-y-2">
-              <Link
-                href="/cart"
-                className="inline-flex w-full md:w-auto items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3.5 rounded-xl font-bold text-base transition-colors"
-              >
-                <IconCart className="w-5 h-5" />
-                장보기 비교 시작
-              </Link>
-              <div className="grid grid-cols-3 gap-2 md:flex md:gap-2">
-                <Link
-                  href="/upload"
-                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
-                >
-                  <IconCamera size={16} />
-                  영수증
-                </Link>
-                <Link
-                  href="/scan"
-                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
-                >
-                  <IconBarcode size={16} />
-                  바코드
-                </Link>
-                <Link
-                  href="/stores"
-                  className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-stone-50 border border-line px-3 md:px-4 py-2.5 rounded-lg font-medium text-sm text-ink-2"
-                >
-                  <IconPin size={16} />
-                  주변 마트
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* hero illustration — LCP 후보라 priority로 즉시 fetch */}
+      {/* Hero — 짧은 메시지 + 4개 동급 액션 카드 (1탭에 어디든) */}
+      <section className="bg-surface-muted rounded-2xl px-5 py-6 md:px-8 md:py-7 border border-line">
+        <div className="flex items-center gap-4 md:gap-6 mb-5">
           <Image
             src="/illustrations/home-hero.png"
             alt=""
             aria-hidden
-            width={224}
-            height={224}
+            width={120}
+            height={120}
             priority
-            className="hidden md:block w-44 lg:w-56 h-auto justify-self-end"
+            className="w-20 h-20 md:w-28 md:h-28 shrink-0"
           />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl md:text-[28px] font-extrabold tracking-tight text-ink-1 leading-tight">
+              오늘 뭐 사세요?
+            </h1>
+            <p className="text-ink-2 text-sm md:text-base mt-1.5 leading-snug">
+              영수증 한 장이면 동네에서 가장 싼 마트가 보입니다.
+            </p>
+          </div>
         </div>
-        {/* 모바일 — 우측 일러스트 대신 하단 배너로 */}
-        <Image
-          src="/illustrations/home-hero.png"
-          alt=""
-          aria-hidden
-          width={128}
-          height={128}
-          priority
-          className="md:hidden mt-4 w-32 h-32 mx-auto block"
-        />
+
+        {/* 4개 동급 액션 — 어떤 시작점이든 1탭 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          <Link
+            href="/cart"
+            className="flex flex-col items-center justify-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white px-4 py-3.5 rounded-xl font-semibold text-sm transition-colors min-h-[64px]"
+          >
+            <IconCart size={22} />
+            장보기 비교
+          </Link>
+          <Link
+            href="/upload"
+            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
+          >
+            <IconCamera size={22} />
+            영수증 올리기
+          </Link>
+          <Link
+            href="/scan"
+            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
+          >
+            <IconBarcode size={22} />
+            바코드 스캔
+          </Link>
+          <Link
+            href="/stores"
+            className="flex flex-col items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-1 px-4 py-3.5 rounded-xl font-semibold text-sm min-h-[64px]"
+          >
+            <IconPin size={22} />
+            주변 매장
+          </Link>
+        </div>
       </section>
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
