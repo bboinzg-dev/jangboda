@@ -456,6 +456,35 @@ function mockOcr(): ParsedReceipt {
 
 export type OcrSource = "clova" | "google_vision" | "mock";
 
+// 여러 ParsedReceipt를 하나로 합침 (긴 영수증 이어찍기)
+// - storeHint/receiptDate/totalAmount는 가장 먼저 발견된 값 우선
+// - items는 합치되 (rawName, price) 중복 제거
+export function mergeReceipts(receipts: ParsedReceipt[]): ParsedReceipt {
+  const out: ParsedReceipt = {
+    storeHint: undefined,
+    receiptDate: undefined,
+    totalAmount: undefined,
+    items: [],
+    rawText: "",
+  };
+  const seen = new Set<string>();
+  const rawTexts: string[] = [];
+  for (const r of receipts) {
+    if (!out.storeHint && r.storeHint) out.storeHint = r.storeHint;
+    if (!out.receiptDate && r.receiptDate) out.receiptDate = r.receiptDate;
+    if (!out.totalAmount && r.totalAmount) out.totalAmount = r.totalAmount;
+    for (const it of r.items) {
+      const key = `${it.rawName}|${it.price}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.items.push(it);
+    }
+    if (r.rawText) rawTexts.push(r.rawText);
+  }
+  out.rawText = rawTexts.join("\n---\n").slice(0, 3000);
+  return out;
+}
+
 export async function parseReceipt(
   imageBase64: string | null
 ): Promise<{ receipt: ParsedReceipt; usedMock: boolean; source: OcrSource }> {

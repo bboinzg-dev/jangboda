@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { parseReceipt } from "@/lib/ocr";
+import { parseReceipt, mergeReceipts, type OcrSource } from "@/lib/ocr";
 import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
@@ -13,27 +13,55 @@ export const maxDuration = 60;
 // 로그인 사용자가 있으면 자동으로 contributor로 사용 (uploaderId 제거됨)
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { imageBase64 } = body;
+  // 단일(imageBase64) + 다중(imagesBase64[]) 둘 다 지원 — 긴 영수증 이어찍기
+  const imagesBase64: string[] = Array.isArray(body.imagesBase64)
+    ? body.imagesBase64.filter((s: unknown) => typeof s === "string" && s)
+    : body.imageBase64
+      ? [body.imageBase64]
+      : [];
 
-  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 8 * 1024 * 1024) {
-    return NextResponse.json({ error: "이미지 크기 초과 (8MB 제한)" }, { status: 413 });
+  // 각 이미지 8MB 제한, 총 합 16MB 안전 한도
+  for (const img of imagesBase64) {
+    if (img.length > 8 * 1024 * 1024) {
+      return NextResponse.json({ error: "이미지 한 장 크기 초과 (8MB 제한)" }, { status: 413 });
+    }
+  }
+  if (imagesBase64.reduce((s, x) => s + x.length, 0) > 16 * 1024 * 1024) {
+    return NextResponse.json({ error: "총 이미지 크기 초과 (16MB)" }, { status: 413 });
   }
 
   const user = await getCurrentUser();
   const uploaderId = user?.id;
 
-  let receipt, usedMock, source;
+  let receipt;
+  let usedMock = false;
+  let source: OcrSource = "mock";
   try {
-    const result = await parseReceipt(imageBase64 ?? null);
-    receipt = result.receipt;
-    usedMock = result.usedMock;
-    source = result.source;
+    if (imagesBase64.length === 0) {
+      // demo flow (이미지 없음 → mock)
+      const result = await parseReceipt(null);
+      receipt = result.receipt;
+      usedMock = result.usedMock;
+      source = result.source;
+    } else if (imagesBase64.length === 1) {
+      const result = await parseReceipt(imagesBase64[0]);
+      receipt = result.receipt;
+      usedMock = result.usedMock;
+      source = result.source;
+    } else {
+      // 다중 이미지 — 각각 OCR 후 merge (storeHint/날짜는 첫 매칭, items 합침+dedup)
+      const results = await Promise.all(imagesBase64.map((img) => parseReceipt(img)));
+      receipt = mergeReceipts(results.map((r) => r.receipt));
+      // 하나라도 실제 OCR 성공이면 usedMock=false
+      usedMock = results.every((r) => r.usedMock);
+      source = results.find((r) => !r.usedMock)?.source ?? "mock";
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
       {
         error: msg,
-        hint: "영수증을 더 밝은 곳에서 똑바로 찍거나, 글씨가 흐리지 않게 찍어주세요. 그래도 안 되면 OCR 환경변수(CLOVA_OCR_URL/SECRET) 확인 필요합니다.",
+        hint: "영수증을 더 밝은 곳에서 똑바로 찍거나, 글씨가 흐리지 않게 찍어주세요. 여러 장 찍었을 때는 한 장씩 다시 시도해보세요.",
       },
       { status: 502 }
     );
@@ -42,19 +70,18 @@ export async function POST(req: NextRequest) {
   // 매장 추론
   const storeId = await matchStore(receipt.storeHint);
 
-  // Supabase Storage 업로드 시도 (실패하면 placeholder fallback)
-  let imageUrl = imageBase64 ? "data:placeholder" : "mock://demo";
+  // Supabase Storage — 첫 번째 이미지만 대표로 저장 (영수증 record는 1개)
+  const primaryImage = imagesBase64[0];
+  let imageUrl = primaryImage ? "data:placeholder" : "mock://demo";
   let storagePath: string | undefined;
-  if (imageBase64) {
+  if (primaryImage) {
     try {
-      // PNG 시그니처 감지 — 아니면 jpg로 처리
-      const isPng = imageBase64.startsWith("data:image/png") || imageBase64.includes("iVBORw0KGgo");
+      const isPng = primaryImage.startsWith("data:image/png") || primaryImage.includes("iVBORw0KGgo");
       const ext: "jpg" | "png" = isPng ? "png" : "jpg";
-      const uploaded = await uploadReceiptImage(imageBase64, ext);
+      const uploaded = await uploadReceiptImage(primaryImage, ext);
       imageUrl = uploaded.publicUrl;
       storagePath = uploaded.path;
     } catch (e) {
-      // bucket 미존재/키 미설정/업로드 실패 → placeholder 유지
       console.warn("[receipts] Storage 업로드 실패, placeholder로 fallback:", (e as Error).message);
     }
   }

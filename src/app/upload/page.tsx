@@ -30,7 +30,11 @@ type Product = { id: string; name: string; brand: string | null };
 export default function UploadPage() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // 긴 영수증 이어찍기 — 추가 사진 누적 (1번째는 imagePreview, 2번째부터 여기)
+  const [extraImages, setExtraImages] = useState<string[]>([]); // dataUrl 배열
   const [cameraOpen, setCameraOpen] = useState(false);
+  // "다음 사진 추가 모드" — 카메라가 끝나면 extraImages로 push
+  const [addingExtra, setAddingExtra] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [result, setResult] = useState<ParseResult | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
@@ -99,11 +103,31 @@ export default function UploadPage() {
 
   async function handleCameraCapture(dataUrl: string) {
     const compressed = await compressDataUrl(dataUrl).catch(() => dataUrl);
-    setImagePreview(compressed);
-    setImageBase64(compressed.split(",")[1] ?? null);
+    if (addingExtra && imagePreview) {
+      // 이어찍기 — extraImages에 추가
+      setExtraImages((prev) => [...prev, compressed]);
+      setAddingExtra(false);
+    } else {
+      // 첫 장 — main image
+      setImagePreview(compressed);
+      setImageBase64(compressed.split(",")[1] ?? null);
+      setExtraImages([]); // 새 영수증 시작 시 extra 초기화
+    }
     setCameraOpen(false);
     setResult(null);
     setSubmitResult(null);
+  }
+
+  function removeExtraAt(idx: number) {
+    setExtraImages((prev) => prev.filter((_, i) => i !== idx));
+    setResult(null);
+  }
+
+  async function rotateExtraAt(idx: number, degrees: number) {
+    const cur = extraImages[idx];
+    if (!cur) return;
+    const rotated = await compressDataUrl(cur, degrees).catch(() => cur);
+    setExtraImages((prev) => prev.map((x, i) => (i === idx ? rotated : x)));
   }
 
   async function loadStores() {
@@ -136,14 +160,25 @@ export default function UploadPage() {
     setParsing(true);
     setResult(null);
     setSubmitResult(null);
-    // 60초 client-side timeout — server timeout 후 무한 대기 방지
+    // 다중 이미지(이어찍기) 지원 — 첫 image + extraImages 합쳐 base64 배열로
+    const allImages: string[] = [];
+    if (imageBase64) allImages.push(imageBase64);
+    for (const dataUrl of extraImages) {
+      const b64 = dataUrl.split(",")[1];
+      if (b64) allImages.push(b64);
+    }
+    // 60초 client-side timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60_000);
     try {
       const res = await fetch("/api/receipts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64 }),
+        body: JSON.stringify(
+          allImages.length > 1
+            ? { imagesBase64: allImages }
+            : { imageBase64: allImages[0] ?? null }
+        ),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -305,7 +340,10 @@ export default function UploadPage() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setCameraOpen(true)}
+                    onClick={() => {
+                      setAddingExtra(false);
+                      setCameraOpen(true);
+                    }}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 border border-line-strong rounded-lg text-sm font-medium text-ink-2 hover:bg-surface-muted"
                   >
                     <IconCamera size={16} />
@@ -317,12 +355,80 @@ export default function UploadPage() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
+                        setAddingExtra(false);
                         const f = e.target.files?.[0];
                         if (f) handleFile(f);
                       }}
                       className="hidden"
                     />
                   </label>
+                </div>
+
+                {/* 이어찍기 — 긴 영수증 다음 부분 추가 */}
+                <div className="border-t border-line pt-3 mt-1 space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-ink-3">
+                    <span className="font-medium">📑 이어찍기</span>
+                    <span>(긴 영수증은 여러 장으로 나눠 찍어주세요)</span>
+                  </div>
+                  {extraImages.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {extraImages.map((src, idx) => (
+                        <div
+                          key={idx}
+                          className="relative aspect-square rounded-lg border border-line overflow-hidden bg-surface-muted"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={src}
+                            alt={`이어찍은 ${idx + 2}번째 사진`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-1 left-1 bg-ink-1/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            #{idx + 2}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeExtraAt(idx)}
+                            className="absolute top-1 right-1 w-6 h-6 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-xs leading-none"
+                            aria-label="삭제"
+                          >
+                            ×
+                          </button>
+                          <div className="absolute bottom-1 right-1 flex gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => rotateExtraAt(idx, -90)}
+                              className="w-6 h-6 bg-white/90 hover:bg-white text-ink-2 rounded text-[10px]"
+                              aria-label="90도 왼쪽 회전"
+                            >
+                              ↶
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => rotateExtraAt(idx, 90)}
+                              className="w-6 h-6 bg-white/90 hover:bg-white text-ink-2 rounded text-[10px]"
+                              aria-label="90도 오른쪽 회전"
+                            >
+                              ↷
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingExtra(true);
+                      setCameraOpen(true);
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 border border-dashed border-line-strong rounded-lg text-sm text-ink-2 hover:bg-surface-muted"
+                  >
+                    <IconCamera size={16} />
+                    {extraImages.length === 0
+                      ? "+ 다음 부분 사진 추가"
+                      : `+ 사진 더 추가 (${extraImages.length + 1}장째)`}
+                  </button>
                 </div>
               </div>
             ) : (
