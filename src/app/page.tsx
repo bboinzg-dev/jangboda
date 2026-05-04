@@ -142,42 +142,15 @@ async function getHomeData() {
     price: p.price,
   }));
 
-  // 회수 ticker — recall.productName으로 우리 카탈로그 product 매칭해서 이미지 추가
-  // (정확 매칭 못해도 text는 그대로 표시)
-  const recallNames = recalls.map((r) => r.productName).filter(Boolean);
-  const matchedProducts = recallNames.length > 0
-    ? await prisma.product.findMany({
-        where: {
-          OR: recallNames.map((n) => ({ name: { contains: n.slice(0, 20) } })),
-        },
-        select: { name: true, imageUrl: true },
-      })
-    : [];
-  const productImageByName = new Map<string, string>();
-  for (const p of matchedProducts) {
-    if (p.imageUrl) productImageByName.set(p.name, p.imageUrl);
-  }
-  const recallTickerData = recalls.map((r) => {
-    // 매칭 시도 — recall.productName이 product.name에 포함되면 사용
-    let imageUrl: string | null = null;
-    for (const [pName, url] of productImageByName.entries()) {
-      if (
-        pName.includes(r.productName) ||
-        r.productName.includes(pName)
-      ) {
-        imageUrl = url;
-        break;
-      }
-    }
-    return {
-      id: r.id,
-      productName: r.productName,
-      productImageUrl: imageUrl,
-      manufacturer: r.manufacturer,
-      reason: r.reason,
-      grade: r.grade,
-    };
-  });
+  // 회수 ticker — Recall.imageUrls는 식약처에서 받은 이미지 URL 배열 (그대로 사용)
+  const recallTickerData = recalls.map((r) => ({
+    id: r.id,
+    productName: r.productName,
+    productImageUrl: r.imageUrls?.[0] ?? null,
+    manufacturer: r.manufacturer,
+    reason: r.reason,
+    grade: r.grade,
+  }));
 
   // 오늘의 시세 = KAMIS(농수산물) + 통계청(가공식품) 병합
   return { tickerData, recallTickerData, priceCards, stats };
