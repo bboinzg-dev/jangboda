@@ -377,12 +377,27 @@ export default function ScanPage() {
                 <div className="text-4xl mb-2">🔍</div>
                 <h2 className="font-bold mb-1">못 찾았어요</h2>
                 <p className="text-sm text-stone-500 mb-2">
-                  바코드 <code className="bg-stone-100 px-1.5 py-0.5 rounded">{result.barcode}</code> 의 상품 정보가
-                  우리 DB와 식약처 카탈로그에 없습니다.
+                  바코드 <code className="bg-stone-100 px-1.5 py-0.5 rounded">{result.barcode}</code>{" "}
+                  정보를 어디서도 찾지 못했습니다.
+                </p>
+                <p className="text-xs text-stone-400 mb-3">
+                  검색 소스: 우리 카탈로그 · 식약처 식품안전나라 ·
+                  Open Food Facts
+                  <br />
+                  음료수/생활용품/신상품은 공공 DB 누락이 잦습니다.
                 </p>
                 {result.error && (
                   <p className="text-xs text-danger-text">{result.error}</p>
                 )}
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                <div className="text-sm font-semibold text-amber-900 mb-1">
+                  💡 직접 등록하시겠어요?
+                </div>
+                <p className="text-xs text-amber-800">
+                  영수증 사진을 올리면 자동으로 품목과 가격이 등록되고,
+                  같은 바코드를 다음에 누구나 찾을 수 있게 됩니다.
+                </p>
               </div>
               <div className="flex gap-2">
                 <Link href="/upload" className="btn-primary flex-1 text-sm">
