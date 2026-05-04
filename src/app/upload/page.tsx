@@ -175,8 +175,19 @@ export default function UploadPage() {
 
   async function submit() {
     if (!result || !storeId) return alert("매장을 선택해주세요");
-    const valid = items.filter((i) => i.productId && i.price > 0);
-    if (valid.length === 0) return alert("매칭된 항목이 없습니다");
+    // 매칭된 항목 + 미매칭 항목(신규 등록) 둘 다 전송
+    // - productId 있으면 기존 매칭
+    // - productId 없으면 isNew + rawName으로 자동 신규 등록
+    const payload = items
+      .filter((i) => i.price > 0 && i.rawName.trim())
+      .map((i) => ({
+        productId: i.productId,
+        price: i.price,
+        quantity: i.quantity,
+        rawName: i.rawName,
+        isNew: !i.productId, // 매칭 안 된 거는 신규 등록
+      }));
+    if (payload.length === 0) return alert("등록할 항목이 없습니다");
 
     setSubmitting(true);
     const res = await fetch("/api/receipts", {
@@ -185,20 +196,17 @@ export default function UploadPage() {
       body: JSON.stringify({
         receiptId: result.receiptId,
         storeId,
-        items: valid.map((i) => ({
-          productId: i.productId,
-          price: i.price,
-          quantity: i.quantity,
-        })),
+        receiptDate: result.receiptDate, // 영수증 거래일 → Price.createdAt
+        items: payload,
       }),
     });
     const data = await res.json();
     setSubmitting(false);
     if (data.ok) {
-      const awardedNote = data.awarded
-        ? `포인트 +${data.count * 2}점 적립`
-        : "로그인하면 포인트가 적립됩니다";
-      setSubmitResult(`✅ ${data.count}건 등록 완료! ${awardedNote}.`);
+      const note = data.awarded
+        ? `${data.matched}건 매칭 + ${data.newProducts}건 신규 등록 (포인트 +${data.matched * 2 + data.newProducts * 5}점)`
+        : `${data.matched}건 매칭 + ${data.newProducts}건 신규 (로그인하면 포인트 적립)`;
+      setSubmitResult(`✅ 총 ${data.count}건 등록 완료! ${note}`);
     } else {
       setSubmitResult(`❌ 실패: ${data.error ?? "알 수 없는 오류"}`);
     }
@@ -484,8 +492,12 @@ export default function UploadPage() {
 
             <div>
               <label className="block text-sm font-medium mb-2 text-ink-1">
-                품목 매칭 ({matchedCount}/{items.length}건 자동 매칭)
+                품목 처리 ({matchedCount}건 매칭 + {items.length - matchedCount}건 신규 등록)
               </label>
+              <p className="text-xs text-ink-3 mb-2">
+                매칭된 항목은 가격이 추가되고, 매칭 안 된 항목은 영수증 이름 그대로
+                새 상품으로 등록됩니다. dropdown에서 직접 매칭할 수도 있어요.
+              </p>
               <div className="space-y-2">
                 {items.map((it, idx) => {
                   const ok = !!it.productId;
@@ -495,26 +507,29 @@ export default function UploadPage() {
                       className={`rounded-md p-2 border text-sm ${
                         ok
                           ? "bg-emerald-50/40 border-emerald-200"
-                          : "bg-rose-50/40 border-rose-200"
+                          : "bg-amber-50/40 border-amber-200"
                       }`}
                     >
                       <div className="flex items-start gap-2">
                         <span
                           className="shrink-0 mt-0.5"
-                          aria-label={ok ? "매칭 성공" : "매칭 실패"}
-                          title={ok ? "자동 매칭됨" : "수동 매칭 필요"}
+                          aria-label={ok ? "기존 매칭" : "신규 등록"}
+                          title={ok ? "기존 카탈로그에 매칭됨" : "신규 상품으로 등록"}
                         >
                           {ok ? (
                             <span className="text-emerald-600">✓</span>
                           ) : (
-                            <span className="text-rose-600">⚠️</span>
+                            <span className="text-amber-600">🆕</span>
                           )}
                         </span>
                         <div className="flex-1 min-w-0">
-                          {/* 영수증 원본 라인은 줄바꿈 허용 — 사용자가 어떤 항목인지 식별해야 매칭 가능 */}
                           <div className="text-ink-2 break-words text-xs mb-1">
-                            <span className="text-ink-3">원본: </span>
-                            {it.rawName}
+                            <span className="text-ink-3">
+                              {ok ? "원본: " : "신규 등록될 이름: "}
+                            </span>
+                            <span className={ok ? "" : "font-medium text-ink-1"}>
+                              {it.rawName}
+                            </span>
                           </div>
                           <select
                             value={it.productId ?? ""}
@@ -530,10 +545,12 @@ export default function UploadPage() {
                             className={`w-full px-2 py-1 border rounded text-xs ${
                               ok
                                 ? "border-emerald-300 bg-white"
-                                : "border-rose-300 bg-white"
+                                : "border-amber-300 bg-white"
                             }`}
                           >
-                            <option value="">선택 안 함 (제외)</option>
+                            <option value="">
+                              {ok ? "선택 해제 (신규 등록)" : "🆕 신규 상품으로 등록"}
+                            </option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id}>
                                 {p.name}
