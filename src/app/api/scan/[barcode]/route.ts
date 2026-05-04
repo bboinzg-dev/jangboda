@@ -108,8 +108,14 @@ export async function GET(
     // foodsafety lookup 실패 — 무시하고 not found 반환
   }
 
+  // 검색 결과 없음 — 200 + found:false (404 status면 client가 endpoint 미존재로 오인)
   return NextResponse.json(
-    { found: false, barcode, source: "none" },
-    { status: 404 }
+    {
+      found: false,
+      barcode,
+      source: "none",
+      message: "이 바코드의 상품이 카탈로그와 식약처 DB에 없습니다.",
+    },
+    { status: 200 }
   );
 }
