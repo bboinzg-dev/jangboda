@@ -167,6 +167,13 @@ export default async function StoreDetailPage({
                 {catItems.map((p) => {
                   const tag = freshnessTag(p.createdAt);
                   const upl = unitPriceLabel(p.price, p.product.unit);
+                  // 영수증 거래일 절대 날짜 (Price.createdAt = 영수증 거래일)
+                  const dateStr = p.createdAt.toLocaleDateString("ko-KR", {
+                    month: "numeric",
+                    day: "numeric",
+                    weekday: "short",
+                  });
+                  const isReceipt = p.source === "receipt";
                   return (
                     <li
                       key={p.id}
@@ -196,15 +203,19 @@ export default async function StoreDetailPage({
                         {upl && (
                           <div className="text-[11px] text-stone-500">{upl}</div>
                         )}
-                        <div className="flex gap-1 justify-end mt-0.5">
+                        <div className="flex gap-1 justify-end items-center mt-0.5 flex-wrap">
                           <SourceBadge source={p.source} />
                           <span
                             className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
                           >
                             {tag.label}
                           </span>
-                          <span className="text-[10px] text-stone-500">
-                            {formatRelativeDate(p.createdAt)}
+                        </div>
+                        <div className="text-[11px] text-stone-500 mt-0.5">
+                          {isReceipt ? "🧾 영수증 거래일 " : ""}
+                          <span className="font-medium tabular-nums">{dateStr}</span>
+                          <span className="text-stone-400 ml-1">
+                            ({formatRelativeDate(p.createdAt)})
                           </span>
                         </div>
                       </div>
