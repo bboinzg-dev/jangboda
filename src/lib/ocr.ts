@@ -355,11 +355,35 @@ function parseDiscountLine(line: string): DiscountInfo | null {
 //   날짜
 //   "품목명     수량 가격" 또는 "품목명\n수량 가격"
 //   "합계", "총", "TOTAL" 줄에 합계
+// OCR row 그룹화로 한 라인에 product + 할인 표기가 합쳐진 경우 분리.
+// 예: "펩시콜라 제로슈거 라 3,290 1 3,290 [번들] 50% -1,645"
+//     → ["펩시콜라 제로슈거 라 3,290 1 3,290", "[번들] 50% -1,645"] 두 라인
+// 분리 조건: [할인 키워드] 또는 (할인 ...) 패턴이 라인 중간에 있고,
+//          그 이전 부분에 한글 2자 + 숫자 둘 다 있어야 (product 라인 가능성).
+function splitMixedDiscountLine(l: string): string[] {
+  const bracketMatch = l.match(/\[\s*[^\]]*?(?:할인|쿠폰|번들|행사|이벤트)/);
+  const parenMatch = l.match(/\(\s*할인\s*-/);
+  const indices = [bracketMatch?.index, parenMatch?.index].filter(
+    (i): i is number => i != null
+  );
+  if (indices.length === 0) return [l];
+  const discIdx = Math.min(...indices);
+  if (discIdx <= 5) return [l]; // 할인 패턴이 라인 시작에 가까움 → 단독 할인 라인
+  const before = l.substring(0, discIdx).trim();
+  const after = l.substring(discIdx).trim();
+  // before에 한글 2자 + 숫자가 있으면 product 가능성 → 분리
+  if (/[가-힣]{2,}/.test(before) && /\d/.test(before)) {
+    return [before, after];
+  }
+  return [l];
+}
+
 function parseReceiptText(text: string): ParsedReceipt {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .flatMap(splitMixedDiscountLine);
 
   // 가격 패턴 — 1,000원 / 1000 / 12,800원 / 12,800
   // 영수증에서 의미있는 가격은 보통 100원 이상
