@@ -53,7 +53,7 @@ type Props = {
   showFavoriteFilter?: boolean;
 };
 
-type StoreSortBy = "unit" | "price";
+type StoreSortBy = "unit" | "price" | "promo";
 
 export default function PriceListClient({
   rows,
@@ -69,7 +69,19 @@ export default function PriceListClient({
     canCompareUnit ? "unit" : "price"
   );
 
-  // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 단가/가격 낮은 순)
+  // 행사가가 freshness 14일 이내면 그 가격, 아니면 listPrice 사용 (행사가순 정렬용)
+  const effectivePrice = (p: PriceRowData): number => {
+    if (
+      p.paidPrice != null &&
+      p.paidPrice < p.price &&
+      isPromoFresh(p.updatedAt)
+    ) {
+      return p.paidPrice;
+    }
+    return p.price;
+  };
+
+  // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 단가/가격/행사가 낮은 순)
   const filtered = favoriteOnly
     ? rows.filter((r) => favoriteIds.has(r.storeId))
     : rows;
@@ -80,11 +92,15 @@ export default function PriceListClient({
     if (sortBy === "unit") {
       const ua = unitPriceValue(a.price, unit);
       const ub = unitPriceValue(b.price, unit);
-      // null은 뒤로
       if (ua === null && ub === null) return a.price - b.price;
       if (ua === null) return 1;
       if (ub === null) return -1;
       return ua - ub;
+    }
+    if (sortBy === "promo") {
+      // 행사가 적용된 매장 우선 + 행사가 낮은 순
+      // 행사 없는 매장은 listPrice로 정렬에 참여 (꺼지진 않음)
+      return effectivePrice(a) - effectivePrice(b);
     }
     return a.price - b.price;
   });
@@ -178,9 +194,10 @@ export default function PriceListClient({
         ) : (
           <span />
         )}
-        {canCompareUnit && (
-          <div className="inline-flex items-center gap-1 text-[11px]">
-            <span className="text-ink-3">정렬:</span>
+        {/* 정렬 토글 — 행사가순은 모든 상품에서 의미 있어 단가 비교 불가 케이스에도 노출 */}
+        <div className="inline-flex items-center gap-1 text-[11px]">
+          <span className="text-ink-3">정렬:</span>
+          {canCompareUnit && (
             <button
               onClick={() => setSortBy("unit")}
               className={`px-2 py-0.5 rounded ${
@@ -192,18 +209,29 @@ export default function PriceListClient({
             >
               단가순
             </button>
-            <button
-              onClick={() => setSortBy("price")}
-              className={`px-2 py-0.5 rounded ${
-                sortBy === "price"
-                  ? "bg-brand-100 text-brand-700 font-medium"
-                  : "text-ink-2 hover:bg-surface-muted"
-              }`}
-            >
-              가격순
-            </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => setSortBy("price")}
+            className={`px-2 py-0.5 rounded ${
+              sortBy === "price"
+                ? "bg-brand-100 text-brand-700 font-medium"
+                : "text-ink-2 hover:bg-surface-muted"
+            }`}
+          >
+            가격순
+          </button>
+          <button
+            onClick={() => setSortBy("promo")}
+            className={`px-2 py-0.5 rounded ${
+              sortBy === "promo"
+                ? "bg-rose-100 text-rose-700 font-medium"
+                : "text-ink-2 hover:bg-surface-muted"
+            }`}
+            title="최근 14일 내 행사가 적용된 매장 우선 정렬"
+          >
+            🎉 행사가순
+          </button>
+        </div>
       </div>
 
       {sorted.length === 0 ? (
