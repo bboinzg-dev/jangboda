@@ -284,8 +284,12 @@ const BARCODE_RE = /^\s*(\d{8}|\d{12}|\d{13}|\d{14})\s*$/;
 const PRICE_RE_GLOBAL = /([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*원?/g;
 
 // 할인 라인 패턴들 (한국 마트/편의점 사례 기반)
-// 패턴 A: 킴스클럽 — "(할인 -11,820 ) 7,980" (음수 할인액 + 할인 후 결과가)
-const DISCOUNT_PAREN_RE = /\(\s*할인\s*-\s*([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*\)/;
+// 패턴 A: 킴스클럽 — 두 형태 모두 지원
+//   "(할인 -11,820)"        → group1=11820, group2=undefined (결과가는 라인의 다른 가격으로)
+//   "(할인 -11,820 7,980)"  → group1=11820, group2=7980 (괄호 안에 결과가까지 포함)
+const DISCOUNT_PAREN_RE = /\(\s*할인\s*-\s*([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})(?:\s+([1-9]\d{0,2}(?:,\d{3})+|\d{3,7}))?\s*\)/;
+// 라인 시작에 8~14자리 바코드(다른 텍스트와 같은 라인에 있어도 인식 — OCR row 그룹화로 합쳐진 경우)
+const LINE_START_BARCODE_RE = /^\s*(\d{8}|\d{12}|\d{13}|\d{14})\b/;
 // 패턴 B: 롯데마트 — "[번들] 50% -1,645", "[L_할인] 3000원 -3,000", "[할인쿠폰] 20% -3,980"
 const DISCOUNT_BRACKET_RE = /\[\s*([^\]]*?(?:할인|쿠폰|번들|행사|이벤트)[^\]]*?)\s*\]/;
 // 음수 할인 금액(라인에서 마지막 음수 가격)
@@ -303,16 +307,21 @@ type DiscountInfo = {
 // 라인이 할인 라인인지 판별 + 할인 정보 추출
 // 반환: null이면 할인 라인 아님
 function parseDiscountLine(line: string): DiscountInfo | null {
-  // 패턴 A: (할인 -11,820)
+  // 패턴 A: (할인 -11,820) 또는 (할인 -11,820 7,980)
   const parenMatch = line.match(DISCOUNT_PAREN_RE);
   if (parenMatch) {
     const amount = parseInt(parenMatch[1].replace(/,/g, ""), 10);
-    // 라인에 있는 모든 양수 가격 중 마지막 = 할인 후 결과가일 가능성
-    const allPrices = [...line.matchAll(PRICE_RE_GLOBAL)]
-      .map((m) => parseInt(m[1].replace(/,/g, ""), 10))
-      .filter((n) => n > 0 && n < 10_000_000);
-    // 할인액 외의 마지막 가격 → 결과가
-    const afterPrice = allPrices.filter((n) => n !== amount).slice(-1)[0];
+    // 1) 정규식이 결과가까지 잡았으면 그대로 사용 (킴스클럽 "(할인 -11,820 7,980)" 형태)
+    let afterPrice: number | undefined;
+    if (parenMatch[2]) {
+      afterPrice = parseInt(parenMatch[2].replace(/,/g, ""), 10);
+    } else {
+      // 2) 정규식이 못 잡았으면 라인의 다른 가격에서 추측
+      const allPrices = [...line.matchAll(PRICE_RE_GLOBAL)]
+        .map((m) => parseInt(m[1].replace(/,/g, ""), 10))
+        .filter((n) => n > 0 && n < 10_000_000);
+      afterPrice = allPrices.filter((n) => n !== amount).slice(-1)[0];
+    }
     return { amount, afterPrice, promotionType: "할인" };
   }
 
@@ -514,12 +523,23 @@ function parseReceiptText(text: string): ParsedReceipt {
     | { kind: "discount"; info: DiscountInfo }
     | { kind: "ignore" };
 
-  const scanned: ScannedLine[] = lines.map((l): ScannedLine => {
-    // 우선순위 1: 할인 라인은 META 키워드("할인") 컷보다 먼저 잡아야 직전 상품에 묶을 수 있음
-    const disc = parseDiscountLine(l);
-    if (disc) return { kind: "discount", info: disc };
+  // flatMap으로 한 라인에서 여러 ScannedLine 추출 가능 (바코드+할인 합쳐진 케이스)
+  const scanned: ScannedLine[] = lines.flatMap((l): ScannedLine | ScannedLine[] => {
+    // 우선순위 1: 같은 라인에 바코드 + 할인이 합쳐진 케이스 (킴스클럽 OCR row 그룹화 결과)
+    //   예: "8501045750088 (할인 -11,820 7,980)"
+    const startBarcode = l.match(LINE_START_BARCODE_RE);
+    const lineDiscount = parseDiscountLine(l);
+    if (startBarcode && lineDiscount) {
+      return [
+        { kind: "barcode", barcode: startBarcode[1] },
+        { kind: "discount", info: lineDiscount },
+      ];
+    }
 
-    // 우선순위 2: 바코드 단독 라인 (LARGE_NUM_RE보다 먼저)
+    // 우선순위 2: 단독 할인 라인 (META "할인" 컷보다 먼저)
+    if (lineDiscount) return { kind: "discount", info: lineDiscount };
+
+    // 우선순위 3: 바코드 단독 라인
     const bm = l.match(BARCODE_RE);
     if (bm) return { kind: "barcode", barcode: bm[1] };
 
@@ -541,9 +561,39 @@ function parseReceiptText(text: string): ParsedReceipt {
     const matches = [...l.matchAll(PRICE_RE)];
     if (matches.length === 0) return { kind: "ignore" };
 
+    // 라인에 가격이 여러 개 있으면 (예: "콤비네이션 피자 415G 9,900 2 19,800")
+    // - 마지막 가격(19,800) = 합계
+    // - 첫 가격(9,900) = 단가 (listPrice)
+    // - 가운데 짧은 숫자(2) = 수량
+    // 단가가 있으면 listPrice = 단가로, quantity는 추출, 합계는 할인 그룹 빌더에서 사용
+    const allPrices = matches.map((m) => parseInt(m[1].replace(/,/g, ""), 10));
     const lastMatch = matches[matches.length - 1];
-    const listPrice = parseInt(lastMatch[1].replace(/,/g, ""), 10);
-    if (!listPrice || listPrice < 100 || listPrice > 200_000) return { kind: "ignore" };
+    const totalPrice = allPrices[allPrices.length - 1];
+    let listPrice = totalPrice;
+    let quantity = 1;
+    if (allPrices.length >= 2) {
+      // 첫 가격을 단가로, 단가×수량 = 합계 인지 확인
+      const firstPrice = allPrices[0];
+      // 라인에서 단가와 합계 사이의 작은 숫자 = 수량 후보
+      const between = l
+        .substring(matches[0].index! + matches[0][0].length, lastMatch.index!)
+        .match(/\b(\d{1,3})\b/);
+      const qtyCandidate = between ? parseInt(between[1], 10) : null;
+      if (
+        qtyCandidate &&
+        qtyCandidate >= 1 &&
+        qtyCandidate <= 99 &&
+        firstPrice * qtyCandidate === totalPrice
+      ) {
+        listPrice = firstPrice;
+        quantity = qtyCandidate;
+      } else if (firstPrice * 2 === totalPrice) {
+        // 수량 누락 케이스 추측: 단가×2 = 합계면 수량 2
+        listPrice = firstPrice;
+        quantity = 2;
+      }
+    }
+    if (listPrice < 100 || listPrice > 200_000) return { kind: "ignore" };
 
     // 품목명 추출
     let name = l.replace(lastMatch[0], "").trim();
@@ -556,7 +606,7 @@ function parseReceiptText(text: string): ParsedReceipt {
     if (nameHangul < 2) return { kind: "ignore" };
     if (name.length < 2) return { kind: "ignore" };
 
-    return { kind: "product", rawName: name, listPrice, quantity: 1 };
+    return { kind: "product", rawName: name, listPrice, quantity };
   });
 
   // 2단계: 그룹 빌딩
