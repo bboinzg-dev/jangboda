@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import MonthlyTrendChart from "@/components/MonthlyTrendChart";
 import BudgetGoalCard from "@/components/BudgetGoalCard";
 import FavoriteToggle from "@/components/FavoriteToggle";
+import CategorySelect from "@/components/CategorySelect";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 
@@ -71,12 +72,26 @@ type BudgetData = {
     chainName: string;
     date: Date;
     total: number;
-    items: { productId: string; name: string; price: number; quantity: number }[];
+    items: {
+      productId: string;
+      name: string;
+      price: number;
+      quantity: number;
+      category: string;
+      isOverride: boolean;
+    }[];
   }[];
   totalCount: number;
 };
 
-async function getBudget(userId: string): Promise<BudgetData> {
+async function getBudget(userId: string): Promise<BudgetData & { overrides: Record<string, string> }> {
+  // 사용자별 카테고리 override 로드 — 자동 분류 정정용
+  const userRow = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { budgetCategoryOverrides: true },
+  });
+  const overrides = (userRow?.budgetCategoryOverrides as Record<string, string>) ?? {};
+
   // 본인 contributor Price 또는 본인 uploader Receipt에 연결된 Price만 (가계부 = 내가 쓴 것)
   // verified 영수증만 (Receipt.storeId 있는 경우 — 매장 식별됨)
   const myPrices = await prisma.price.findMany({
@@ -158,10 +173,15 @@ async function getBudget(userId: string): Promise<BudgetData> {
       : null;
 
   // 카테고리별 — 메가 카테고리(신선식품/유제품/가공즉석/음료/...)로 정상화
-  // ("참가격 등록 상품" / "사용자 등록" 같은 무의미한 출처 메타 그룹화 해소)
+  // 사용자 override가 있으면 그걸 우선 (잘못 분류된 product를 사용자가 수동 정정 가능)
+  const resolveCategory = (productId: string, name: string, productCat?: string | null) => {
+    const ov = overrides[productId];
+    if (ov) return ov as BudgetCategory;
+    return budgetCategoryOf(name, productCat);
+  };
   const catMap = new Map<BudgetCategory, number>();
   for (const p of valid) {
-    const cat = budgetCategoryOf(p.product?.name ?? "", p.product?.category);
+    const cat = resolveCategory(p.productId, p.product?.name ?? "", p.product?.category);
     catMap.set(cat, (catMap.get(cat) ?? 0) + paidOf(p));
   }
   const byCategory = Array.from(catMap.entries())
@@ -305,7 +325,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
     include: {
       store: { include: { chain: true } },
       prices: {
-        include: { product: { select: { id: true, name: true } } },
+        include: { product: { select: { id: true, name: true, category: true } } },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -313,12 +333,21 @@ async function getBudget(userId: string): Promise<BudgetData> {
   });
 
   const receipts = myReceipts.map((r) => {
-    const items = r.prices.map((p) => ({
-      productId: p.productId,
-      name: p.product?.name ?? "(이름 없음)",
-      price: p.paidPrice ?? p.listPrice ?? 0, // 사용자 실제 지불액
-      quantity: 1,
-    }));
+    const items = r.prices.map((p) => {
+      const cat = resolveCategory(
+        p.productId,
+        p.product?.name ?? "",
+        p.product?.category,
+      );
+      return {
+        productId: p.productId,
+        name: p.product?.name ?? "(이름 없음)",
+        price: p.paidPrice ?? p.listPrice ?? 0,
+        quantity: 1,
+        category: cat,
+        isOverride: !!overrides[p.productId],
+      };
+    });
     const total = items.reduce((s, it) => s + it.price, 0);
     // 영수증 거래일은 첫 Price.createdAt 사용 (영수증 거래일이 그곳에 저장됨)
     const date = r.prices[0]?.createdAt ?? r.createdAt;
@@ -352,6 +381,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
     frequentProducts: topFrequent,
     receipts,
     totalCount: valid.length,
+    overrides,
   };
 }
 
@@ -689,15 +719,20 @@ export default async function BudgetPage() {
                       {r.items.map((it, i) => (
                         <li
                           key={`${r.id}-${i}`}
-                          className="flex items-center justify-between px-3 py-1.5 text-sm border-b border-stone-100 last:border-0"
+                          className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border-b border-stone-100 last:border-0"
                         >
                           <Link
                             href={`/products/${it.productId}`}
-                            className="hover:underline truncate min-w-0 text-ink-2"
+                            className="hover:underline truncate min-w-0 text-ink-2 flex-1"
                           >
                             {it.name}
                           </Link>
-                          <span className="font-medium tabular-nums text-ink-1 shrink-0 ml-3">
+                          <CategorySelect
+                            productId={it.productId}
+                            current={it.category}
+                            isOverride={it.isOverride}
+                          />
+                          <span className="font-medium tabular-nums text-ink-1 shrink-0">
                             {formatWon(it.price)}
                           </span>
                         </li>

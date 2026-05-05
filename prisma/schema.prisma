@@ -148,6 +148,9 @@ model User {
   favorites     FavoriteStore[]
   benefitProfile BenefitProfile?
   budgetGoal    BudgetGoal?
+  // 가계부 카테고리 사용자 override — { productId: BudgetCategory } 매핑
+  // 자동 분류(budgetCategoryOf)가 잘못 분류한 케이스를 사용자가 수동 정정
+  budgetCategoryOverrides Json @default("{}")
 }
 
 // 월 예산 — 사용자가 설정한 한 달 지출 목표 (가계부 진행률 표시)
