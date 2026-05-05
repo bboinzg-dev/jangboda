@@ -178,13 +178,17 @@ export default async function ProductDetailPage({
     return false;
   };
 
-  // 온라인 섹션의 호가 사전 컷 — 호가성(naver/온라인전용chain)인데 outlier면 page level에서 미리 제거.
-  // 옥션·G마켓·기타 온라인몰 같은 곳의 비정상 호가가 매장 카드에 그대로 노출되는 문제 방지.
+  // 온라인 섹션의 호가/단위불일치 사전 컷:
+  // - 호가성(naver/온라인전용chain)인데 outlier → page level에서 미리 제거
+  // - "기타 온라인몰" (canonicalMallName 미매칭) — 마이너 셀러는 같은 product 이름이라도
+  //   사양이 다른 경우 多 (예: 12개입 vs 24개입). 단위 검증 못 하므로 항상 hide.
   // 제외 건수는 별도로 보존 → "아직 없음"이 아니라 "N건 호가성 자동 제외"로 정직하게 표시.
   const offlineRows = prices.filter((p) => !p.online);
   const allOnlineRows = prices.filter((p) => p.online);
   const onlineRows = allOnlineRows.filter(
-    (p) => !isUnitOutlier(p.price, p.source, p.chainName)
+    (p) =>
+      p.chainName !== "기타 온라인몰" &&
+      !isUnitOutlier(p.price, p.source, p.chainName),
   );
   const onlineHiddenCount = allOnlineRows.length - onlineRows.length;
 
@@ -404,10 +408,10 @@ export default async function ProductDetailPage({
               emptyHint={
                 onlineHiddenCount > 0 ? (
                   <>
-                    온라인몰 호가성 가격 {onlineHiddenCount}건이 자동 제외됐어요.
+                    온라인몰 가격 {onlineHiddenCount}건이 자동 제외됐어요.
                     <br />
                     <span className="text-[11px] text-ink-3">
-                      옥션·G마켓 등 일부 판매자 호가가 비정상 범위로 등록되어 비교에서 제외됨
+                      옥션·G마켓 호가성 가격 + 마이너 셀러(단위 검증 안 됨)는 비교 신뢰도가 낮아 제외
                     </span>
                   </>
                 ) : (
