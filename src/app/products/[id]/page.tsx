@@ -193,9 +193,16 @@ export default async function ProductDetailPage({
   const onlineHiddenCount = allOnlineRows.length - onlineRows.length;
 
   // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
-  // 시세(KAMIS) 제외 + 호가성 source의 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.
+  // 시세(KAMIS) 제외 + 호가성 source의 outlier 제외 + "기타 온라인몰" 제외.
+  // "기타 온라인몰"은 단위(12개입 vs 24개입)가 검증 안 되어 같은 product에 다른 사양 가격이 묶임 →
+  // 매장 카드 리스트에서도 hide 중이라 헤더 통계도 일관되게 제외해야 함.
   const headlinePrices = prices
-    .filter((p) => !isMarketRate(p.source) && !isUnitOutlier(p.price, p.source, p.chainName))
+    .filter(
+      (p) =>
+        !isMarketRate(p.source) &&
+        !isUnitOutlier(p.price, p.source, p.chainName) &&
+        p.chainName !== "기타 온라인몰",
+    )
     .map((p) => p.price)
     .filter((x) => x > 0);
   // 모두 outlier로 빠진 극단 케이스 — raw로 fallback
