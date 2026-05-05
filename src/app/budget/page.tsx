@@ -6,6 +6,7 @@ import { formatWon } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
 import MonthlyTrendChart from "@/components/MonthlyTrendChart";
 import BudgetGoalCard from "@/components/BudgetGoalCard";
+import FavoriteToggle from "@/components/FavoriteToggle";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 
@@ -53,7 +54,7 @@ type BudgetData = {
   };
   monthly: { key: string; total: number }[];
   byCategory: { category: BudgetCategory; total: number; color: string }[];
-  byStore: { storeName: string; chainName: string; total: number }[];
+  byStore: { storeId: string; storeName: string; chainName: string; total: number }[];
   overpaid: {
     productId: string;
     productName: string;
@@ -174,12 +175,13 @@ async function getBudget(userId: string): Promise<BudgetData> {
   // 매장별 상위 5
   const storeMap = new Map<
     string,
-    { storeName: string; chainName: string; total: number }
+    { storeId: string; storeName: string; chainName: string; total: number }
   >();
   for (const p of valid) {
     if (!p.store) continue;
     const key = p.store.id;
     const cur = storeMap.get(key) ?? {
+      storeId: p.store.id,
       storeName: p.store.name,
       chainName: p.store.chain.name,
       total: 0,
@@ -716,18 +718,22 @@ export default async function BudgetPage() {
           <div className="text-sm text-stone-500">매장 데이터 없음</div>
         ) : (
           <ul className="space-y-2">
-            {data.byStore.map((s, i) => (
+            {data.byStore.map((s) => (
               <li
-                key={`${s.chainName}-${s.storeName}-${i}`}
-                className="flex items-center justify-between text-sm border-b border-stone-100 last:border-0 pb-2 last:pb-0"
+                key={s.storeId}
+                className="flex items-center justify-between text-sm border-b border-stone-100 last:border-0 pb-2 last:pb-0 gap-3"
               >
-                <div className="min-w-0">
+                <FavoriteToggle storeId={s.storeId} size="sm" />
+                <Link
+                  href={`/stores/${s.storeId}`}
+                  className="min-w-0 flex-1 hover:underline"
+                >
                   <div className="font-medium truncate">{s.chainName}</div>
                   <div className="text-xs text-stone-500 truncate">
                     {s.storeName}
                   </div>
-                </div>
-                <div className="font-bold text-stone-700 shrink-0 ml-3">
+                </Link>
+                <div className="font-bold text-stone-700 shrink-0">
                   {formatWon(s.total)}
                 </div>
               </li>
