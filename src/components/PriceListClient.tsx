@@ -310,13 +310,14 @@ export default function PriceListClient({
                     );
                   })()}
                   {/* 최근 행사가 — paidPrice가 listPrice보다 작고 14일 이내 등록된 경우만 표시
-                      (행사 만료를 알 수 없으므로 신선도 컷오프 적용. 통계에는 미포함, 참고용) */}
+                      "이 매장은 가끔 할인 행사도 한다" 신호 — 사용자가 행사 빈도 감 잡게.
+                      행사 만료를 알 수 없어 14일 freshness 컷오프 적용. 통계에는 미포함. */}
                   {p.paidPrice != null &&
                     p.paidPrice < p.price &&
                     isPromoFresh(p.updatedAt) && (
-                      <div className="mt-1 text-[10px] text-rose-600 leading-tight">
-                        💰 최근 행사 {formatWon(p.paidPrice)}
-                        {p.promotionType ? ` (${p.promotionType})` : ""}
+                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.5 font-medium">
+                        🎉 최근 행사가 {formatWon(p.paidPrice)}
+                        {p.promotionType ? ` · ${p.promotionType}` : ""}
                       </div>
                     )}
                   <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">

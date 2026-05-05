@@ -204,6 +204,16 @@ export default async function StoreDetailPage({
                         {upl && (
                           <div className="text-[11px] text-stone-500">{upl}</div>
                         )}
+                        {/* 최근 14일 이내 행사가 있으면 보조 표시 — "이 매장이 가끔 할인하는구나" 신호 */}
+                        {p.paidPrice != null &&
+                          p.paidPrice < lp &&
+                          Date.now() - p.createdAt.getTime() <
+                            14 * 24 * 60 * 60 * 1000 && (
+                            <div className="mt-1 text-[11px] text-rose-600 font-medium">
+                              💰 행사가 {formatWon(p.paidPrice)}
+                              {p.promotionType ? ` (${p.promotionType})` : ""}
+                            </div>
+                          )}
                         <div className="flex gap-1 justify-end items-center mt-0.5 flex-wrap">
                           <SourceBadge source={p.source} />
                           <span
