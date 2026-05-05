@@ -129,15 +129,11 @@ export default async function ProductDetailPage({
   const offlineRows = prices.filter((p) => !p.online);
   const onlineRows = prices.filter((p) => p.online);
 
-  const allPrices = prices.map((p) => p.price).filter((x) => x > 0);
-  const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0;
-  // winner 계산 — 시세(KAMIS) + 단가 outlier(박스/멀티팩 가능성) 제외
-  // 시세 source: kamis, stats_official
+  // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
 
-  // 단가 outlier 판정 — 단가 median ±50% 벗어난 가격은 winner 비교 제외
-  // (PriceListClient의 분리 로직과 동일 기준)
+  // 단가 outlier 판정 — 단가 median ±50% 벗어난 가격은 통계 비교 제외
+  // (PriceListClient의 분리 로직과 동일 기준 — 매장 카드와 헤더 숫자 일관성 확보)
   const validUnitPrices = prices
     .map((p) => unitPriceValue(p.price, product.unit))
     .filter((v): v is number => v !== null && v > 0)
@@ -154,6 +150,19 @@ export default async function ProductDetailPage({
     if (u === null) return false;
     return u < lowBound || u > highBound;
   };
+
+  // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
+  // 시세(KAMIS) 제외 + 단가 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.
+  const headlinePrices = prices
+    .filter((p) => !isMarketRate(p.source) && !isUnitOutlier(p.price))
+    .map((p) => p.price)
+    .filter((x) => x > 0);
+  // 모두 outlier로 빠진 극단 케이스 — raw로 fallback
+  const fallbackPrices = prices.map((p) => p.price).filter((x) => x > 0);
+  const statPool = headlinePrices.length > 0 ? headlinePrices : fallbackPrices;
+  const minPrice = statPool.length > 0 ? Math.min(...statPool) : 0;
+  const maxPrice = statPool.length > 0 ? Math.max(...statPool) : 0;
+  const excludedCount = fallbackPrices.length - headlinePrices.length;
 
   const offlineMarket = offlineRows.filter(
     (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price)
@@ -255,11 +264,18 @@ export default async function ProductDetailPage({
         )}
 
         {prices.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <PriceStat label="전체 최저가" value={formatWon(minPrice)} highlight />
-            <PriceStat label="전체 최고가" value={formatWon(maxPrice)} />
-            <PriceStat label="가격차" value={formatWon(maxPrice - minPrice)} />
-          </div>
+          <>
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              <PriceStat label="전체 최저가" value={formatWon(minPrice)} highlight />
+              <PriceStat label="전체 최고가" value={formatWon(maxPrice)} />
+              <PriceStat label="가격차" value={formatWon(maxPrice - minPrice)} />
+            </div>
+            {excludedCount > 0 && (
+              <div className="mt-2 text-[11px] text-ink-3">
+                {statPool.length}건 비교 · 시세/이상치 {excludedCount}건 제외
+              </div>
+            )}
+          </>
         )}
 
         {winnerSection && (
