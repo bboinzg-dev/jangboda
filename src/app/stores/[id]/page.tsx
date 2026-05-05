@@ -96,11 +96,11 @@ export default async function StoreDetailPage({
       </div>
 
       <header className="bg-white border border-stone-200 rounded-xl p-6">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-4">
           <ChainLogo
             src={store.chain.logoUrl}
             name={store.chain.name}
-            size={48}
+            size={72}
           />
           <div className="min-w-0 flex-1">
             <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
