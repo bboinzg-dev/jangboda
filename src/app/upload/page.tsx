@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatWon } from "@/lib/format";
 import CameraCapture from "@/components/CameraCapture";
@@ -196,6 +196,8 @@ export default function UploadPage() {
       setResult(data);
       setItems(data.items);
       setStoreId(data.storeId ?? "");
+      // OCR이 매장을 매칭하지 못했어도(server matchStore=null), 클라이언트 stores 로드 후
+      // useEffect에서 storeHint로 부분 매칭 시도 (영수증 매장명으로 자동 dropdown 채움)
       await Promise.all([loadStores(), loadProducts()]);
     } catch (e) {
       clearTimeout(timeoutId);
@@ -210,6 +212,25 @@ export default function UploadPage() {
       setParsing(false);
     }
   }
+
+  // 매장 추측이 있는데 자동 매핑 실패 시 클라이언트에서 부분 매칭 시도
+  // 예: storeHint="킴스클럽 (천호점)" → "킴스클럽 천호점" 같은 store 자동 선택
+  useEffect(() => {
+    if (!result?.storeHint || storeId || stores.length === 0) return;
+    const normalize = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[()[\]_\-,.]/g, "");
+    const hint = normalize(result.storeHint);
+    if (hint.length < 2) return;
+    // 1순위: 정규화 후 정확/부분 매칭
+    const found = stores.find((s) => {
+      const sName = normalize(s.name);
+      return sName === hint || sName.includes(hint) || hint.includes(sName);
+    });
+    if (found) setStoreId(found.id);
+  }, [result, stores, storeId]);
 
   async function submit() {
     if (!result || !storeId) return alert("매장을 선택해주세요");
@@ -708,10 +729,28 @@ export default function UploadPage() {
               </div>
             </div>
 
+            {!storeId && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 flex items-center gap-2">
+                <span aria-hidden>⚠️</span>
+                <span>
+                  매장을 먼저 선택해주세요.
+                  {result.storeHint && (
+                    <>
+                      {" "}
+                      <span className="text-ink-3">
+                        영수증 매장: <strong className="text-ink-2">{result.storeHint}</strong>
+                        {" — "}
+                        목록에 없으면 가장 가까운 매장을 선택하세요.
+                      </span>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             <button
               onClick={submit}
               disabled={submitting || !storeId}
-              className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50"
+              className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "등록 중..." : "✓ 가격 등록 (포인트 +2/건)"}
             </button>
