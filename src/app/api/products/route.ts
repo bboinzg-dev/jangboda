@@ -40,12 +40,15 @@ export async function GET(req: NextRequest) {
       productId: { in: productIds },
       source: { not: "stats_official" }, // 시세는 매장 가격 통계에서 제외
     },
-    select: { productId: true, price: true },
+    select: { productId: true, listPrice: true },
   });
 
   const stats = new Map<string, { min: number; max: number; avg: number; count: number }>();
   for (const id of productIds) {
-    const list = allPrices.filter((p) => p.productId === id).map((p) => p.price);
+    const list = allPrices
+      .filter((p) => p.productId === id)
+      .map((p) => p.listPrice ?? 0)
+      .filter((x) => x > 0);
     if (list.length === 0) {
       stats.set(id, { min: 0, max: 0, avg: 0, count: 0 });
     } else {

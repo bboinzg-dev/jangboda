@@ -30,8 +30,10 @@ export async function GET(
             address: s.address,
             lat: s.lat,
             lng: s.lng,
-            price: latest.price,
-            isOnSale: latest.isOnSale,
+            price: latest.listPrice ?? 0,
+            listPrice: latest.listPrice ?? 0,
+            paidPrice: latest.paidPrice,
+            promotionType: latest.promotionType,
             source: latest.source,
             updatedAt: latest.createdAt,
           }
@@ -63,7 +65,7 @@ export async function GET(
     prices: filtered,
     history: history.map((h) => ({
       date: h.createdAt,
-      price: h.price,
+      price: h.listPrice ?? 0,
       chainName: h.store.chain.name,
       storeName: h.store.name,
     })),

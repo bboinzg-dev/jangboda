@@ -62,7 +62,10 @@ export async function GET(
         },
         prices: product.prices.map((p) => ({
           id: p.id,
-          price: p.price,
+          price: p.listPrice ?? 0,
+          listPrice: p.listPrice,
+          paidPrice: p.paidPrice,
+          promotionType: p.promotionType,
           source: p.source,
           storeName: p.store.name,
           chainName: p.store.chain.name,

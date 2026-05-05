@@ -481,7 +481,7 @@ export default async function ProfilePage() {
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-semibold tabular-nums text-ink-1">
-                    {formatWon(p.price)}
+                    {formatWon(p.listPrice ?? 0)}
                   </div>
                   <div className="flex gap-1 justify-end mt-0.5">
                     <SourceBadge source={p.source} />

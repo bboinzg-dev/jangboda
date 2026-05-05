@@ -71,12 +71,16 @@ async function getBudget(userId: string): Promise<BudgetData> {
     return true;
   });
 
+  // 사용자가 실제 지불한 금액 = paidPrice (행사 적용가) ?? listPrice (정가)
+  const paidOf = (p: { paidPrice: number | null; listPrice: number | null }) =>
+    p.paidPrice ?? p.listPrice ?? 0;
+
   // 이번 달 합계
   const now = new Date();
   const curKey = monthKey(now);
   const thisMonthTotal = valid
     .filter((p) => monthKey(p.createdAt) === curKey)
-    .reduce((s, p) => s + p.price, 0);
+    .reduce((s, p) => s + paidOf(p), 0);
 
   // 최근 6개월 월별 합계
   const keys = recentMonthKeys(6);
@@ -84,7 +88,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
   for (const p of valid) {
     const k = monthKey(p.createdAt);
     if (monthlyMap.has(k)) {
-      monthlyMap.set(k, (monthlyMap.get(k) ?? 0) + p.price);
+      monthlyMap.set(k, (monthlyMap.get(k) ?? 0) + paidOf(p));
     }
   }
   const monthly = keys.map((k) => ({ key: k, total: monthlyMap.get(k) ?? 0 }));
@@ -93,7 +97,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
   const catMap = new Map<string, number>();
   for (const p of valid) {
     const c = p.product?.category ?? "기타";
-    catMap.set(c, (catMap.get(c) ?? 0) + p.price);
+    catMap.set(c, (catMap.get(c) ?? 0) + paidOf(p));
   }
   const byCategory = Array.from(catMap.entries())
     .map(([category, total]) => ({ category, total }))
@@ -112,34 +116,36 @@ async function getBudget(userId: string): Promise<BudgetData> {
       chainName: p.store.chain.name,
       total: 0,
     };
-    cur.total += p.price;
+    cur.total += paidOf(p);
     storeMap.set(key, cur);
   }
   const byStore = Array.from(storeMap.values())
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  // 평균보다 비싸게 산 Top 5 — 같은 product의 최저가 vs 본인이 산 가격
+  // 평균보다 비싸게 산 Top 5 — 같은 product의 정가 최저가 vs 본인이 실제 낸 금액 비교
+  // (시장 비교 기준은 listPrice로 통일 — 행사 만료 추정 불가 정책)
   const productIds = Array.from(new Set(valid.map((p) => p.productId)));
   const minByProduct = new Map<string, number>();
   if (productIds.length > 0) {
     const allMins = await prisma.price.groupBy({
       by: ["productId"],
       where: { productId: { in: productIds } },
-      _min: { price: true },
+      _min: { listPrice: true },
     });
     for (const r of allMins) {
-      if (r._min.price != null) minByProduct.set(r.productId, r._min.price);
+      if (r._min.listPrice != null) minByProduct.set(r.productId, r._min.listPrice);
     }
   }
 
-  // 본인이 산 가격 중 가장 비싼 것 vs 최저가 비교 — 같은 상품 여러 번이면 최고가 사용
+  // 본인이 산 가격 중 가장 비싼 것 vs 최저가 비교 — 같은 상품 여러 번이면 최고 지불 사용
   const myMaxByProduct = new Map<string, { paid: number; productName: string }>();
   for (const p of valid) {
     const cur = myMaxByProduct.get(p.productId);
-    if (!cur || p.price > cur.paid) {
+    const myPaid = paidOf(p);
+    if (!cur || myPaid > cur.paid) {
       myMaxByProduct.set(p.productId, {
-        paid: p.price,
+        paid: myPaid,
         productName: p.product?.name ?? "(이름 없음)",
       });
     }
@@ -180,7 +186,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
     const items = r.prices.map((p) => ({
       productId: p.productId,
       name: p.product?.name ?? "(이름 없음)",
-      price: p.price,
+      price: p.paidPrice ?? p.listPrice ?? 0, // 사용자 실제 지불액
       quantity: 1,
     }));
     const total = items.reduce((s, it) => s + it.price, 0);

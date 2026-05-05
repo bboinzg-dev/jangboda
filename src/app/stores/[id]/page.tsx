@@ -166,7 +166,8 @@ export default async function StoreDetailPage({
               <ul className="space-y-2">
                 {catItems.map((p) => {
                   const tag = freshnessTag(p.createdAt);
-                  const upl = unitPriceLabel(p.price, p.product.unit);
+                  const lp = p.listPrice ?? 0;
+                  const upl = unitPriceLabel(lp, p.product.unit);
                   // 영수증 거래일 절대 날짜 (Price.createdAt = 영수증 거래일)
                   const dateStr = p.createdAt.toLocaleDateString("ko-KR", {
                     month: "numeric",
@@ -199,7 +200,7 @@ export default async function StoreDetailPage({
                         </div>
                       </Link>
                       <div className="text-right shrink-0">
-                        <div className="font-semibold">{formatWon(p.price)}</div>
+                        <div className="font-semibold">{formatWon(lp)}</div>
                         {upl && (
                           <div className="text-[11px] text-stone-500">{upl}</div>
                         )}

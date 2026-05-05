@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
           productId: it.productId,
           productName: latest?.product.name ?? "(미확인)",
           quantity: it.quantity,
-          unitPrice: latest?.price ?? null,
-          lineTotal: latest ? latest.price * it.quantity : null,
+          unitPrice: latest?.listPrice ?? null,
+          lineTotal: latest ? (latest.listPrice ?? 0) * it.quantity : null,
           available: !!latest,
         };
       });

@@ -76,10 +76,13 @@ async function getHomeData() {
 
       // 단가 기반 outlier 제외 — 코스트코 대용량 박스 같은 다른 패키지는 비교에서 빼고
       // "가격차" 부풀려지는 거 방지. PriceListClient와 동일한 ±50%/+70% 기준.
-      const withUnitPrice = p.prices.map((x) => ({
-        price: x.price,
-        unitPrice: unitPriceValue(x.price, p.unit),
-      }));
+      const withUnitPrice = p.prices.map((x) => {
+        const lp = x.listPrice ?? 0;
+        return {
+          price: lp,
+          unitPrice: unitPriceValue(lp, p.unit),
+        };
+      });
       const validUnit = withUnitPrice
         .map((x) => x.unitPrice)
         .filter((v): v is number => v !== null && v > 0)
@@ -139,7 +142,7 @@ async function getHomeData() {
     productName: p.product.name,
     productUnit: p.product.unit,
     productImageUrl: p.product.imageUrl,
-    price: p.price,
+    price: p.listPrice ?? 0,
   }));
 
   // 회수 ticker — Recall.imageUrls는 식약처에서 받은 이미지 URL 배열 (그대로 사용)

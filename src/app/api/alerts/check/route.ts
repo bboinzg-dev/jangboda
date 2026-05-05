@@ -36,13 +36,13 @@ export async function POST(req: NextRequest) {
     checked++;
     if (alert.lastNotifiedAt && alert.lastNotifiedAt > oneDayAgo) continue;
 
-    // product의 최저가
+    // product의 최저가 (정가 기준)
     const minRow = await prisma.price.findFirst({
       where: { productId: alert.productId },
-      orderBy: { price: "asc" },
+      orderBy: { listPrice: "asc" },
       include: { store: { include: { chain: true } } },
     });
-    if (!minRow || minRow.price > alert.threshold) continue;
+    if (!minRow || (minRow.listPrice ?? Infinity) > alert.threshold) continue;
 
     triggered++;
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
         {
           title: `🎯 ${alert.product.name} 알림`,
-          body: `${minRow.store.chain.name} ${formatWon(minRow.price)} (목표 ${formatWon(alert.threshold)} 이하)`,
+          body: `${minRow.store.chain.name} ${formatWon(minRow.listPrice ?? 0)} (목표 ${formatWon(alert.threshold)} 이하)`,
           url: `/products/${alert.product.id}`,
         }
       );

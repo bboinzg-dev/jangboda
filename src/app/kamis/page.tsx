@@ -42,7 +42,7 @@ export default async function KamisPage({
 
   const sorted =
     sort === "cheap"
-      ? [...allPrices].sort((a, b) => a.price - b.price)
+      ? [...allPrices].sort((a, b) => (a.listPrice ?? 0) - (b.listPrice ?? 0))
       : allPrices;
 
   return (
@@ -145,7 +145,7 @@ export default async function KamisPage({
                     {p.product.unit}
                   </div>
                   <div className="text-lg font-bold text-brand-700">
-                    {formatWon(p.price)}
+                    {formatWon(p.listPrice ?? 0)}
                   </div>
                   {change !== null && pct !== null && (
                     <div className={`text-xs font-medium mt-0.5 ${colorClass}`}>
