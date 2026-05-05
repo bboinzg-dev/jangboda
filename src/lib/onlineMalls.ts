@@ -45,3 +45,30 @@ export function canonicalMallName(rawMallName: string): {
   }
   return { canonical: "기타 온라인몰", isMajor: false };
 }
+
+// 순수 온라인 전용 chain — 오프라인 매장이 없는 종합/오픈마켓
+// (이마트/롯데마트 등은 온라인몰도 있지만 오프라인 매장이 본업이라 여기 포함 X)
+// isOnlineStore에서 좌표 결측을 안전 무시할 때 사용 — 좌표 없는 parsa 매장(이마트수원점 등)이
+// 잘못 온라인으로 분류되는 결함 방지.
+export const ONLINE_ONLY_CHAINS = [
+  "쿠팡",
+  "G마켓",
+  "지마켓",
+  "SSG",
+  "SSG.COM",
+  "신세계몰",
+  "11번가",
+  "옥션",
+  "위메프",
+  "티몬",
+  "인터파크",
+  "마켓컬리",
+  "컬리",
+  "네이버쇼핑",
+  "기타 온라인몰",
+];
+
+export function isOnlineOnlyChain(chainName: string | undefined | null): boolean {
+  if (!chainName) return false;
+  return ONLINE_ONLY_CHAINS.some((c) => chainName.includes(c));
+}

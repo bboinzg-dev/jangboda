@@ -10,6 +10,7 @@ import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
+import { isOnlineOnlyChain } from "@/lib/onlineMalls";
 
 type TrustInfo = {
   count: number;
@@ -116,7 +117,7 @@ export default function PriceListClient({
         (x.unitPrice >= (lowBound as number) && x.unitPrice <= (highBound as number))
     )
     .map((x) => x.row);
-  const outliers = withUnitPrice
+  const allOutliers = withUnitPrice
     .filter(
       (x) =>
         median !== null &&
@@ -124,6 +125,11 @@ export default function PriceListClient({
         (x.unitPrice < (lowBound as number) || x.unitPrice > (highBound as number))
     )
     .map((x) => x.row);
+  // 온라인 전용 chain(쿠팡/옥션/G마켓/네이버쇼핑/기타 온라인몰 등)의 outlier는
+  // 패키지 차이가 아니라 호가성 등록일 가능성 큼 — 보조 섹션에서도 hide.
+  // 이마트/롯데마트 등 오프라인 chain의 outlier는 대용량/박스 가능성 → details에 보존.
+  const outliers = allOutliers.filter((p) => !isOnlineOnlyChain(p.chainName));
+  const hiddenOutlierCount = allOutliers.length - outliers.length;
 
   const minPrice = sorted[0]?.price ?? 0;
 
@@ -324,10 +330,20 @@ export default function PriceListClient({
         </CollapsibleList>
       )}
 
+      {hiddenOutlierCount > 0 && outliers.length === 0 && (
+        <div className="mt-2 text-[11px] text-ink-3 text-center">
+          온라인몰 호가성 {hiddenOutlierCount}건은 자동 제외됨
+        </div>
+      )}
       {outliers.length > 0 && (
         <details className="mt-3 border border-warning-soft bg-warning-soft/50 rounded-xl">
           <summary className="cursor-pointer p-3 text-xs text-warning-text font-medium select-none">
             ⚠️ 패키지가 다를 가능성이 있는 가격 {outliers.length}건 (펼쳐 보기)
+            {hiddenOutlierCount > 0 && (
+              <span className="ml-2 text-warning-text/70 font-normal">
+                · 온라인몰 호가성 {hiddenOutlierCount}건 자동 제외
+              </span>
+            )}
           </summary>
           <div className="px-3 pb-3 text-[11px] text-warning-text/80 mb-1">
             같은 상품으로 등록됐지만 단가가 다른 매장과 크게 다릅니다.

@@ -21,15 +21,27 @@ export default function SourceBadge({ source }: Props) {
   );
 }
 
-// 매장이 온라인 가상 매장인지 판별 (lat=0, lng=0 또는 "온라인" 포함)
+// 매장이 온라인 전용 매장인지 판별
+//
+// 판정 우선순위 (좌표 결측에 의존 X):
+//   1) chainName이 ONLINE_ONLY_CHAINS(쿠팡/옥션/G마켓/SSG/11번가/네이버쇼핑/기타 온라인몰 등) 매칭 → online
+//   2) store name에 "온라인" 또는 address가 "온라인 (전국 배송)" → online
+//   3) 그 외 → offline
+//
+// 이전에는 lat=0 && lng=0이면 무조건 온라인으로 판정했으나,
+// parsa 동기화 매장 중 좌표 결측인 오프라인 매장(예: GS더프레시수원매탄점)이
+// 잘못 온라인 섹션으로 빠지는 결함이 있어 화이트리스트 기반으로 변경.
+import { isOnlineOnlyChain } from "@/lib/onlineMalls";
+
 export function isOnlineStore(opts: {
   lat?: number;
   lng?: number;
   name?: string;
   chainName?: string;
+  address?: string;
 }): boolean {
-  if (opts.lat === 0 && opts.lng === 0) return true;
+  if (isOnlineOnlyChain(opts.chainName)) return true;
   if (opts.name?.includes("온라인")) return true;
-  const onlineChains = ["쿠팡", "G마켓", "지마켓", "SSG", "SSG.COM", "11번가", "옥션", "위메프", "티몬", "인터파크"];
-  return !!(opts.chainName && onlineChains.some((c) => opts.chainName!.includes(c)));
+  if (opts.address?.includes("온라인")) return true;
+  return false;
 }
