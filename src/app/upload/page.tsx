@@ -8,7 +8,11 @@ import { IconCamera, IconCheck, IconReceipt } from "@/components/icons";
 
 type ParsedItem = {
   rawName: string;
-  price: number;
+  price: number;                       // 호환 (= paidPrice ?? listPrice)
+  listPrice: number;                   // 정가
+  paidPrice: number | null;            // 행사가 (할인 적용 후 단가)
+  promotionType: string | null;        // "할인" | "1+1" | "번들 50%" 등
+  barcode: string | null;              // EAN-13 등
   quantity: number;
   productId: string | null;
 };
@@ -214,10 +218,14 @@ export default function UploadPage() {
     // - productId 있으면 기존 매칭
     // - productId 없으면 isNew + rawName으로 자동 신규 등록
     const payload = items
-      .filter((i) => i.price > 0 && i.rawName.trim())
+      .filter((i) => (i.listPrice ?? i.price) > 0 && i.rawName.trim())
       .map((i) => ({
         productId: i.productId,
         price: i.price,
+        listPrice: i.listPrice,
+        paidPrice: i.paidPrice,
+        promotionType: i.promotionType,
+        barcode: i.barcode,
         quantity: i.quantity,
         rawName: i.rawName,
         isNew: !i.productId, // 매칭 안 된 거는 신규 등록
@@ -663,13 +671,36 @@ export default function UploadPage() {
                               </option>
                             ))}
                           </select>
-                          <div className="flex justify-between items-center mt-1 text-xs">
-                            <span className="text-ink-3">
-                              x{it.quantity}
-                            </span>
-                            <span className="font-semibold tabular-nums text-ink-1">
-                              {formatWon(it.price)}
-                            </span>
+                          <div className="flex justify-between items-end mt-1 text-xs">
+                            <div className="text-ink-3 space-y-0.5">
+                              <div>x{it.quantity}</div>
+                              {it.barcode && (
+                                <div className="font-mono text-[10px]" title="바코드 (EAN-13)">
+                                  📦 {it.barcode}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              {it.paidPrice != null && it.paidPrice < it.listPrice ? (
+                                <>
+                                  <div className="text-[10px] text-ink-3 line-through tabular-nums">
+                                    {formatWon(it.listPrice)}
+                                  </div>
+                                  <div className="font-semibold tabular-nums text-rose-600">
+                                    {formatWon(it.paidPrice)}
+                                  </div>
+                                  {it.promotionType && (
+                                    <div className="text-[10px] text-rose-500">
+                                      {it.promotionType}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="font-semibold tabular-nums text-ink-1">
+                                  {formatWon(it.listPrice ?? it.price)}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
