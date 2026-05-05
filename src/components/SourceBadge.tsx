@@ -4,9 +4,12 @@ const LABELS: Record<string, { text: string; className: string }> = {
   receipt: { text: "📸 영수증", className: "bg-blue-100 text-blue-700" },
   manual: { text: "✍️ 직접 입력", className: "bg-purple-100 text-purple-700" },
   kamis: { text: "📊 KAMIS 시세", className: "bg-emerald-100 text-emerald-700" },
+  stats_official: { text: "📊 통계청 시세", className: "bg-emerald-100 text-emerald-700" },
   naver: { text: "🛍️ 네이버쇼핑", className: "bg-green-100 text-green-700" },
-  seed: { text: "🌱 초기 데이터", className: "bg-stone-100 text-stone-600" },
+  parsa: { text: "💰 참가격(소비자원)", className: "bg-teal-100 text-teal-700" },
   csv: { text: "📋 CSV 임포트", className: "bg-amber-100 text-amber-700" },
+  // seed는 사용자에게 노출하지 않을 데모 데이터 — 혹시 잔재가 들어와도 명확히 구분
+  seed: { text: "🧪 데모 데이터", className: "bg-stone-100 text-stone-500" },
 };
 
 export default function SourceBadge({ source }: Props) {
