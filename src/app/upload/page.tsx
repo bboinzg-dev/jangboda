@@ -214,7 +214,7 @@ export default function UploadPage() {
   }
 
   // 매장 추측이 있는데 자동 매핑 실패 시 클라이언트에서 부분 매칭 시도
-  // 예: storeHint="킴스클럽 (천호점)" → "킴스클럽 천호점" 같은 store 자동 선택
+  // server matchStore 강화(분점 번호 제거)와 동일한 로직 — 클라이언트도 같은 동작
   useEffect(() => {
     if (!result?.storeHint || storeId || stores.length === 0) return;
     const normalize = (s: string) =>
@@ -222,13 +222,25 @@ export default function UploadPage() {
         .toLowerCase()
         .replace(/\s+/g, "")
         .replace(/[()[\]_\-,.]/g, "");
+    const looseNormalize = (s: string) =>
+      normalize(s)
+        .replace(/(\d+)호점/g, "점")
+        .replace(/(\d+)점/g, "점");
     const hint = normalize(result.storeHint);
     if (hint.length < 2) return;
     // 1순위: 정규화 후 정확/부분 매칭
-    const found = stores.find((s) => {
+    let found = stores.find((s) => {
       const sName = normalize(s.name);
       return sName === hint || sName.includes(hint) || hint.includes(sName);
     });
+    // 2순위: 분점 번호 제거 후 매칭 ("천호점" ↔ "천호2점")
+    if (!found) {
+      const looseHint = looseNormalize(result.storeHint);
+      found = stores.find((s) => {
+        const sN = looseNormalize(s.name);
+        return sN === looseHint || sN.includes(looseHint) || looseHint.includes(sN);
+      });
+    }
     if (found) setStoreId(found.id);
   }, [result, stores, storeId]);
 
@@ -681,14 +693,24 @@ export default function UploadPage() {
                                 : "border-amber-300 bg-white"
                             }`}
                           >
-                            <option value="">
-                              {ok ? "선택 해제 (신규 등록)" : "🆕 신규 상품으로 등록"}
-                            </option>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
+                            {/* 매칭된 항목: 첫 옵션을 "그대로 등록"으로 명확히. 변경하고 싶을 때만 아래 옵션 선택 */}
+                            {ok && it.productId && (
+                              <option value={it.productId}>
+                                ✓ 자동 매칭된 상품 — 그대로 등록
                               </option>
-                            ))}
+                            )}
+                            <option value="">
+                              {ok
+                                ? "🔍 다른 상품으로 변경 또는 신규 등록"
+                                : "🆕 신규 상품으로 등록"}
+                            </option>
+                            {products
+                              .filter((p) => p.id !== it.productId)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
                           </select>
                           <div className="flex justify-between items-end mt-1 text-xs">
                             <div className="text-ink-3 space-y-0.5">
