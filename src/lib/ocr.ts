@@ -388,23 +388,57 @@ function parseReceiptText(text: string): ParsedReceipt {
     }
   }
 
-  // 합계 찾기 — 공백 무시 (CLOVA가 "합 계" 분리해 보낼 수 있음)
-  let totalAmount: number | undefined;
-  const TOTAL_KEYWORDS = ["합계", "총", "TOTAL", "Total", "결제금액", "구매금액"];
-  const containsTotal = (line: string) => {
-    const noSpace = line.replace(/\s/g, "");
-    return TOTAL_KEYWORDS.some((k) => noSpace.includes(k.replace(/\s/g, "")));
+  // 합계 찾기 — 우선순위 기반으로 "결제 후 실제 금액"을 잡음
+  // (영수증마다 "총계 = 단가 합" / "품목할인계 = 할인 합" / "합계 = 결제 합" 의미가 뒤섞임)
+  // 공백 무시 매칭 — CLOVA가 "합 계" 분리해 보낼 수 있음
+  // 우선순위: 결제금액 > 신용카드 > 청구액 > 현금영수증 > 합계 > 구매금액
+  // ("총계"는 단가 합이라 후보 제외 — 품목 라인 컷용으로만 사용)
+  const TOTAL_KEYWORDS_BY_PRIORITY = [
+    "결제금액",
+    "신용카드", "체크카드",
+    "청구액",
+    "현금영수증",
+    "합계",
+    "구매금액",
+    "TOTAL",
+  ];
+  // "총계", "할인계" 등은 합계 라인 컷용 — 품목 추출 루프가 이 라인들을 품목으로 잘못 잡지 않게.
+  const TOTAL_KEYWORDS_FOR_LINE_CUT = [
+    ...TOTAL_KEYWORDS_BY_PRIORITY,
+    "총계",          // 단가 합 (할인 전)
+    "할인계", "할인합계",
+    "자사할인", "에누리",
+    "물품가액", "공급가액",
+  ];
+  // 합계 후보에서 제외할 라인 키워드 — 면세/과세/부가세, 할인 합계 라인 등
+  const TOTAL_EXCLUDE = [
+    "할인계", "할인합계",
+    "자사할인", "에누리",
+    "면세", "과세", "부가세",
+    "물품가액", "공급가액",
+    "총계",   // 단가 합 — 결제 합계 아님
+  ];
+  const noSpaceOf = (s: string) => s.replace(/\s/g, "");
+  const containsAny = (line: string, keywords: string[]) => {
+    const ns = noSpaceOf(line);
+    return keywords.some((k) => ns.includes(noSpaceOf(k)));
   };
-  for (const l of lines) {
-    if (containsTotal(l)) {
+  // 품목 라인 컷용 (기존 호환 유지)
+  const containsTotal = (line: string) => containsAny(line, TOTAL_KEYWORDS_FOR_LINE_CUT);
+
+  let totalAmount: number | undefined;
+  outer: for (const k of TOTAL_KEYWORDS_BY_PRIORITY) {
+    for (const l of lines) {
+      if (!noSpaceOf(l).includes(noSpaceOf(k))) continue;
+      if (containsAny(l, TOTAL_EXCLUDE)) continue;
       const matches = [...l.matchAll(PRICE_RE)];
-      if (matches.length > 0) {
-        const last = matches[matches.length - 1][1];
-        const n = parseInt(last.replace(/,/g, ""), 10);
-        if (n > 0) {
-          totalAmount = n;
-          break;
-        }
+      if (matches.length === 0) continue;
+      const last = matches[matches.length - 1][1];
+      const n = parseInt(last.replace(/,/g, ""), 10);
+      // sanity — 결제금액이 100원 미만이거나 1억 이상이면 의심
+      if (n >= 100 && n < 100_000_000) {
+        totalAmount = n;
+        break outer;
       }
     }
   }
