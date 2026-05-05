@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         take: 1,
       },
+      // 클라이언트 측 검색에서도 alias로 찾을 수 있도록 같이 반환
+      aliases: { select: { alias: true } },
       _count: { select: { prices: true } },
     },
     orderBy: sort === "popular" ? { prices: { _count: "desc" } } : undefined,
@@ -93,6 +95,8 @@ export async function GET(req: NextRequest) {
         chains: Array.from(chainsByProduct.get(p.id)?.values() ?? [])
           .sort((a, b) => b.count - a.count)
           .slice(0, 6),
+        // alias 목록 — 클라이언트 측 검색에서 alias로도 매칭 가능
+        aliases: p.aliases.map((a) => a.alias),
         hasHaccp: p.hasHaccp,
         imageUrl: p.imageUrl,
       })),

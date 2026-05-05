@@ -89,9 +89,10 @@ export default function CartPage() {
   // 장보기 모드 (풀스크린 체크리스트)
   const [shoppingOpen, setShoppingOpen] = useState(false);
 
-  // 인기 정렬로 fetch — priceCount 많은 순
+  // 인기 정렬로 fetch — priceCount 많은 순. limit은 전체 카탈로그(현재 622건)을 다 받도록
+  // 1000으로 (이전 500은 잘려서 영수증 1건짜리 신규 product가 안 보이는 문제)
   useEffect(() => {
-    fetch("/api/products?limit=500&sort=popular")
+    fetch("/api/products?limit=1000&sort=popular")
       .then((r) => r.json())
       .then((d) => setProducts(d.products ?? []));
   }, []);

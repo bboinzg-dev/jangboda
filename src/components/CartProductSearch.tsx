@@ -12,6 +12,7 @@ export type SearchableProduct = {
   unit?: string;
   priceCount?: number;
   stats?: { min: number; max: number; avg: number; count: number };
+  aliases?: string[];
   hasHaccp?: boolean;
   imageUrl?: string | null;
 };
@@ -58,7 +59,11 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
     }
     if (q.length > 0) {
       list = list.filter((p) => {
-        const hay = norm(`${p.name} ${p.brand ?? ""} ${p.category ?? ""}`);
+        // name/brand/category + alias까지 포함해 매칭 (영수증 OCR 약칭으로 검색해도 잡히게)
+        const aliasJoined = (p.aliases ?? []).join(" ");
+        const hay = norm(
+          `${p.name} ${p.brand ?? ""} ${p.category ?? ""} ${aliasJoined}`,
+        );
         return hay.includes(q);
       });
     }
