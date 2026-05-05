@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
 import MonthlyTrendChart from "@/components/MonthlyTrendChart";
+import BudgetGoalCard from "@/components/BudgetGoalCard";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 
@@ -460,6 +461,9 @@ export default async function BudgetPage() {
           </div>
         </div>
       </header>
+
+      {/* 월 예산 진행률 — 미설정 시 "예산 설정" CTA, 설정 시 진행률 바 */}
+      <BudgetGoalCard thisMonth={data.kpi.thisMonth} />
 
       {/* 자동 인사이트 — 룰 기반으로 데이터에서 발견한 멘트 */}
       {insights.length > 0 && (

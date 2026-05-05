@@ -147,6 +147,18 @@ model User {
   pushSubs      PushSubscription[]
   favorites     FavoriteStore[]
   benefitProfile BenefitProfile?
+  budgetGoal    BudgetGoal?
+}
+
+// 월 예산 — 사용자가 설정한 한 달 지출 목표 (가계부 진행률 표시)
+// 1차는 단일 monthlyAmount만, 카테고리별 한도는 후속 (categoryLimits Json)
+model BudgetGoal {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monthlyAmount Int      // 원 단위. 0이면 사실상 미설정과 동일
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // 즐겨찾기 매장 — 사용자가 자주 가는 매장 표시
