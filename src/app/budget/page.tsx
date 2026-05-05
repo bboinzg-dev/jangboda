@@ -8,6 +8,7 @@ import MonthlyTrendChart from "@/components/MonthlyTrendChart";
 import BudgetGoalCard from "@/components/BudgetGoalCard";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import CategorySelect from "@/components/CategorySelect";
+import ManualEntryDialog from "@/components/ManualEntryDialog";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 
@@ -431,7 +432,7 @@ export default async function BudgetPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-2xl font-bold">📊 가계부</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <a
             href="/api/budget/export"
             download
@@ -440,6 +441,7 @@ export default async function BudgetPage() {
           >
             📥 내보내기
           </a>
+          <ManualEntryDialog />
           <Link
             href="/upload"
             className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg font-medium"
