@@ -1,5 +1,6 @@
 // 영수증/외부데이터의 원본 상품명을 카탈로그 Product에 매칭
-// 1차: ProductAlias 정확 매칭 (가장 신뢰 높음)
+// 0차: GTIN/EAN 바코드 정확 매칭 (가장 신뢰 높음 — 영수증에 바코드 출력되는 마트만)
+// 1차: ProductAlias 정확 매칭
 // 2차: 정규화 후 정확 일치
 // 3차: 정규화 후 부분 일치 (양쪽 길이 차이 ±30% 이내일 때만)
 // 4차: 상품명 직접 비교 (보수적)
@@ -28,7 +29,20 @@ function lengthRatioOk(a: string, b: string): boolean {
   return shorter / longer >= LEN_RATIO_MIN;
 }
 
-export async function matchProduct(rawName: string): Promise<string | null> {
+export async function matchProduct(
+  rawName: string,
+  barcode?: string
+): Promise<string | null> {
+  // 0. 바코드 정확 매칭 — 킴스클럽/이마트/롯데마트 등 EAN-13 출력 영수증에서 가장 신뢰
+  // Product.barcode가 @unique이므로 findUnique로 한 번에 확정
+  if (barcode && /^\d{8,14}$/.test(barcode.trim())) {
+    const byBarcode = await prisma.product.findUnique({
+      where: { barcode: barcode.trim() },
+      select: { id: true },
+    });
+    if (byBarcode) return byBarcode.id;
+  }
+
   if (!rawName || !rawName.trim()) return null;
   const normalized = normalize(rawName);
   if (normalized.length < MIN_MATCH_LEN) {
