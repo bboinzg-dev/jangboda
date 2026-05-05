@@ -490,6 +490,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   const TOTAL_KEYWORDS_FOR_LINE_CUT = [
     ...TOTAL_KEYWORDS_BY_PRIORITY,
     "총계",          // 단가 합 (할인 전)
+    "종 계", "종계", // 총 계 OCR 오인식 (총→종)
     "할인계", "할인합계",
     "자사할인", "에누리",
     "물품가액", "공급가액",
@@ -530,7 +531,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   // 영수증 메타정보 키워드 — 품목이 아니므로 제외
   // (주소/연락처/카드정보/결제정보/광고문구 등)
   const META_KEYWORDS_FILTER = [
-    "주소", "전화", "TEL", "Tel", "사업자", "시업자", "사 업자", "대표자", "POS",
+    "주소", "전화", "선화", "TEL", "Tel", "사업자", "시업자", "사 업자", "대표자", "POS",
     "카드번호", "카드사", "매입사", "가맹점", "발행",
     "사용금액", "할부", "승인", "응답", "거래일시",
     "매출", "부가세", "결제금액", "현금영수증",

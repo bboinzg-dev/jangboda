@@ -201,6 +201,11 @@ export default async function StoreDetailPage({
                         {p.product.unit}
                         {p.product.brand ? ` · ${p.product.brand}` : ""}
                       </div>
+                      {p.product.barcode && (
+                        <div className="text-[10px] text-stone-400 font-mono mt-0.5 truncate">
+                          📦 {p.product.barcode}
+                        </div>
+                      )}
                     </div>
                   </Link>
                   <div className="text-right shrink-0">
