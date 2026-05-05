@@ -15,6 +15,7 @@ import AgriTraceLookup from "@/components/AgriTraceLookup";
 import HealthFunctionalPanel from "@/components/HealthFunctionalPanel";
 import CattleTracePanel from "@/components/CattleTracePanel";
 import SeafoodTracePanel from "@/components/SeafoodTracePanel";
+import FoodSafetyPanel from "@/components/FoodSafetyPanel";
 import ProductImage from "@/components/ProductImage";
 
 export const revalidate = 30;
@@ -27,6 +28,30 @@ type HistoryPoint = {
   chainName: string;
 };
 
+// 제조사명 정규화 — "(주)농심" / "농심㈜" / "농심 주식회사" 동일하게 (회수 fallback 매칭용)
+function normalizeManufacturer(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .toLowerCase()
+    .replace(/[()（）\[\]【】㈜주식회사\s.,\-_]/g, "")
+    .replace(/co\.?ltd\.?|inc\.?|corp\.?/gi, "");
+}
+
+function nameTokenOverlap(recallName: string, productName: string): number {
+  const tok = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[()（）\[\]【】·,\-_/+]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 2);
+  const rt = tok(recallName);
+  if (rt.length === 0) return 0;
+  const ptSet = new Set(tok(productName));
+  let hit = 0;
+  for (const t of rt) if (ptSet.has(t)) hit++;
+  return hit / rt.length;
+}
+
 async function getProductDetail(id: string) {
   try {
     const product = await prisma.product.findUnique({
@@ -34,6 +59,74 @@ async function getProductDetail(id: string) {
       include: { aliases: true },
     });
     if (!product) return null;
+
+    // 회수 정보 매칭 (식약처 I0490)
+    // 1순위: barcode 정확매칭 (확실)
+    // 2순위(fallback): barcode 없는 회수 + 정규화 manufacturer 일치 + productName 토큰 60%↑
+    //   (식약처 회수 354건 중 ~38%가 barcode 누락 — 농수산물·소분식품)
+    const recallSelect = {
+      id: true,
+      productName: true,
+      manufacturer: true,
+      reason: true,
+      grade: true,
+      registeredAt: true,
+      recallMethod: true,
+    } as const;
+    type RecallRow = {
+      id: string;
+      productName: string;
+      manufacturer: string | null;
+      reason: string;
+      grade: string | null;
+      registeredAt: Date;
+      recallMethod: string | null;
+      matchType?: "exact" | "fuzzy";
+      score?: number;
+    };
+    const recalls: RecallRow[] = [];
+    const recallIdSet = new Set<string>();
+    if (product.barcode) {
+      const exact = await prisma.recall.findMany({
+        where: { barcode: product.barcode },
+        orderBy: { registeredAt: "desc" },
+        take: 5,
+        select: recallSelect,
+      });
+      for (const r of exact) {
+        recalls.push({ ...r, matchType: "exact" });
+        recallIdSet.add(r.id);
+      }
+    }
+    // fallback — product.manufacturer 있을 때만 (오탐 방지)
+    if (product.manufacturer && recalls.length < 5) {
+      const mfrNorm = normalizeManufacturer(product.manufacturer);
+      if (mfrNorm) {
+        // 같은 정규화 제조사의 barcode-less 회수만 후보
+        // (DB 인덱스가 manufacturer raw 기준이라 후보군은 메모리에서 정규화 비교)
+        const candidates = await prisma.recall.findMany({
+          where: { barcode: null, manufacturer: { not: null } },
+          orderBy: { registeredAt: "desc" },
+          take: 200,
+          select: recallSelect,
+        });
+        for (const r of candidates) {
+          if (recallIdSet.has(r.id)) continue;
+          if (!r.manufacturer || normalizeManufacturer(r.manufacturer) !== mfrNorm) continue;
+          const score = nameTokenOverlap(r.productName, product.name);
+          if (score >= 0.6) {
+            recalls.push({ ...r, matchType: "fuzzy", score });
+            recallIdSet.add(r.id);
+            if (recalls.length >= 5) break;
+          }
+        }
+      }
+    }
+    // 정확매칭 우선, 그 안에서 최신순
+    recalls.sort((a, b) => {
+      if (a.matchType !== b.matchType) return a.matchType === "exact" ? -1 : 1;
+      return b.registeredAt.getTime() - a.registeredAt.getTime();
+    });
 
     // 한 번의 쿼리로 이 productId의 모든 가격 가져오기 (N+1 회피)
     // store 정보는 join으로 같이. take 5000 제한 (메모리 보호)
@@ -112,7 +205,7 @@ async function getProductDetail(id: string) {
       }))
       .reverse();
 
-    return { product, prices: valid, history };
+    return { product, prices: valid, history, recalls };
   } catch (e) {
     console.error("[products/[id]] getProductDetail error:", {
       productId: id,
@@ -129,7 +222,7 @@ export default async function ProductDetailPage({
 }) {
   const data = await getProductDetail(params.id);
   if (!data) return notFound();
-  const { product, prices, history } = data;
+  const { product, prices, history, recalls } = data;
 
   // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
@@ -264,6 +357,97 @@ export default async function ProductDetailPage({
             </div>
           </div>
         </div>
+
+        {/* ⚠️ 회수 경고 — 식약처 회수 매칭 (1순위 바코드 정확매칭, fallback 제조사+제품명) */}
+        {recalls.length > 0 && (() => {
+          const top = recalls[0];
+          const isFuzzy = top.matchType === "fuzzy";
+          // fuzzy는 "추정"으로 약하게, exact는 "확정" 강하게
+          const tone = isFuzzy
+            ? "border-amber-300 bg-amber-50 text-amber-900"
+            : "border-rose-300 bg-rose-50 text-rose-900";
+          const subTone = isFuzzy ? "text-amber-700" : "text-rose-700";
+          return (
+            <div className={`mt-4 rounded-xl border-2 p-4 ${tone}`}>
+              <div className="flex items-start gap-2">
+                <span className="text-2xl leading-none">⚠️</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold">
+                      {isFuzzy ? "회수 대상 추정 상품" : "회수 대상 상품"}
+                    </span>
+                    {top.grade && (
+                      <span
+                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${
+                          isFuzzy ? "bg-amber-700" : "bg-rose-700"
+                        }`}
+                      >
+                        {top.grade}
+                      </span>
+                    )}
+                    {isFuzzy && top.score !== undefined && (
+                      <span className={`text-[11px] ${subTone}`}>
+                        매칭 정확도 {Math.round(top.score * 100)}%
+                      </span>
+                    )}
+                    <span className={`text-[11px] ${subTone}`}>
+                      {top.registeredAt.toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })}{" "}
+                      식약처 등록
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm">
+                    <span className="font-medium">회수명:</span> {top.productName}
+                  </div>
+                  <div className="mt-0.5 text-sm">
+                    <span className="font-medium">사유:</span> {top.reason}
+                  </div>
+                  {top.recallMethod && (
+                    <div className="mt-0.5 text-xs">
+                      <span className="font-medium">조치:</span> {top.recallMethod}
+                    </div>
+                  )}
+                  {recalls.length > 1 && (
+                    <details className="mt-2 text-xs">
+                      <summary className={`cursor-pointer font-medium ${subTone}`}>
+                        다른 회수 이력 {recalls.length - 1}건 보기
+                      </summary>
+                      <ul className="mt-2 space-y-1.5 pl-2">
+                        {recalls.slice(1).map((r) => (
+                          <li
+                            key={r.id}
+                            className={`border-l-2 pl-2 ${
+                              r.matchType === "fuzzy"
+                                ? "border-amber-300"
+                                : "border-rose-300"
+                            }`}
+                          >
+                            <div className={subTone}>
+                              {r.registeredAt.toLocaleDateString("ko-KR")}
+                              {r.grade && ` · ${r.grade}`}
+                              {r.matchType === "fuzzy" &&
+                                ` · 추정 ${Math.round((r.score ?? 0) * 100)}%`}
+                            </div>
+                            <div>{r.reason}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  <div className={`mt-2 text-[11px] ${subTone}`}>
+                    {isFuzzy
+                      ? "바코드가 없는 회수 — 제조사·제품명 매칭으로 추정한 결과입니다. 확인이 필요합니다."
+                      : "같은 바코드(EAN)로 매칭된 회수 정보입니다."}{" "}
+                    출처: 식약처 회수판매중지 공개데이터
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 제조/원산지/등급/인증 정보 */}
         {(product.manufacturer ||
@@ -460,6 +644,10 @@ export default async function ProductDetailPage({
           </span>
         </summary>
         <div className="mt-3 space-y-6">
+          {/* 식약처 등록 정보 — 영수증 enrich로 metadata.foodsafety에 저장된 정보 노출
+              (제조사 주소·식품유형·카테고리 트리·소비기한·신고번호) */}
+          <FoodSafetyPanel data={product.metadata} />
+
           {/* 원재료 정보 — 농수산물(KAMIS)은 C002에 데이터 없음 → 스킵 */}
           {product.category !== "농수산물" && (
             <IngredientsPanel productId={product.id} />
