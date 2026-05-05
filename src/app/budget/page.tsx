@@ -56,6 +56,8 @@ type BudgetData = {
     paid: number;
     minPrice: number;
     diff: number;
+    minStoreName?: string;
+    minChainName?: string;
   }[];
   frequentProducts: FrequentProduct[];  // 자주 사는 상품 + 곧 살 때
   receipts: {
@@ -177,16 +179,30 @@ async function getBudget(userId: string): Promise<BudgetData> {
 
   // 평균보다 비싸게 산 Top 5 — 같은 product의 정가 최저가 vs 본인이 실제 낸 금액 비교
   // (시장 비교 기준은 listPrice로 통일 — 행사 만료 추정 불가 정책)
+  // 강화: 어느 매장에서 더 쌌는지 (chainName + storeName)도 함께 조회 → "더 싼 매장" 안내
   const productIds = Array.from(new Set(valid.map((p) => p.productId)));
-  const minByProduct = new Map<string, number>();
+  const minByProduct = new Map<
+    string,
+    { listPrice: number; storeName: string; chainName: string }
+  >();
   if (productIds.length > 0) {
-    const allMins = await prisma.price.groupBy({
-      by: ["productId"],
+    const allMinsWithStore = await prisma.price.findMany({
       where: { productId: { in: productIds } },
-      _min: { listPrice: true },
+      select: {
+        productId: true,
+        listPrice: true,
+        store: { select: { name: true, chain: { select: { name: true } } } },
+      },
+      orderBy: { listPrice: "asc" },
     });
-    for (const r of allMins) {
-      if (r._min.listPrice != null) minByProduct.set(r.productId, r._min.listPrice);
+    for (const p of allMinsWithStore) {
+      if (!minByProduct.has(p.productId) && p.store) {
+        minByProduct.set(p.productId, {
+          listPrice: p.listPrice,
+          storeName: p.store.name,
+          chainName: p.store.chain.name,
+        });
+      }
     }
   }
 
@@ -247,13 +263,16 @@ async function getBudget(userId: string): Promise<BudgetData> {
   }
   const overpaid = Array.from(myMaxByProduct.entries())
     .map(([productId, v]) => {
-      const minPrice = minByProduct.get(productId) ?? v.paid;
+      const minInfo = minByProduct.get(productId);
+      const minPrice = minInfo?.listPrice ?? v.paid;
       return {
         productId,
         productName: v.productName,
         paid: v.paid,
         minPrice,
         diff: v.paid - minPrice,
+        minStoreName: minInfo?.storeName,
+        minChainName: minInfo?.chainName,
       };
     })
     .filter((x) => x.diff > 0)
@@ -731,23 +750,36 @@ export default async function BudgetPage() {
               return (
                 <li
                   key={o.productId}
-                  className="flex items-center justify-between text-sm border-b border-stone-100 last:border-0 pb-2 last:pb-0"
+                  className="border-b border-stone-100 last:border-0 pb-2 last:pb-0"
                 >
                   <Link
                     href={`/products/${o.productId}`}
-                    className="hover:underline truncate min-w-0"
+                    className="block hover:bg-stone-50 -mx-1 px-1 py-1 rounded"
                   >
-                    {o.productName}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-ink-1 truncate">
+                          {o.productName}
+                        </div>
+                        {o.minChainName && (
+                          <div className="text-xs text-emerald-700 mt-0.5">
+                            💡{" "}
+                            <span className="font-medium">{o.minChainName}</span>
+                            {o.minStoreName && o.minStoreName !== o.minChainName ? ` ${o.minStoreName}` : ""}
+                            에서 더 싸게 살 수 있어요
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-rose-600 font-bold text-sm">
+                          +{formatWon(o.diff)}
+                        </div>
+                        <div className="text-xs text-stone-500 tabular-nums">
+                          {formatWon(o.paid)} → {formatWon(o.minPrice)} (+{pct}%)
+                        </div>
+                      </div>
+                    </div>
                   </Link>
-                  <div className="text-right shrink-0 ml-3">
-                    <div className="text-rose-600 font-bold">
-                      +{formatWon(o.diff)}
-                    </div>
-                    <div className="text-xs text-stone-500">
-                      산값 {formatWon(o.paid)} / 최저 {formatWon(o.minPrice)} (+
-                      {pct}%)
-                    </div>
-                  </div>
                 </li>
               );
             })}
