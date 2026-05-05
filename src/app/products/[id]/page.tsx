@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
-import { unitPriceValue } from "@/lib/units";
+import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import { notFound } from "next/navigation";
 import { isOnlineStore } from "@/components/SourceBadge";
 import { isOnlineOnlyChain } from "@/lib/onlineMalls";
@@ -307,9 +307,21 @@ export default async function ProductDetailPage({
         {prices.length > 0 && (
           <>
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <PriceStat label="전체 최저가" value={formatWon(minPrice)} highlight />
-              <PriceStat label="전체 최고가" value={formatWon(maxPrice)} />
-              <PriceStat label="가격차" value={formatWon(maxPrice - minPrice)} />
+              <PriceStat
+                label="전체 최저가"
+                value={formatWon(minPrice)}
+                subValue={unitPriceLabel(minPrice, product.unit)}
+                highlight
+              />
+              <PriceStat
+                label="전체 최고가"
+                value={formatWon(maxPrice)}
+                subValue={unitPriceLabel(maxPrice, product.unit)}
+              />
+              <PriceStat
+                label="가격차"
+                value={formatWon(maxPrice - minPrice)}
+              />
             </div>
             {excludedCount > 0 && (
               <div className="mt-2 text-[11px] text-ink-3">
@@ -481,10 +493,12 @@ export default async function ProductDetailPage({
 function PriceStat({
   label,
   value,
+  subValue,
   highlight,
 }: {
   label: string;
   value: string;
+  subValue?: string | null;
   highlight?: boolean;
 }) {
   return (
@@ -501,6 +515,15 @@ function PriceStat({
       >
         {value}
       </div>
+      {subValue && (
+        <div
+          className={`text-[10px] mt-0.5 tabular-nums ${
+            highlight ? "text-brand-600/70" : "text-ink-3"
+          }`}
+        >
+          {subValue}
+        </div>
+      )}
     </div>
   );
 }
