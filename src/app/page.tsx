@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceParts, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
+import BudgetSummaryWidget from "@/components/BudgetSummaryWidget";
 import RecallTicker from "@/components/RecallTicker";
 import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
@@ -225,6 +226,9 @@ export default async function HomePage() {
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
+
+      {/* 가계부 위젯 — 로그인 사용자에게 이번 달 KPI 미니 카드 (client-side fetch, ISR 보존) */}
+      <BudgetSummaryWidget />
 
       {/* 시세 + 회수 — 좌우 2칼럼 (모바일은 세로 스택) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
