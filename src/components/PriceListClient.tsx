@@ -81,14 +81,14 @@ export default function PriceListClient({
     return p.price;
   };
 
-  // 필터 + 정렬 (즐겨찾기 매장 우선, 그 다음 단가/가격/행사가 낮은 순)
+  // 필터 + 정렬 — 사용자가 선택한 정렬 기준만 사용 (단가/가격/행사가)
+  // 즐겨찾기 우선 정렬은 제거 — 모든 정렬 모드가 같은 결과 되는 문제 해결
+  // 즐겨찾기 매장은 amber 테두리 + ★ 아이콘으로 시각 구분
+  // 즐겨찾기만 보고 싶으면 "★ 즐겨찾기 매장만" 체크박스 활용
   const filtered = favoriteOnly
     ? rows.filter((r) => favoriteIds.has(r.storeId))
     : rows;
   const sortedAll = [...filtered].sort((a, b) => {
-    const aFav = favoriteIds.has(a.storeId) ? 1 : 0;
-    const bFav = favoriteIds.has(b.storeId) ? 1 : 0;
-    if (aFav !== bFav) return bFav - aFav; // 즐겨찾기 우선
     if (sortBy === "unit") {
       const ua = unitPriceValue(a.price, unit);
       const ub = unitPriceValue(b.price, unit);
@@ -98,8 +98,7 @@ export default function PriceListClient({
       return ua - ub;
     }
     if (sortBy === "promo") {
-      // 행사가 적용된 매장 우선 + 행사가 낮은 순
-      // 행사 없는 매장은 listPrice로 정렬에 참여 (꺼지진 않음)
+      // 행사가 적용된 매장이 자연스럽게 위로 (effectivePrice 작아서)
       return effectivePrice(a) - effectivePrice(b);
     }
     return a.price - b.price;
