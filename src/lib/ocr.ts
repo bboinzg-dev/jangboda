@@ -378,7 +378,7 @@ function splitMixedDiscountLine(l: string): string[] {
   return [l];
 }
 
-function parseReceiptText(text: string): ParsedReceipt {
+export function parseReceiptText(text: string): ParsedReceipt {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -393,9 +393,13 @@ function parseReceiptText(text: string): ParsedReceipt {
   // GS25 같은 특정 chain은 보통 캐치프레이즈("재미있는 일상 플랫폼") 옆에 같이 나옴 →
   // 그 라인 통째로 쓰면 "재미있는 일상 플랫폼 GS25"가 매장명이 됨. 다음 라인에서 더
   // 구체적인 매장명("GS25힐데스하임점")이 나오는 경우가 많아서 그걸 우선.
+  // 구체적인 chain 이름만 — "마트" / "백화점" 같은 일반 키워드는 "스마트영수증" 같은 앱 헤더에
+  // 부분 매칭되어 storeHint가 잘못 잡히는 문제 방지
   const STORE_KEYWORDS = [
     "롯데마트", "이마트", "홈플러스", "킴스클럽", "코스트코",
-    "GS더프레시", "GS25", "CU", "세븐일레븐", "마트", "백화점",
+    "농협하나로", "메가마트", "트레이더스",
+    "신세계백화점", "롯데백화점", "현대백화점", "갤러리아백화점",
+    "GS더프레시", "GS25", "CU", "세븐일레븐", "이마트24", "미니스톱",
   ];
   const SLOGAN_KEYWORDS = [
     "재미있는", "행복한", "즐거운", "신선한", "감사", "환영",
@@ -542,8 +546,9 @@ function parseReceiptText(text: string): ParsedReceipt {
     "외 1명", "외 2명", "외 3명", "외 4명", "외 5명",
     // 결제 수단
     "신용", "체크", "현금", "GSPAY", "삼성페이", "카카오페이", "네이버페이",
-    // 행정구역 (주소 라인)
-    "동", "구", "시", "도", // "서울/강동구/천호동" 같은 행정구역
+    // ❌ 행정구역 ("동", "구", "시", "도") 키워드 단독 매칭은 너무 광범위해서 제거됨.
+    //    "펩시콜라" → "시", "치킨도시락" → "도" 같은 false positive 유발.
+    //    실제 주소 라인은 ADDRESS_RE(번지 패턴) 또는 한글+가격 부재로 자연 컷됨.
   ];
 
   // 행정구역 키워드는 너무 흔해서 단독으로 쓰면 over-filter — 주소 패턴(번지 포함)일 때만
