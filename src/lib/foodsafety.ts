@@ -149,50 +149,85 @@ export async function searchByName(query: string, limit = 10): Promise<FoodSafet
   }
 }
 
-// best match — brand + name 점수 매칭 (보수적, 임계값 ↑)
+// 단위·괄호 제거 — 검색 키워드용 (식약처 product name은 "농심 신라면 120g"식이라
+// "(3개입)" "x 12" 같은 우리쪽 단위가 들어가면 매칭 실패)
+function stripUnits(s: string): string {
+  return s
+    .replace(/\(.*?\)/g, " ")
+    .replace(/(\d+(?:\.\d+)?)\s*(g|kg|ml|l|개입|개|매|입|봉|팩|박스|set)\b/gi, " ")
+    .replace(/x\s*\d+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// best match — brand + name 점수 매칭
+// minScore 기본값을 3으로 낮춤 (이전 5는 너무 빡빡 — 부분일치 + 토큰 매칭으로 점수 누적 가능)
 export async function findBestMatchForProduct(
   productName: string,
   brand?: string | null,
   options?: { minScore?: number }
 ): Promise<FoodSafetyItem | null> {
-  // ParsaProduct(brand 없음, "팔도 왕뚜껑(110g)" 형태)는 minScore=3으로 호출 권장
-  const minScore = options?.minScore ?? 5;
-  const cleaned = (brand ? productName.replace(brand, "") : productName)
-    .replace(/[()]/g, " ")
-    .trim();
-  const tokens = cleaned.split(/\s+/).filter((t) => t.length >= 2);
-  // brand가 없으면 첫 단어를 brand 추정 (점수 부여용 — 매칭에는 영향 없음)
-  const guessedBrand = brand ?? tokens[0];
+  const minScore = options?.minScore ?? 3;
+  // 단위 제거 후 검색어 생성 (식약처 풀네임과 토큰 매칭 잘 되도록)
+  const stripped = stripUnits(brand ? productName.replace(brand, "") : productName);
+  const tokens = stripped.split(/\s+/).filter((t) => t.length >= 2);
+  // brand가 없으면 첫 토큰을 brand 추정 (점수 부여용)
+  const guessedBrand = brand ?? tokens[0] ?? null;
 
-  // 검색 정확도 위해 더 구체적인 검색어부터 시도
-  // (이전엔 tokens[0]=brand만으로 검색해서 광범위 결과 + 매칭 score 부족)
-  const candidates = [
-    cleaned,                            // "팔도 왕뚜껑 110g" — 가장 정확
-    tokens.slice(0, 2).join(" "),       // "팔도 왕뚜껑"
-    tokens[0],                          // "팔도" — brand fallback
-  ].filter(Boolean);
+  // 검색 시도 우선순위: 좁은 → 넓은 (좁은 게 정확하면 토큰 적게 가져옴)
+  const queries = Array.from(
+    new Set(
+      [
+        stripped,                           // "햇반"
+        tokens.slice(0, 3).join(" "),       // 핵심 3토큰
+        tokens.slice(0, 2).join(" "),       // 핵심 2토큰
+        tokens[0],                          // 첫 토큰 (가장 광범위)
+      ].filter((q) => q && q.length >= 2),
+    ),
+  );
   let rows: FoodSafetyItem[] = [];
-  for (const q of candidates) {
-    rows = await searchByName(q, 15);
+  for (const q of queries) {
+    rows = await searchByName(q, 20);
     if (rows.length > 0) break;
   }
   if (rows.length === 0) return null;
 
+  // 정규화 + 토큰 set
   const normalize = (s: string) =>
     s.toLowerCase().replace(/\s+/g, "").replace(/[^가-힣a-z0-9]/g, "");
+  const tokenize = (s: string): Set<string> =>
+    new Set(
+      stripUnits(s)
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((t) => t.length >= 2),
+    );
   const targetN = normalize(productName);
+  const targetTokens = tokenize(productName);
   const brandN = guessedBrand ? normalize(guessedBrand) : "";
 
   let best: { item: FoodSafetyItem; score: number } | null = null;
   for (const r of rows) {
     const cName = normalize(r.productName);
     const cMfr = normalize(r.manufacturer);
+    const cTokens = tokenize(r.productName + " " + r.manufacturer);
     let score = 0;
+
+    // 1. brand 일치 — 추정 brand가 candidate name/manufacturer에 들어있으면 +2
     if (brandN && (cMfr.includes(brandN) || cName.includes(brandN))) score += 2;
+
+    // 2. name 일치 — 정확 +5, 부분 +2
     if (cName.length >= 3 && targetN.length >= 3) {
       if (cName === targetN) score += 5;
       else if (cName.includes(targetN) || targetN.includes(cName)) score += 2;
     }
+
+    // 3. 토큰 매칭 — 공통 토큰 수만큼 가중치 (각 +1, 최대 +3)
+    //    예: target [햇반] ∩ candidate [cj, 햇반, 백미밥] = [햇반] → +1
+    let common = 0;
+    for (const t of targetTokens) if (cTokens.has(t)) common++;
+    score += Math.min(common, 3);
+
     if (!best || score > best.score) best = { item: r, score };
   }
   if (!best || best.score < minScore) return null;

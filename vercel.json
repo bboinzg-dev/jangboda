@@ -89,6 +89,10 @@
     {
       "path": "/api/sync/parsa/enrich?chain=true",
       "schedule": "0 23 * * 6"
+    },
+    {
+      "path": "/api/sync/brand-match",
+      "schedule": "0 2 * * 0"
     }
   ],
   "functions": {
@@ -109,6 +113,7 @@
     "src/app/api/cron/sync-benefits/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/normalize-benefits/route.ts": { "maxDuration": 60 },
     "src/app/api/cron/stale-benefits/route.ts": { "maxDuration": 60 },
-    "src/app/api/sync/product-images/route.ts": { "maxDuration": 60 }
+    "src/app/api/sync/product-images/route.ts": { "maxDuration": 60 },
+    "src/app/api/sync/brand-match/route.ts": { "maxDuration": 60 }
   }
 }
