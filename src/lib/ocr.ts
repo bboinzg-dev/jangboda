@@ -89,9 +89,12 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
     ).length;
     // 텍스트 파서가 할인/바코드를 더 잡았으면 그쪽 items 사용 + 구조화 메타 보강
     if (textRichness > structRichness) {
+      // text 파서가 items를 더 풍부하게 추출했으면 storeHint/storeAddress도 text 우선
+      // (CLOVA Receipt가 앱 헤더를 storeInfo.name으로 오인식하는 케이스 — "스마트영수증" 등)
       return {
         items: textParsed.items,
-        storeHint: structured.storeHint || textParsed.storeHint,
+        storeHint: textParsed.storeHint || structured.storeHint,
+        storeAddress: textParsed.storeAddress || structured.storeAddress,
         receiptDate: structured.receiptDate || textParsed.receiptDate,
         totalAmount: structured.totalAmount || textParsed.totalAmount,
         rawText: textParsed.rawText || structured.rawText,
@@ -406,14 +409,25 @@ function parseReceiptText(text: string): ParsedReceipt {
     if (first && first.length <= 20 && /[가-힣]/.test(first)) storeHint = first;
   }
 
-  // 매장 주소 추출 — "주소:..." 라인 (분점 매칭에 활용 — 이름보다 정확)
-  // OCR row 그룹화로 "주소:서울시 강동구 구천면로 189, ..." 형태로 합쳐 들어옴
+  // 매장 주소 추출 — 분점 매칭에 활용 (이름보다 정확)
+  // 1순위: "주소:" 키워드 있는 라인 (킴스클럽 등)
+  // 2순위: 도로명+번지 패턴 포함 라인 (롯데마트 스마트영수증 등 — "주소:" prefix 없음)
   let storeAddress: string | undefined;
   for (const l of lines.slice(0, 12)) {
     const m = l.match(/주\s*소\s*[:：]\s*(.+)$/);
     if (m && m[1].trim().length >= 5) {
       storeAddress = m[1].trim();
       break;
+    }
+  }
+  if (!storeAddress) {
+    // "○○로/대로/길 N" 도로명+번지 패턴이 포함되고 80자 이내인 라인
+    // (영수증 푸터의 긴 안내문 배제)
+    for (const l of lines.slice(0, 12)) {
+      if (/[가-힣]+(?:로|대로|길)\s+\d/.test(l) && l.length <= 80) {
+        storeAddress = l.trim();
+        break;
+      }
     }
   }
 
@@ -495,6 +509,8 @@ function parseReceiptText(text: string): ParsedReceipt {
     "포인트", "적립", "쿠폰",
     "버는법", "이벤트", "당첨", "응모",
     "교환/환불", "교환", "환불",
+    // 영수증 하단 푸터 안내문 (롯데마트 "마트&슈퍼60을 이용해주셔서 감사합니다" 등)
+    "이용해주", "방문해주", "감사합니다", "감사하|", "이용하여",
     "할인", "행사할인", "쿠폰할인", "회원할인", "즉시할인",
     "식별번호", "회원번호", "회원NO", "회원 NO", "거래번호",
     "NO:", "NO :", "수량/금액", "고객용", "송장",
@@ -617,8 +633,12 @@ function parseReceiptText(text: string): ParsedReceipt {
     }
     if (listPrice < 100 || listPrice > 200_000) return { kind: "ignore" };
 
-    // 품목명 추출
-    let name = l.replace(lastMatch[0], "").trim();
+    // 품목명 추출 — 가격이 시작되는 위치까지 substring
+    // (이전: l.replace(lastMatch[0], "")는 첫 매칭만 제거 → "3,290 1 3,290"에서
+    //  첫 "3,290"만 빠지고 "1 3,290" 남아 결국 "1"이 이름 끝에 남는 버그)
+    const nameEndIdx =
+      strictMatches.length >= 1 ? strictMatches[0].index! : lastMatch.index!;
+    let name = l.substring(0, nameEndIdx).trim();
     name = name.replace(COMMA_PRICE_RE, " ");
     name = name.replace(/^\d+\s+/, "");
     name = name.replace(/\s+x?\s*\d+$/i, "");
