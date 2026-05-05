@@ -21,6 +21,7 @@ type Product = {
   unit: string;
   imageUrl?: string | null;
   stats?: { min: number; max: number; avg: number; count: number };
+  chains?: { name: string; logoUrl: string | null; count: number }[];
   hasHaccp?: boolean;
 };
 
@@ -65,12 +66,15 @@ export default function SearchPage() {
     run("", ALL);
   }, []);
 
-  // 카테고리 변경 시 즉시 재조회
+  // 입력 중 자동 검색 (300ms debounce) — enter/검색 버튼 안 눌러도 결과 즉시 반영
+  // 사용자가 "물회" 타이핑하면 300ms 후 자동으로 fetch
   useEffect(() => {
-    run(q, category);
-    // q 변경 시는 form submit이 호출하므로 의존성에 q 안 넣음
+    const handle = setTimeout(() => {
+      run(q, category);
+    }, 300);
+    return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
+  }, [q, category]);
 
   const sorted = useMemo(() => {
     return [...products].sort((a, b) => {
@@ -294,6 +298,23 @@ export default function SearchPage() {
                         )}
                       </div>
                       <div className="text-xs text-ink-3 mt-0.5">{p.unit}</div>
+                      {/* 등록 chain 분포 — 같은 SKU인지 다른 SKU인지 사용자가 매장 분포로 판단 */}
+                      {p.chains && p.chains.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {p.chains.map((c) => (
+                            <span
+                              key={c.name}
+                              className="inline-flex items-center text-[10px] bg-stone-100 text-stone-700 rounded px-1.5 py-0.5"
+                              title={`${c.name} ${c.count}매장`}
+                            >
+                              {c.name}
+                              {c.count > 1 && (
+                                <span className="ml-0.5 text-stone-500">·{c.count}</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       {p.stats && p.stats.count > 0 ? (

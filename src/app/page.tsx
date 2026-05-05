@@ -63,6 +63,7 @@ async function getHomeData() {
             where: { source: { not: "stats_official" } },
             take: 50,
             orderBy: { createdAt: "desc" },
+            include: { store: { select: { chain: { select: { name: true, logoUrl: true } } } } },
           },
         },
       }),
@@ -116,6 +117,17 @@ async function getHomeData() {
         minUnit !== null && maxUnit !== null && maxUnit > 0
           ? Math.round(((maxUnit - minUnit) / maxUnit) * 100)
           : null;
+      // 등록 chain 분포 — 같은 SKU인지 다른 SKU인지 사용자가 매장 분포로 판단 (top 6)
+      const chMap = new Map<string, { name: string; logoUrl: string | null; count: number }>();
+      for (const pr of p.prices) {
+        const ch = pr.store?.chain;
+        if (!ch?.name) continue;
+        const cur = chMap.get(ch.name);
+        if (cur) cur.count++;
+        else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl, count: 1 });
+      }
+      const chains = [...chMap.values()].sort((a, b) => b.count - a.count).slice(0, 6);
+
       return {
         id: p.id,
         name: p.name,
@@ -128,6 +140,7 @@ async function getHomeData() {
         hasHaccp: p.hasHaccp,
         imageUrl: p.imageUrl,
         excludedCount: p.prices.length - filteredPrices.length,
+        chains,
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -307,6 +320,23 @@ export default async function HomePage() {
                       <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium mt-1">
                         🏅 HACCP
                       </span>
+                    )}
+                    {/* 등록 chain 분포 — 매장 비교 가능성 가늠 */}
+                    {c.chains.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {c.chains.map((ch) => (
+                          <span
+                            key={ch.name}
+                            className="inline-flex items-center text-[10px] bg-stone-100 text-stone-700 rounded px-1.5 py-0.5"
+                            title={`${ch.name} ${ch.count}매장`}
+                          >
+                            {ch.name}
+                            {ch.count > 1 && (
+                              <span className="ml-0.5 text-stone-500">·{ch.count}</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="text-right shrink-0 ml-4">

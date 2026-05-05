@@ -33,22 +33,30 @@ export async function GET(req: NextRequest) {
     take: limit,
   });
 
-  // 각 상품의 최저가/평균가 계산을 위해 가격 한 번 더 집계
+  // 각 상품의 최저가/평균가 + 등록 chain 분포 — 한 번에 join으로 가져옴
+  // chain 분포는 사용자가 "이 상품은 어디 있나" 보고 다른 product 카드와 비교해
+  // 같은 SKU인지 판단하는 데 도움 (이름이 살짝 달라도 매장 분포로 동일성 추정)
   const productIds = products.map((p) => p.id);
   const allPrices = await prisma.price.findMany({
     where: {
       productId: { in: productIds },
       source: { not: "stats_official" }, // 시세는 매장 가격 통계에서 제외
     },
-    select: { productId: true, listPrice: true },
+    select: {
+      productId: true,
+      listPrice: true,
+      store: { select: { chain: { select: { name: true, logoUrl: true } } } },
+    },
   });
 
-  const stats = new Map<string, { min: number; max: number; avg: number; count: number }>();
+  type Stat = { min: number; max: number; avg: number; count: number };
+  type ChainEntry = { name: string; logoUrl: string | null; count: number };
+  const stats = new Map<string, Stat>();
+  const chainsByProduct = new Map<string, Map<string, ChainEntry>>();
+
   for (const id of productIds) {
-    const list = allPrices
-      .filter((p) => p.productId === id)
-      .map((p) => p.listPrice ?? 0)
-      .filter((x) => x > 0);
+    const rows = allPrices.filter((p) => p.productId === id);
+    const list = rows.map((p) => p.listPrice ?? 0).filter((x) => x > 0);
     if (list.length === 0) {
       stats.set(id, { min: 0, max: 0, avg: 0, count: 0 });
     } else {
@@ -60,6 +68,15 @@ export async function GET(req: NextRequest) {
         count: list.length,
       });
     }
+    const chMap = new Map<string, ChainEntry>();
+    for (const r of rows) {
+      const ch = r.store?.chain;
+      if (!ch?.name) continue;
+      const cur = chMap.get(ch.name);
+      if (cur) cur.count++;
+      else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl, count: 1 });
+    }
+    chainsByProduct.set(id, chMap);
   }
 
   return NextResponse.json(
@@ -72,6 +89,10 @@ export async function GET(req: NextRequest) {
         unit: p.unit,
         priceCount: p._count.prices,
         stats: stats.get(p.id),
+        // chain 등록 빈도 높은 순으로 정렬, 카드 UI 공간 고려해 top 6만
+        chains: Array.from(chainsByProduct.get(p.id)?.values() ?? [])
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6),
         hasHaccp: p.hasHaccp,
         imageUrl: p.imageUrl,
       })),
