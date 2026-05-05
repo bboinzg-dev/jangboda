@@ -97,14 +97,13 @@ function ItemCard({ item }: { item: TickerItem }) {
         <div className="text-sm font-bold text-brand-700 tabular-nums">
           {item.price.toLocaleString("ko-KR")}원
         </div>
+        {/* 부가 표시: 용량당 가격 — 실판매가 아래 작게 (10kg쌀이면 "100g당 689원") */}
         {(() => {
           const upl = unitPriceLabel(item.price, item.productUnit);
           if (!upl) return null;
-          const m = upl.match(/^(.*?당)\s*(\d[\d,]*)원/);
-          if (!m) return null;
           return (
-            <div className="text-[10px] text-stone-400 tabular-nums font-mono">
-              {m[1]} {m[2]}원
+            <div className="text-[11px] text-stone-500 tabular-nums">
+              {upl}
             </div>
           );
         })()}
