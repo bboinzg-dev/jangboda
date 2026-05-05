@@ -397,14 +397,24 @@ export default async function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-2xl font-bold">📊 가계부</h1>
-        <Link
-          href="/upload"
-          className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg font-medium"
-        >
-          + 영수증 추가
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/budget/export"
+            download
+            className="text-sm border border-line text-ink-2 hover:bg-surface-muted px-3 py-1.5 rounded-lg font-medium inline-flex items-center gap-1"
+            title="가계부 데이터를 CSV로 다운로드"
+          >
+            📥 내보내기
+          </a>
+          <Link
+            href="/upload"
+            className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg font-medium"
+          >
+            + 영수증 추가
+          </Link>
+        </div>
       </div>
 
       {/* 4-KPI 헤더 — 가계부의 핵심 지표를 한눈에 */}
