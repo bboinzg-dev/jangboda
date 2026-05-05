@@ -2,12 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 // GET /api/products?q=신라면&category=라면
+//
+// Query params:
+//   q          - 이름/브랜드/alias contains 검색
+//   category   - 카테고리 정확 일치
+//   sort       - "popular" → priceCount desc
+//   limit      - 결과 수 (default 200, max 1000)
+//   slim=true  - chains/store join 생략 (가벼운 응답 — /cart처럼 chains 안 쓰는 곳용)
+//                stats(min/max/avg)는 그대로 계산
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category") ?? undefined;
-  const sort = searchParams.get("sort") ?? undefined; // "popular" | undefined
+  const sort = searchParams.get("sort") ?? undefined;
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "200"), 1000);
+  const slim = searchParams.get("slim") === "true";
 
   const products = await prisma.product.findMany({
     where: {
@@ -22,12 +31,15 @@ export async function GET(req: NextRequest) {
           }
         : {}),
     },
-    include: {
-      prices: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-      // 클라이언트 측 검색에서도 alias로 찾을 수 있도록 같이 반환
+    select: {
+      id: true,
+      name: true,
+      brand: true,
+      category: true,
+      unit: true,
+      hasHaccp: true,
+      imageUrl: true,
+      // alias는 항상 — 클라이언트 측 검색 매칭에 가벼움 (avg 1.1개)
       aliases: { select: { alias: true } },
       _count: { select: { prices: true } },
     },
@@ -35,19 +47,22 @@ export async function GET(req: NextRequest) {
     take: limit,
   });
 
-  // 각 상품의 최저가/평균가 + 등록 chain 분포 — 한 번에 join으로 가져옴
-  // chain 분포는 사용자가 "이 상품은 어디 있나" 보고 다른 product 카드와 비교해
-  // 같은 SKU인지 판단하는 데 도움 (이름이 살짝 달라도 매장 분포로 동일성 추정)
+  // 가격 + (slim 아닐 때만) chain 분포
   const productIds = products.map((p) => p.id);
   const allPrices = await prisma.price.findMany({
     where: {
       productId: { in: productIds },
-      source: { not: "stats_official" }, // 시세는 매장 가격 통계에서 제외
+      source: { not: "stats_official" },
     },
     select: {
       productId: true,
       listPrice: true,
-      store: { select: { chain: { select: { name: true, logoUrl: true } } } },
+      // slim 모드면 store/chain join 생략 (가장 무거운 부분)
+      ...(slim
+        ? {}
+        : {
+            store: { select: { chain: { select: { name: true, logoUrl: true } } } },
+          }),
     },
   });
 
@@ -56,8 +71,16 @@ export async function GET(req: NextRequest) {
   const stats = new Map<string, Stat>();
   const chainsByProduct = new Map<string, Map<string, ChainEntry>>();
 
+  // productId → row 묶기 (filter N²을 단일 패스로)
+  const rowsByProduct = new Map<string, typeof allPrices>();
+  for (const r of allPrices) {
+    const arr = rowsByProduct.get(r.productId);
+    if (arr) arr.push(r);
+    else rowsByProduct.set(r.productId, [r]);
+  }
+
   for (const id of productIds) {
-    const rows = allPrices.filter((p) => p.productId === id);
+    const rows = rowsByProduct.get(id) ?? [];
     const list = rows.map((p) => p.listPrice ?? 0).filter((x) => x > 0);
     if (list.length === 0) {
       stats.set(id, { min: 0, max: 0, avg: 0, count: 0 });
@@ -70,15 +93,19 @@ export async function GET(req: NextRequest) {
         count: list.length,
       });
     }
-    const chMap = new Map<string, ChainEntry>();
-    for (const r of rows) {
-      const ch = r.store?.chain;
-      if (!ch?.name) continue;
-      const cur = chMap.get(ch.name);
-      if (cur) cur.count++;
-      else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl, count: 1 });
+    if (!slim) {
+      const chMap = new Map<string, ChainEntry>();
+      for (const r of rows) {
+        // slim 분기 때문에 타입 좁힘 안 됨 — 런타임 가드
+        const ch = (r as { store?: { chain?: { name: string; logoUrl: string | null } } })
+          .store?.chain;
+        if (!ch?.name) continue;
+        const cur = chMap.get(ch.name);
+        if (cur) cur.count++;
+        else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl, count: 1 });
+      }
+      chainsByProduct.set(id, chMap);
     }
-    chainsByProduct.set(id, chMap);
   }
 
   return NextResponse.json(
@@ -91,11 +118,13 @@ export async function GET(req: NextRequest) {
         unit: p.unit,
         priceCount: p._count.prices,
         stats: stats.get(p.id),
-        // chain 등록 빈도 높은 순으로 정렬, 카드 UI 공간 고려해 top 6만
-        chains: Array.from(chainsByProduct.get(p.id)?.values() ?? [])
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 6),
-        // alias 목록 — 클라이언트 측 검색에서 alias로도 매칭 가능
+        ...(slim
+          ? {}
+          : {
+              chains: Array.from(chainsByProduct.get(p.id)?.values() ?? [])
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 6),
+            }),
         aliases: p.aliases.map((a) => a.alias),
         hasHaccp: p.hasHaccp,
         imageUrl: p.imageUrl,
@@ -103,8 +132,8 @@ export async function GET(req: NextRequest) {
     },
     {
       headers: {
-        // 60초 CDN 캐시 + 5분 stale-while-revalidate (사용자 즉시 응답, 백그라운드 갱신)
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        // 카탈로그는 자주 안 바뀜 → 5분 캐시 + 30분 SWR (재방문 즉시 응답)
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
       },
     }
   );

@@ -22,6 +22,8 @@ type Props = {
   onAdd: (productId: string) => void;
   /** 이미 장바구니에 담긴 productId 집합 — 표시용 */
   cartIds?: Set<string>;
+  /** 첫 카탈로그 fetch 중 — 검색 placeholder/skeleton 노출용 */
+  loading?: boolean;
 };
 
 // 정규화: 한글 띄어쓰기 무시 + 소문자
@@ -30,7 +32,7 @@ function norm(s: string) {
 }
 
 // 검색하면서 + 버튼으로 즉시 담는 풍부한 카드 UI
-export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
+export default function CartProductSearch({ products, onAdd, cartIds, loading }: Props) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -131,7 +133,24 @@ export default function CartProductSearch({ products, onAdd, cartIds }: Props) {
         {showingPopular && popular.length > 0 && (
           <div className="text-xs text-ink-3 mb-2">인기 상품</div>
         )}
-        {!showingPopular && results.length === 0 && (
+        {/* 첫 fetch 중에는 skeleton — 빈 화면 회피 */}
+        {loading && products.length === 0 && (
+          <ul className="space-y-2" aria-busy="true">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3 p-3 border border-line rounded-xl bg-white"
+              >
+                <div className="w-12 h-12 rounded bg-stone-100 animate-pulse shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-3/4 bg-stone-100 animate-pulse rounded" />
+                  <div className="h-2.5 w-1/2 bg-stone-100 animate-pulse rounded" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!loading && !showingPopular && results.length === 0 && (
           <div className="text-sm text-ink-3 text-center py-6 border border-dashed border-line-strong rounded-xl">
             &quot;{query || activeCategory}&quot;에 맞는 상품이 없습니다
           </div>

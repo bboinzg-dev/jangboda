@@ -71,6 +71,7 @@ function isOnlineStore(c: Comparison): boolean {
 
 export default function CartPage() {
   const [products, setProducts] = useState<SearchableProduct[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [results, setResults] = useState<Comparison[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,12 +90,14 @@ export default function CartPage() {
   // 장보기 모드 (풀스크린 체크리스트)
   const [shoppingOpen, setShoppingOpen] = useState(false);
 
-  // 인기 정렬로 fetch — priceCount 많은 순. limit은 전체 카탈로그(현재 622건)을 다 받도록
-  // 1000으로 (이전 500은 잘려서 영수증 1건짜리 신규 product가 안 보이는 문제)
+  // 인기 정렬로 fetch — priceCount 많은 순. 전체 카탈로그(현재 622건)를 다 받음.
+  // slim=true: chains/store join 생략 (cart 검색 카드는 chain 안 씀 — 페이로드 ↓·응답 ↑)
   useEffect(() => {
-    fetch("/api/products?limit=1000&sort=popular")
+    setProductsLoading(true);
+    fetch("/api/products?limit=1000&sort=popular&slim=true")
       .then((r) => r.json())
-      .then((d) => setProducts(d.products ?? []));
+      .then((d) => setProducts(d.products ?? []))
+      .finally(() => setProductsLoading(false));
   }, []);
 
   // 첫 진입 시 자동 위치 요청 (사용자가 매번 버튼 눌러야 하는 거 회피)
@@ -509,6 +512,7 @@ export default function CartPage() {
             products={products}
             onAdd={addToCart}
             cartIds={cartIds}
+            loading={productsLoading}
           />
         </section>
 
