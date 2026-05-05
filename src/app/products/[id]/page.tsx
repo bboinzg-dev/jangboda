@@ -170,10 +170,13 @@ export default async function ProductDetailPage({
   // 온라인 섹션의 호가 사전 컷 — PriceListClient는 onlineRows length가 적으면(<3)
   // 자체 median 계산이 비활성되므로, page level에서 호가성 chain의 outlier를 미리 제거.
   // 옥션·G마켓·기타 온라인몰 같은 곳의 비정상 호가가 매장 카드에 그대로 노출되는 문제 방지.
+  // 제외 건수는 별도로 보존 → "아직 없음"이 아니라 "N건 호가성 자동 제외"로 정직하게 표시.
   const offlineRows = prices.filter((p) => !p.online);
-  const onlineRows = prices.filter(
-    (p) => p.online && !(isUnitOutlier(p.price) && isOnlineOnlyChain(p.chainName))
+  const allOnlineRows = prices.filter((p) => p.online);
+  const onlineRows = allOnlineRows.filter(
+    (p) => !(isUnitOutlier(p.price) && isOnlineOnlyChain(p.chainName))
   );
+  const onlineHiddenCount = allOnlineRows.length - onlineRows.length;
 
   // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
   // 시세(KAMIS) 제외 + 단가 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.
@@ -380,7 +383,8 @@ export default async function ProductDetailPage({
             <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
               📦 온라인 쇼핑몰
               <span className="text-xs text-ink-3 font-normal">
-                ({onlineRows.length}개 몰, 낮은 순)
+                ({onlineRows.length}개 몰, 낮은 순
+                {onlineHiddenCount > 0 && ` · 호가성 ${onlineHiddenCount}건 자동 제외`})
               </span>
             </h2>
             <PriceListClient
@@ -388,16 +392,26 @@ export default async function ProductDetailPage({
               unit={product.unit}
               rows={onlineRows}
               emptyHint={
-                <>
-                  아직 등록된 온라인 가격이 없습니다.
-                  <br />
-                  <Link
-                    href="/sync"
-                    className="text-brand-600 hover:underline font-medium"
-                  >
-                    네이버 쇼핑 동기화로 한 번에 가져오기 →
-                  </Link>
-                </>
+                onlineHiddenCount > 0 ? (
+                  <>
+                    온라인몰 호가성 가격 {onlineHiddenCount}건이 자동 제외됐어요.
+                    <br />
+                    <span className="text-[11px] text-ink-3">
+                      옥션·G마켓 등 일부 판매자 호가가 비정상 범위로 등록되어 비교에서 제외됨
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    아직 등록된 온라인 가격이 없습니다.
+                    <br />
+                    <Link
+                      href="/sync"
+                      className="text-brand-600 hover:underline font-medium"
+                    >
+                      네이버 쇼핑 동기화로 한 번에 가져오기 →
+                    </Link>
+                  </>
+                )
               }
             />
           </section>
