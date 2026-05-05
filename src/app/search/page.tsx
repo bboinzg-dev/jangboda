@@ -298,27 +298,17 @@ export default function SearchPage() {
                     <div className="text-right shrink-0">
                       {p.stats && p.stats.count > 0 ? (
                         <>
-                          {/* 단가를 메인 라인으로 — 같은 기준으로 비교 가능하게 */}
-                          {uparts ? (
-                            <>
-                              <div className="text-[10px] text-ink-3 font-medium">
-                                {uparts.basis}
-                              </div>
-                              <div className="text-xl font-extrabold tabular-nums tracking-tight text-brand-600 font-mono">
-                                {uparts.amount}
-                              </div>
-                              {/* 매장 가격은 보조 표시 */}
-                              <div className="text-[11px] text-ink-3 tabular-nums mt-0.5">
-                                실판매가 {formatWon(p.stats.min)}
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-xs text-ink-3">최저가</div>
-                              <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
-                                {formatWon(p.stats.min)}
-                              </div>
-                            </>
+                          {/* 실판매가가 메인 — 사용자가 실제로 지불할 금액. 단가는 보조 비교용 */}
+                          <div className="text-[10px] text-ink-3 font-medium">
+                            최저가
+                          </div>
+                          <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
+                            {formatWon(p.stats.min)}
+                          </div>
+                          {uparts && (
+                            <div className="text-[11px] text-ink-3 tabular-nums font-mono mt-0.5">
+                              {uparts.basis} {uparts.amount}
+                            </div>
                           )}
                           <div className="text-[10px] text-ink-3 mt-0.5">
                             {p.stats.count}개 매장

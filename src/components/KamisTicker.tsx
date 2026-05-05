@@ -93,31 +93,18 @@ function ItemCard({ item }: { item: TickerItem }) {
         </div>
       </div>
       <div className="shrink-0 ml-1 text-right">
-        {/* 단가가 메인 — 다른 용량/개수와 직접 비교 가능 */}
+        {/* 실판매가가 메인 — 사용자가 실제 지불할 금액. 단가는 보조 비교용 */}
+        <div className="text-sm font-bold text-brand-700 tabular-nums">
+          {item.price.toLocaleString("ko-KR")}원
+        </div>
         {(() => {
           const upl = unitPriceLabel(item.price, item.productUnit);
-          if (upl) {
-            // unitPriceLabel 형식: "100g당 1,234원" 같은 텍스트
-            const m = upl.match(/^(.*?당)\s*(\d[\d,]*)원/);
-            if (m) {
-              return (
-                <>
-                  <div className="text-[10px] text-stone-500 leading-none">
-                    {m[1]}
-                  </div>
-                  <div className="text-sm font-bold text-brand-700 tabular-nums">
-                    {m[2]}원
-                  </div>
-                  <div className="text-[10px] text-stone-400 tabular-nums">
-                    실판매 {item.price.toLocaleString("ko-KR")}원
-                  </div>
-                </>
-              );
-            }
-          }
+          if (!upl) return null;
+          const m = upl.match(/^(.*?당)\s*(\d[\d,]*)원/);
+          if (!m) return null;
           return (
-            <div className="text-sm font-bold text-brand-700 tabular-nums">
-              {item.price.toLocaleString("ko-KR")}원
+            <div className="text-[10px] text-stone-400 tabular-nums font-mono">
+              {m[1]} {m[2]}원
             </div>
           );
         })()}

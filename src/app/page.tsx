@@ -310,30 +310,21 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
-                    {uparts ? (
-                      <>
-                        {/* 단가를 메인으로 — 패키지 차이 무시하고 같은 기준으로 비교 */}
-                        <div className="text-[10px] text-ink-3 font-medium leading-none">
-                          최저 {uparts.basis}
-                        </div>
-                        <div className="text-[18px] font-extrabold tabular-nums text-ink-1 font-mono leading-tight">
-                          {uparts.amount}
-                        </div>
-                        <div className="text-[11px] text-ink-3 tabular-nums">
-                          실판매가 {formatWon(c.min)}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-xs text-ink-3">최저</div>
-                        <div className="text-[18px] font-extrabold tabular-nums text-ink-1">
-                          {formatWon(c.min)}
-                        </div>
-                      </>
+                    {/* 실판매가가 메인 — 사용자가 실제 지불할 금액. 단가는 패키지 비교용 보조 */}
+                    <div className="text-[10px] text-ink-3 font-medium leading-none">
+                      최저
+                    </div>
+                    <div className="text-[20px] font-extrabold tabular-nums text-ink-1 leading-tight">
+                      {formatWon(c.min)}
+                    </div>
+                    {uparts && (
+                      <div className="text-[11px] text-ink-3 tabular-nums font-mono">
+                        {uparts.basis} {uparts.amount}
+                      </div>
                     )}
                     <div className="text-xs text-danger-text mt-0.5 font-medium">
                       {c.unitSavingsPct !== null && c.unitSavingsPct > 0
-                        ? `단가 ${c.unitSavingsPct}% 절약`
+                        ? `${c.unitSavingsPct}% 절약`
                         : `최대 ${formatWon(c.diff)} 절약`}
                     </div>
                   </div>
