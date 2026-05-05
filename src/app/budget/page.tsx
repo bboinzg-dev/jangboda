@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
+import MonthlyTrendChart from "@/components/MonthlyTrendChart";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 
@@ -562,36 +563,10 @@ export default async function BudgetPage() {
         </section>
       )}
 
-      {/* 월별 막대 그래프 */}
+      {/* 월별 추세 라인차트 — SVG (recharts 안 씀, 번들 보호) */}
       <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">최근 6개월 소비 추이</h2>
-        <div className="flex items-end gap-2 h-40">
-          {data.monthly.map((m) => {
-            const h = (m.total / maxMonthly) * 100;
-            const labelMonth = m.key.split("-")[1];
-            const isCurrent = m.key === monthKey(new Date());
-            return (
-              <div
-                key={m.key}
-                className="flex-1 flex flex-col items-center gap-1 min-w-0"
-              >
-                <div className="text-[10px] text-stone-500 truncate w-full text-center">
-                  {m.total > 0 ? formatWon(m.total) : "-"}
-                </div>
-                <div className="w-full bg-stone-100 rounded-t flex items-end h-full">
-                  <div
-                    className={`w-full rounded-t transition-all ${
-                      isCurrent ? "bg-brand-500" : "bg-brand-300"
-                    }`}
-                    style={{ height: `${Math.max(h, 2)}%` }}
-                    aria-label={`${m.key} ${m.total}원`}
-                  />
-                </div>
-                <div className="text-xs text-stone-600">{labelMonth}월</div>
-              </div>
-            );
-          })}
-        </div>
+        <h2 className="font-bold mb-3">📈 최근 6개월 소비 추이</h2>
+        <MonthlyTrendChart data={data.monthly} currentKey={monthKey(new Date())} />
       </section>
 
       {/* 카테고리별 — 메가 카테고리(신선식품/유제품/음료/...) 정상화 */}
