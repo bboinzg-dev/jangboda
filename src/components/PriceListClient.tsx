@@ -24,13 +24,25 @@ export type PriceRowData = {
   chainLogoUrl?: string | null; // chain.logoUrl — 옵셔널 (호출자가 안 주면 미표시)
   lat: number;
   lng: number;
-  price: number;
+  price: number;                       // 통계·정렬용 가격 — 정책상 listPrice (정가) 기준
+  listPrice?: number | null;           // 정가 (= price와 동일하지만 명시)
+  paidPrice?: number | null;           // 행사가 (할인 적용 후 단가) — 보조 표시 전용, 통계엔 안 들어감
+  promotionType?: string | null;       // "할인" | "1+1" | "번들 50%" 등
   updatedAt: Date | string;
   source: string;
   productUrl?: string | null; // 온라인 가격일 때 외부 구매 링크
   online: boolean;
   trust?: TrustInfo;
 };
+
+// 행사가 freshness — 영수증 등록 후 14일 이내만 "최근 행사" 표시
+// 행사 만료일을 알 수 없는 데이터의 신선도 한계 (정책 결정)
+const PROMO_FRESH_DAYS = 14;
+function isPromoFresh(updatedAt: Date | string): boolean {
+  const t = typeof updatedAt === "string" ? new Date(updatedAt).getTime() : updatedAt.getTime();
+  if (!Number.isFinite(t)) return false;
+  return Date.now() - t < PROMO_FRESH_DAYS * 24 * 60 * 60 * 1000;
+}
 
 type Props = {
   rows: PriceRowData[];
@@ -272,6 +284,16 @@ export default function PriceListClient({
                       </div>
                     );
                   })()}
+                  {/* 최근 행사가 — paidPrice가 listPrice보다 작고 14일 이내 등록된 경우만 표시
+                      (행사 만료를 알 수 없으므로 신선도 컷오프 적용. 통계에는 미포함, 참고용) */}
+                  {p.paidPrice != null &&
+                    p.paidPrice < p.price &&
+                    isPromoFresh(p.updatedAt) && (
+                      <div className="mt-1 text-[10px] text-rose-600 leading-tight">
+                        💰 최근 행사 {formatWon(p.paidPrice)}
+                        {p.promotionType ? ` (${p.promotionType})` : ""}
+                      </div>
+                    )}
                   <div className="flex items-center gap-1 justify-end mt-0.5 flex-wrap">
                     <SourceBadge source={p.source} />
                     {p.trust && (
