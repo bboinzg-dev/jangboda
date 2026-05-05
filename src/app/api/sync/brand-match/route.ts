@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkSyncAuth } from "@/lib/auth";
-import { matchBrand } from "@/lib/brandRules";
+import { matchBrand, generateAliasCandidates } from "@/lib/brandRules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -50,10 +50,43 @@ async function handle(req: NextRequest) {
       }
     }
 
+    // 시간 budget 남으면 alias 자동 생성 진행
+    // 영수증 OCR 매칭용 — "CJ 햇반 백미밥" 외에 "햇반 백미밥", "햇반"도 alias로 등록.
+    // ProductAlias.alias는 @@unique 제약 — 충돌 시 silent skip.
+    let aliasesCreated = 0;
+    if (Date.now() - startedAt < TIME_BUDGET_MS) {
+      const allProducts = await prisma.product.findMany({
+        select: { id: true, name: true, brand: true },
+      });
+      // 기존 alias 캐시 (충돌 빠르게 거름)
+      const existingAliases = new Set(
+        (await prisma.productAlias.findMany({ select: { alias: true } })).map(
+          (a) => a.alias,
+        ),
+      );
+      for (const p of allProducts) {
+        if (Date.now() - startedAt > TIME_BUDGET_MS) break;
+        const candidates = generateAliasCandidates(p.name, p.brand);
+        for (const alias of candidates) {
+          if (existingAliases.has(alias)) continue;
+          try {
+            await prisma.productAlias.create({
+              data: { productId: p.id, alias },
+            });
+            existingAliases.add(alias);
+            aliasesCreated++;
+          } catch {
+            // unique 충돌 — silent skip
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       candidatesScanned: processed,
       updated,
+      aliasesCreated,
       byBrand: Object.fromEntries(byBrand),
       durationMs: Date.now() - startedAt,
     });

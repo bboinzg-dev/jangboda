@@ -391,3 +391,65 @@ export function matchBrand(productName: string): BrandMatchResult | null {
     matchedKeyword: top.keyword,
   };
 }
+
+// 영수증 OCR 매칭용 alias 후보 생성 — product name에서 brand 토큰 제거하거나
+// 괄호/단위 제거한 형태. 영수증에 "CJ 햇반 백미밥" 대신 "햇반 백미밥"으로 출력되는 경우가
+// 흔해서 alias로 등록하면 매칭률이 향상됨.
+//
+// 안전선:
+//   - 4자 이상만 (너무 짧으면 모호)
+//   - 원본 name과 동일하면 skip (alias 의미 없음)
+//   - 호출 측에서 @@unique([alias]) 제약으로 충돌 시 skip
+export function generateAliasCandidates(
+  name: string,
+  brand: string | null,
+): string[] {
+  const out = new Set<string>();
+  const trim = (s: string) => s.trim().replace(/\s+/g, " ");
+
+  // 1. 괄호 안 내용 제거 (영수증은 보통 괄호 없음 — "햇반(3개입)" → "햇반")
+  const noParens = trim(name.replace(/\([^)]*\)/g, " "));
+  if (noParens.length >= 4 && noParens !== name) out.add(noParens);
+
+  // 2. 단위(g/ml/개입 등) 제거 — "오뚜기 컵밥 제육덮밥 310g" → "오뚜기 컵밥 제육덮밥"
+  const noUnits = trim(
+    name
+      .replace(/\(.*?\)/g, " ")
+      .replace(
+        /(\d+(?:\.\d+)?)\s*(g|kg|ml|l|개입|개|매|입|봉|팩|박스|set)\b/gi,
+        " ",
+      )
+      .replace(/x\s*\d+/gi, " "),
+  );
+  if (noUnits.length >= 4 && noUnits !== name) out.add(noUnits);
+
+  // 3. brand 토큰 제거 — "오뚜기 컵밥 제육덮밥(310g)" → "컵밥 제육덮밥"
+  //    brand 매칭 결과의 keyword(예: "햇반", "오뚜기") 또는 brand name 토큰 제거
+  const matched = matchBrand(name);
+  const brandTokens = new Set<string>();
+  if (matched) {
+    brandTokens.add(matched.matchedKeyword.toLowerCase());
+    // brand name 자체 (예: "오뚜기")도 제거 후보
+    for (const t of matched.brand.split(/\s+/)) {
+      if (t.length >= 2) brandTokens.add(t.toLowerCase());
+    }
+  }
+  if (brand) {
+    for (const t of brand.split(/\s+/)) {
+      if (t.length >= 2) brandTokens.add(t.toLowerCase());
+    }
+  }
+  if (brandTokens.size > 0) {
+    // 원본에서 brand 토큰 제거 후 정리
+    const tokens = noUnits.split(/\s+/);
+    const stripped = tokens
+      .filter((t) => !brandTokens.has(t.toLowerCase()))
+      .join(" ");
+    const strippedTrim = trim(stripped);
+    if (strippedTrim.length >= 4 && strippedTrim !== name && strippedTrim !== noUnits) {
+      out.add(strippedTrim);
+    }
+  }
+
+  return [...out];
+}
