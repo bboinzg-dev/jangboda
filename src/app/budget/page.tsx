@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
+import { generateInsights } from "@/lib/budgetInsights";
 
 export const dynamic = "force-dynamic";
 
@@ -302,6 +303,7 @@ export default async function BudgetPage() {
     data.kpi.totalPriceCount > 0
       ? Math.round((data.kpi.promoCount / data.kpi.totalPriceCount) * 100)
       : 0;
+  const insights = generateInsights(data);
 
   return (
     <div className="space-y-6">
@@ -383,6 +385,59 @@ export default async function BudgetPage() {
           </div>
         </div>
       </header>
+
+      {/* 자동 인사이트 — 룰 기반으로 데이터에서 발견한 멘트 */}
+      {insights.length > 0 && (
+        <section className="bg-white border border-line rounded-xl p-5">
+          <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
+            💡 오늘의 발견
+            <span className="text-xs text-ink-3 font-normal">
+              ({insights.length}건)
+            </span>
+          </h2>
+          <div className="space-y-2">
+            {insights.map((ins, i) => {
+              const toneStyle =
+                ins.tone === "positive"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                  : ins.tone === "negative"
+                  ? "bg-rose-50 border-rose-200 text-rose-900"
+                  : "bg-amber-50 border-amber-200 text-amber-900";
+              const Wrapper = ins.link ? Link : "div";
+              const wrapperProps = ins.link
+                ? { href: ins.link, className: "block hover:opacity-90" }
+                : {};
+              return (
+                <Wrapper
+                  key={i}
+                  {...(wrapperProps as { href: string; className: string })}
+                >
+                  <div
+                    className={`flex items-start gap-3 border rounded-lg p-3 ${toneStyle}`}
+                  >
+                    <span className="text-lg shrink-0" aria-hidden>
+                      {ins.emoji}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium leading-snug">
+                        {ins.text}
+                      </div>
+                      {ins.detail && (
+                        <div className="text-xs opacity-75 mt-0.5">
+                          {ins.detail}
+                        </div>
+                      )}
+                    </div>
+                    {ins.link && (
+                      <span className="text-sm opacity-60 shrink-0">›</span>
+                    )}
+                  </div>
+                </Wrapper>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 월별 막대 그래프 */}
       <section className="bg-white border border-stone-200 rounded-xl p-5">
