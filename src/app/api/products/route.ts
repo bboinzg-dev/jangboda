@@ -8,7 +8,7 @@ import { prisma } from "@/lib/db";
 //   category   - 카테고리 정확 일치
 //   sort       - "popular" → priceCount desc
 //   limit      - 결과 수 (default 200, max 1000)
-//   slim=true  - chains/store join 생략 (가벼운 응답 — /cart처럼 chains 안 쓰는 곳용)
+//   slim=true  - logoUrl/count 제외 lite chain (이름만) 반환 — /cart처럼 카드에 작은 chain 칩만 쓰는 곳용
 //                stats(min/max/avg)는 그대로 계산
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     take: limit,
   });
 
-  // 가격 + (slim 아닐 때만) chain 분포
+  // 가격 + chain 분포 — slim이면 chain 이름만(logoUrl 미포함, 페이로드 ↓)
   const productIds = products.map((p) => p.id);
   const allPrices = await prisma.price.findMany({
     where: {
@@ -57,12 +57,13 @@ export async function GET(req: NextRequest) {
     select: {
       productId: true,
       listPrice: true,
-      // slim 모드면 store/chain join 생략 (가장 무거운 부분)
-      ...(slim
-        ? {}
-        : {
-            store: { select: { chain: { select: { name: true, logoUrl: true } } } },
-          }),
+      store: {
+        select: {
+          chain: slim
+            ? { select: { name: true } }
+            : { select: { name: true, logoUrl: true } },
+        },
+      },
     },
   });
 
@@ -93,42 +94,42 @@ export async function GET(req: NextRequest) {
         count: list.length,
       });
     }
-    if (!slim) {
-      const chMap = new Map<string, ChainEntry>();
-      for (const r of rows) {
-        // slim 분기 때문에 타입 좁힘 안 됨 — 런타임 가드
-        const ch = (r as { store?: { chain?: { name: string; logoUrl: string | null } } })
-          .store?.chain;
-        if (!ch?.name) continue;
-        const cur = chMap.get(ch.name);
-        if (cur) cur.count++;
-        else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl, count: 1 });
-      }
-      chainsByProduct.set(id, chMap);
+    const chMap = new Map<string, ChainEntry>();
+    for (const r of rows) {
+      const ch = r.store?.chain as
+        | { name: string; logoUrl?: string | null }
+        | undefined;
+      if (!ch?.name) continue;
+      const cur = chMap.get(ch.name);
+      if (cur) cur.count++;
+      else chMap.set(ch.name, { name: ch.name, logoUrl: ch.logoUrl ?? null, count: 1 });
     }
+    chainsByProduct.set(id, chMap);
   }
 
   return NextResponse.json(
     {
-      products: products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        brand: p.brand,
-        category: p.category,
-        unit: p.unit,
-        priceCount: p._count.prices,
-        stats: stats.get(p.id),
-        ...(slim
-          ? {}
-          : {
-              chains: Array.from(chainsByProduct.get(p.id)?.values() ?? [])
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 6),
-            }),
-        aliases: p.aliases.map((a) => a.alias),
-        hasHaccp: p.hasHaccp,
-        imageUrl: p.imageUrl,
-      })),
+      products: products.map((p) => {
+        const chArr = Array.from(chainsByProduct.get(p.id)?.values() ?? [])
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6);
+        return {
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          category: p.category,
+          unit: p.unit,
+          priceCount: p._count.prices,
+          stats: stats.get(p.id),
+          // slim: 이름 배열 (가벼움). full: { name, logoUrl, count }[] (카드 풍부 표시용)
+          chains: slim
+            ? chArr.map((c) => c.name)
+            : chArr,
+          aliases: p.aliases.map((a) => a.alias),
+          hasHaccp: p.hasHaccp,
+          imageUrl: p.imageUrl,
+        };
+      }),
     },
     {
       headers: {

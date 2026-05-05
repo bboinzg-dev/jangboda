@@ -13,6 +13,8 @@ export type SearchableProduct = {
   priceCount?: number;
   stats?: { min: number; max: number; avg: number; count: number };
   aliases?: string[];
+  // slim API는 이름 배열, full API는 객체 배열 — 둘 다 받음
+  chains?: string[] | { name: string; logoUrl?: string | null; count?: number }[];
   hasHaccp?: boolean;
   imageUrl?: string | null;
 };
@@ -187,6 +189,28 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                   {minPrice > 0 && (
                     <div className="text-[11px] text-ink-2 mt-0.5">
                       최저 <span className="font-semibold">{formatWon(minPrice)}</span>
+                    </div>
+                  )}
+                  {/* 등록 chain 분포 — 같은 SKU인지 다른 SKU인지 사용자가 매장 분포로 판단
+                      slim API는 string[], full API는 객체 배열 — 둘 다 처리 */}
+                  {Array.isArray(p.chains) && p.chains.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {p.chains.map((ch) => {
+                        const name = typeof ch === "string" ? ch : ch.name;
+                        const count = typeof ch === "string" ? undefined : ch.count;
+                        return (
+                          <span
+                            key={name}
+                            className="inline-flex items-center text-[10px] bg-stone-100 text-stone-700 rounded px-1.5 py-0.5"
+                            title={count ? `${name} ${count}매장` : name}
+                          >
+                            {name}
+                            {count && count > 1 && (
+                              <span className="ml-0.5 text-stone-500">·{count}</span>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
