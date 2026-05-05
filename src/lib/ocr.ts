@@ -349,6 +349,8 @@ function parseReceiptText(text: string): ParsedReceipt {
     "포인트", "적립", "쿠폰",
     "버는법", "이벤트", "당첨", "응모",
     "교환/환불", "교환", "환불",
+    "할인", "행사할인", "쿠폰할인", "회원할인", "즉시할인",
+    "식별번호", "회원번호", "회원NO", "회원 NO", "거래번호",
     "NO:", "NO :", "수량/금액", "고객용", "송장",
     // 영수증 헤더 (구매자 표시)
     "외 1명", "외 2명", "외 3명", "외 4명", "외 5명",
@@ -365,6 +367,14 @@ function parseReceiptText(text: string): ParsedReceipt {
   const CARD_NUM_RE = /\d{4}[-\s]\d{2,4}[-*]+/;
   // 길이 큰 숫자만 (10자리+) — 승인번호/영수증번호 등
   const LARGE_NUM_RE = /^\D*\d{8,}\D*$/;
+  // 마스킹된 개인정보 (이름/카드 마스킹) — 별표 1개라도 있으면 거의 비-상품
+  const MASKED_PII_RE = /\*/;
+  // "홍길동님:" 같은 고객명 라인
+  const CUSTOMER_NAME_RE = /[가-힣*]{2,}\s*(님|고객|회원)\s*[:：]/;
+  // "(할인 -11,820)" 처럼 음수 가격이 들어간 라인 — 할인/환불
+  const NEGATIVE_PRICE_RE = /-\s*[1-9]\d{0,2}(?:,\d{3})+/;
+  // 콤마 포함된 가격(이름에서 제거할 때 사용) — "콤비네이션 피자 415G 9,900" → 단가 9,900 제거
+  const COMMA_PRICE_RE = /[1-9]\d{0,2}(?:,\d{3})+\s*원?/g;
 
   // 품목 줄 추출 — 보수적으로
   const items: ParsedReceiptItem[] = [];
@@ -376,6 +386,9 @@ function parseReceiptText(text: string): ParsedReceipt {
     if (CARD_NUM_RE.test(l)) continue;
     if (LARGE_NUM_RE.test(l)) continue;
     if (ADDRESS_RE.test(l)) continue; // 주소 (~번지/~번길)
+    if (MASKED_PII_RE.test(l)) continue; // 별표(*) 마스킹 — 이름/카드 가림표시
+    if (CUSTOMER_NAME_RE.test(l)) continue; // "홍길동님:" 형태
+    if (NEGATIVE_PRICE_RE.test(l)) continue; // 할인/마이너스 라인
     // 한글 글자가 2자 이상 들어있어야 (한글 없는 라인은 메타정보일 가능성 ↑)
     const hangul = l.match(/[가-힣]/g)?.length ?? 0;
     if (hangul < 2) continue;
@@ -392,9 +405,12 @@ function parseReceiptText(text: string): ParsedReceipt {
 
     // 품목명 추출
     let name = l.replace(lastMatch[0], "").trim();
+    // 이름에 남은 단가(콤마 포함 숫자, 예: 9,900) 모두 제거 — 단위(415G)는 보존
+    name = name.replace(COMMA_PRICE_RE, " ");
     name = name.replace(/^\d+\s+/, "");
     name = name.replace(/\s+x?\s*\d+$/i, "");
     name = name.replace(/[*#]+$/, "").trim();
+    name = name.replace(/\s+/g, " ").trim(); // 중간 공백 정리
     // 한글 핵심 토큰 추출 — 영문/숫자만 남으면 메타정보
     const nameHangul = name.match(/[가-힣]/g)?.length ?? 0;
     if (nameHangul < 2) continue;
