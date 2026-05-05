@@ -372,8 +372,9 @@ function parseReceiptText(text: string): ParsedReceipt {
   const CARD_NUM_RE = /\d{4}[-\s]\d{2,4}[-*]+/;
   // 길이 큰 숫자만 (10자리+) — 승인번호/영수증번호 등
   const LARGE_NUM_RE = /^\D*\d{8,}\D*$/;
-  // 마스킹된 개인정보 (이름/카드 마스킹) — 별표 1개라도 있으면 거의 비-상품
-  const MASKED_PII_RE = /\*/;
+  // 마스킹된 개인정보 — 글자 사이 *(김*진남) 또는 다중 *(***117*, 8710****370*)
+  // 단, 라인 맨 앞 단일 *는 면세 표시(롯데마트 "*호주산 홍두깨")이므로 제외
+  const MASKED_PII_RE = /[가-힣A-Za-z\d]\*[가-힣A-Za-z\d]|\*{2,}/;
   // "홍길동님:" 같은 고객명 라인
   const CUSTOMER_NAME_RE = /[가-힣*]{2,}\s*(님|고객|회원)\s*[:：]/;
   // "(할인 -11,820)" 처럼 음수 가격이 들어간 라인 — 할인/환불
@@ -414,7 +415,7 @@ function parseReceiptText(text: string): ParsedReceipt {
     name = name.replace(COMMA_PRICE_RE, " ");
     name = name.replace(/^\d+\s+/, "");
     name = name.replace(/\s+x?\s*\d+$/i, "");
-    name = name.replace(/[*#]+$/, "").trim();
+    name = name.replace(/^[*#]+|[*#]+$/g, "").trim(); // 면세표시(*) 등 제거
     name = name.replace(/\s+/g, " ").trim(); // 중간 공백 정리
     // 한글 핵심 토큰 추출 — 영문/숫자만 남으면 메타정보
     const nameHangul = name.match(/[가-힣]/g)?.length ?? 0;
