@@ -150,7 +150,9 @@ export default function PriceListClient({
   const outliers = allOutliers.filter((p) => !isOnlineOnlyChain(p.chainName));
   const hiddenOutlierCount = allOutliers.length - outliers.length;
 
-  const minPrice = sorted[0]?.price ?? 0;
+  // 최저가는 정렬 순서가 아니라 실제 가격 최소값 — 즐겨찾기 우선 정렬과 무관해야 함
+  // (이전 버그: 즐겨찾기 매장이 1위로 정렬되면 "최저가" 배지가 잘못 부여됨)
+  const minPrice = sorted.length > 0 ? Math.min(...sorted.map((p) => p.price)) : 0;
 
   if (rows.length === 0) {
     return (
@@ -218,19 +220,21 @@ export default function PriceListClient({
                 : 0;
             const showDirections = !p.online && p.lat > 0 && p.lng > 0;
             const isFav = favoriteIds.has(p.storeId);
+            // "최저가" 배지·테두리는 실제 최소 가격 매장에만 (정렬 순서와 무관)
+            const isLowest = p.price === minPrice && minPrice > 0;
             return (
               <li
                 key={p.storeId}
                 className={`bg-white border border-line rounded-xl p-4 flex items-center justify-between gap-3 ${
-                  i === 0
-                    ? "first:border-l-4 first:border-l-brand-500 first:bg-brand-50/30"
+                  isLowest
+                    ? "border-l-4 border-l-brand-500 bg-brand-50/30"
                     : isFav
                     ? "border-amber-200 bg-amber-50/30"
                     : ""
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {i === 0 && (
+                  {isLowest && (
                     <span className="bg-brand-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
                       최저가
                     </span>
