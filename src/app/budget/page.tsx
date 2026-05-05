@@ -44,6 +44,8 @@ type BudgetData = {
     thisMonth: number;             // 이번 달 총 지출
     lastMonth: number;             // 지난 달 총 지출 (비교용)
     monthDeltaPct: number | null;  // (thisMonth - lastMonth) / lastMonth * 100
+    lastYearTotal: number;         // 작년 같은 달 지출
+    yearDeltaPct: number | null;   // 작년 동월 대비 변화율
     savedAmount: number;           // 행사가로 산 누적 절약액 = Σ(listPrice - paidPrice)
     promoCount: number;            // 행사가로 구매한 건수
     totalPriceCount: number;       // 전체 등록 건수
@@ -133,8 +135,8 @@ async function getBudget(userId: string): Promise<BudgetData> {
     valid.map((p) => p.store?.id).filter((id): id is string => !!id),
   ).size;
 
-  // 최근 6개월 월별 합계
-  const keys = recentMonthKeys(6);
+  // 최근 12개월 월별 합계 — 연도별 추세 + 작년 동월 비교용
+  const keys = recentMonthKeys(12);
   const monthlyMap = new Map<string, number>(keys.map((k) => [k, 0]));
   for (const p of valid) {
     const k = monthKey(p.createdAt);
@@ -143,6 +145,16 @@ async function getBudget(userId: string): Promise<BudgetData> {
     }
   }
   const monthly = keys.map((k) => ({ key: k, total: monthlyMap.get(k) ?? 0 }));
+
+  // 작년 동월 비교 — 13개월 데이터까지 검사 (이번 달과 같은 월의 작년 데이터)
+  const lastYearKey = `${now.getFullYear() - 1}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const lastYearTotal = valid
+    .filter((p) => monthKey(p.createdAt) === lastYearKey)
+    .reduce((s, p) => s + paidOf(p), 0);
+  const yearDeltaPct =
+    lastYearTotal > 0
+      ? Math.round(((thisMonthTotal - lastYearTotal) / lastYearTotal) * 100)
+      : null;
 
   // 카테고리별 — 메가 카테고리(신선식품/유제품/가공즉석/음료/...)로 정상화
   // ("참가격 등록 상품" / "사용자 등록" 같은 무의미한 출처 메타 그룹화 해소)
@@ -324,6 +336,8 @@ async function getBudget(userId: string): Promise<BudgetData> {
       thisMonth: thisMonthTotal,
       lastMonth: lastMonthTotal,
       monthDeltaPct,
+      lastYearTotal,
+      yearDeltaPct,
       savedAmount,
       promoCount,
       totalPriceCount,

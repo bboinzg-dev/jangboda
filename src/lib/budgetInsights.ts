@@ -16,6 +16,8 @@ type InsightInput = {
     thisMonth: number;
     lastMonth: number;
     monthDeltaPct: number | null;
+    lastYearTotal: number;
+    yearDeltaPct: number | null;
     savedAmount: number;
     promoCount: number;
     totalPriceCount: number;
@@ -46,6 +48,33 @@ export function generateInsights(data: InsightInput): Insight[] {
         (data.kpi.promoCount / Math.max(data.kpi.totalPriceCount, 1)) * 100,
       )}%)`,
     });
+  }
+
+  // 1.5 작년 동월 비교 — 1년 추세 (절약 칭찬보다 우선순위 낮게 살짝)
+  if (
+    data.kpi.yearDeltaPct !== null &&
+    data.kpi.lastYearTotal > 0 &&
+    Math.abs(data.kpi.yearDeltaPct) >= 15
+  ) {
+    if (data.kpi.yearDeltaPct < 0) {
+      insights.push({
+        emoji: "🎊",
+        tone: "positive",
+        text: `작년 같은 달보다 ${Math.abs(data.kpi.yearDeltaPct)}% 적게 쓰셨어요!`,
+        detail: `작년 ${formatWon(data.kpi.lastYearTotal)} → 올해 ${formatWon(
+          data.kpi.thisMonth,
+        )}`,
+      });
+    } else {
+      insights.push({
+        emoji: "📅",
+        tone: "neutral",
+        text: `작년 같은 달보다 ${data.kpi.yearDeltaPct}% 더 쓰고 계세요.`,
+        detail: `작년 ${formatWon(data.kpi.lastYearTotal)} → 올해 ${formatWon(
+          data.kpi.thisMonth,
+        )}`,
+      });
+    }
   }
 
   // 2. 지출 증가/감소 — 이전 달 비교
