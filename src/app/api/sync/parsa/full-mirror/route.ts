@@ -215,8 +215,6 @@ async function mirrorPrices(from: number, limit: number) {
     listPrice: number;
     paidPrice: number | null;
     promotionType: string | null;
-    price: number;        // 호환 (Phase 6 cleanup 시 제거)
-    isOnSale: boolean;    // 호환
     source: string;
     productUrl: string | null;
   };
@@ -237,8 +235,6 @@ async function mirrorPrices(from: number, limit: number) {
       listPrice: p.price,
       paidPrice: onSale ? p.price : null, // parsa는 조사가가 곧 할인 적용가 → paidPrice도 동일
       promotionType,
-      price: p.price,
-      isOnSale: onSale,
       source: PRICE_SOURCE,
       productUrl: null,
     });

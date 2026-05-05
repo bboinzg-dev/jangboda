@@ -302,7 +302,7 @@ async function main() {
         data: {
           productId: product.id,
           storeId,
-          price,
+          listPrice: price,
           source: "seed",
         },
       });

@@ -129,13 +129,13 @@ export async function POST(req: NextRequest) {
             productId: product.id,
             source: { in: ["seed", "manual", "receipt"] },
           },
-          select: { price: true },
+          select: { listPrice: true },
         }),
       ]);
 
       const avg =
         existing.length > 0
-          ? existing.reduce((s, p) => s + p.price, 0) / existing.length
+          ? existing.reduce((s, p) => s + p.listPrice, 0) / existing.length
           : null;
 
       // outlier 필터
@@ -215,11 +215,14 @@ export async function POST(req: NextRequest) {
       await prisma.price.deleteMany({
         where: { productId: product.id, storeId: store.id, source: "naver" },
       });
+      // 네이버는 정가 미공개 → listPrice = 응답가
       await prisma.price.create({
         data: {
           productId: product.id,
           storeId: store.id,
-          price,
+          listPrice: price,
+          paidPrice: null,
+          promotionType: null,
           source: "naver",
           productUrl: productUrl || null,
         },

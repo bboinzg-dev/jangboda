@@ -8,7 +8,6 @@ import { IconCamera, IconCheck, IconReceipt } from "@/components/icons";
 
 type ParsedItem = {
   rawName: string;
-  price: number;                       // 호환 (= paidPrice ?? listPrice)
   listPrice: number;                   // 정가
   paidPrice: number | null;            // 행사가 (할인 적용 후 단가)
   promotionType: string | null;        // "할인" | "1+1" | "번들 50%" 등
@@ -218,10 +217,9 @@ export default function UploadPage() {
     // - productId 있으면 기존 매칭
     // - productId 없으면 isNew + rawName으로 자동 신규 등록
     const payload = items
-      .filter((i) => (i.listPrice ?? i.price) > 0 && i.rawName.trim())
+      .filter((i) => i.listPrice > 0 && i.rawName.trim())
       .map((i) => ({
         productId: i.productId,
-        price: i.price,
         listPrice: i.listPrice,
         paidPrice: i.paidPrice,
         promotionType: i.promotionType,
@@ -697,7 +695,7 @@ export default function UploadPage() {
                                 </>
                               ) : (
                                 <span className="font-semibold tabular-nums text-ink-1">
-                                  {formatWon(it.listPrice ?? it.price)}
+                                  {formatWon(it.listPrice)}
                                 </span>
                               )}
                             </div>

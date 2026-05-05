@@ -103,7 +103,6 @@ export async function POST(req: NextRequest) {
   const matches = await Promise.all(
     receipt.items.map(async (it) => ({
       rawName: it.rawName,
-      price: it.price,                      // 호환 (= paidPrice ?? listPrice)
       listPrice: it.listPrice,
       paidPrice: it.paidPrice ?? null,
       promotionType: it.promotionType ?? null,
@@ -141,8 +140,7 @@ export async function PATCH(req: NextRequest) {
     storeId: string;
     items: {
       productId: string | null;
-      price: number;                      // 호환: 클라이언트가 listPrice/paidPrice 안 보내면 이걸 listPrice로
-      listPrice?: number;                 // 정가 (정상가)
+      listPrice: number;                  // 정가 (정상가) — 필수
       paidPrice?: number | null;          // 행사/할인 적용 후 단가
       promotionType?: string | null;      // "할인" | "1+1" | "2+1" | "번들 50%" 등
       barcode?: string | null;            // EAN-8/12/13/14
@@ -183,13 +181,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   // valid 분류:
-  //   - 기존 매칭: productId 있고 price > 0
-  //   - 신규 등록: isNew && rawName && price > 0
+  //   - 기존 매칭: productId 있고 listPrice > 0
+  //   - 신규 등록: isNew && rawName && listPrice > 0
   const validMatched = items.filter(
-    (i) => i.productId && !i.isNew && i.price > 0
+    (i) => i.productId && !i.isNew && i.listPrice > 0
   );
   const validNew = items.filter(
-    (i) => i.isNew && i.rawName && i.rawName.trim() && i.price > 0
+    (i) => i.isNew && i.rawName && i.rawName.trim() && i.listPrice > 0
   );
   if (validMatched.length === 0 && validNew.length === 0) {
     return NextResponse.json({ error: "확정할 항목 없음" }, { status: 400 });
@@ -216,20 +214,12 @@ export async function PATCH(req: NextRequest) {
     // (사용자가 같은 영수증 두 번 등록해도 중복 안 생김)
     await tx.price.deleteMany({ where: { receiptId } });
 
-    // 가격 데이터 빌더 — listPrice/paidPrice/promotionType + price 호환 동기화
-    const buildPriceData = (it: (typeof items)[number]) => {
-      const listPrice = it.listPrice ?? it.price; // 클라가 listPrice 미전송하면 price를 정가로
-      const paidPrice = it.paidPrice ?? null;
-      const isOnSale = paidPrice != null && paidPrice < listPrice;
-      return {
-        listPrice,
-        paidPrice,
-        promotionType: it.promotionType ?? null,
-        // 호환 필드 (Phase 6에서 제거): paidPrice 있으면 그걸, 없으면 listPrice
-        price: paidPrice ?? listPrice,
-        isOnSale,
-      };
-    };
+    // 가격 데이터 빌더 — listPrice/paidPrice/promotionType
+    const buildPriceData = (it: (typeof items)[number]) => ({
+      listPrice: it.listPrice,
+      paidPrice: it.paidPrice ?? null,
+      promotionType: it.promotionType ?? null,
+    });
 
     // 1) 기존 매칭 항목 → Price 추가
     for (const it of validMatched) {

@@ -70,7 +70,6 @@ async function getProductDetail(id: string) {
     for (const { latestPrice: p, count, latestDate } of byStore.values()) {
       const chainName = p.store?.chain?.name ?? "(미상)";
       // 통계·정렬용 가격은 정가(listPrice) 기준 — 행사가는 보조 표시 전용 (행사 만료 추정 불가 정책)
-      const headlinePrice = p.listPrice ?? p.price;
       valid.push({
         priceId: p.id,
         storeId: p.storeId,
@@ -78,8 +77,8 @@ async function getProductDetail(id: string) {
         chainName,
         lat: p.store?.lat ?? 0,
         lng: p.store?.lng ?? 0,
-        price: headlinePrice,
-        listPrice: p.listPrice ?? null,
+        price: p.listPrice,
+        listPrice: p.listPrice,
         paidPrice: p.paidPrice ?? null,
         promotionType: p.promotionType ?? null,
         updatedAt: p.createdAt,
@@ -107,7 +106,7 @@ async function getProductDetail(id: string) {
       .slice(-200) // 그래프 점 200개 limit (렌더 보호)
       .map((p) => ({
         date: p.createdAt,
-        price: p.price,
+        price: p.listPrice,
         chainName: p.store?.chain?.name ?? "(미상)",
       }))
       .reverse();

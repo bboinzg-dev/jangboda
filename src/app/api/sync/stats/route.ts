@@ -134,11 +134,14 @@ export async function POST(req: NextRequest) {
       await prisma.price.deleteMany({
         where: { productId, storeId: store.id, source: "stats_official" },
       });
+      // 통계청 시세 — listPrice만 채움
       await prisma.price.create({
         data: {
           productId,
           storeId: store.id,
-          price: median,
+          listPrice: median,
+          paidPrice: null,
+          promotionType: null,
           source: "stats_official",
           metadata: { sampleCount: prices.length, category: item.itemName, date } as never,
         },

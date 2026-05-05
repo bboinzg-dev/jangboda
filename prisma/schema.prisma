@@ -95,18 +95,16 @@ model Price {
   storeId       String
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   // 가격 — 정가 + 행사가 분리 보존
-  // - listPrice: 정가/단가 (할인 없는 정상가). 가격비교 시 기준이 되는 안정적 가격.
+  // - listPrice: 정가/단가 (할인 없는 정상가). 가격비교·통계의 기준값.
   // - paidPrice: 행사/할인 적용 후 단가. NULL이면 할인 없음(=listPrice).
-  // - promotionType: "할인" | "1+1" | "2+1" | "3+1" 등. NULL이면 정상가 결제.
+  // - promotionType: "할인" | "1+1" | "2+1" | "번들 50%" 등. NULL이면 정상가.
   // 영수증 등록 시 paidPrice는 (할인 후 결제 합계 / 수량)으로 계산.
-  // 1+1: 2개 사고 1개 가격이면 paidPrice = listPrice / 2.
-  listPrice     Int?     // 정가 (점진 마이그레이션 중 — Phase 6 후 NOT NULL)
+  // 가계부의 "내 지출"은 paidPrice ?? listPrice (실제 지불액).
+  // 가격비교 통계·정렬은 listPrice 기준 (행사 만료를 추정 못하므로 통계 노이즈 방지).
+  listPrice     Int      // 정가 — 항상 채워짐
   paidPrice     Int?     // 행사가 (할인 적용 후 단가). NULL이면 정상가.
-  promotionType String?  // "할인" | "1+1" | "2+1" | "3+1" | "n+m"
-  // [DEPRECATED] price/isOnSale — Phase 6에서 제거 예정. 현재는 listPrice ?? paidPrice와 동기화 유지.
-  price         Int      // 원 단위 (정수)
-  isOnSale      Boolean  @default(false)
-  source        String   // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv"
+  promotionType String?  // "할인" | "1+1" | "2+1" | "번들 50%" 등
+  source        String   // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv" | "parsa" | "stats_official"
   productUrl    String?  // 온라인 가격일 때 외부 구매 링크 (네이버 쇼핑 link 등)
   contributorId String?
   contributor   User?    @relation(fields: [contributorId], references: [id])
@@ -114,7 +112,7 @@ model Price {
   receipt       Receipt? @relation(fields: [receiptId], references: [id])
   reports       PriceReport[]
   createdAt     DateTime @default(now())
-  // 부가 메타데이터 — KAMIS 가격 변동(previousPrice/changeAmount/changePct), parsa 할인 등
+  // 부가 메타데이터 — KAMIS 가격 변동(previousPrice/changeAmount/changePct), parsa 할인 기간 등
   metadata      Json?
 
   @@index([productId, storeId, createdAt])

@@ -93,11 +93,14 @@ export async function POST(req: NextRequest) {
             weeklyAverage: k.weeklyAverage,
           }
         : undefined;
+    // KAMIS는 시세(정가) — listPrice만 채움
     await prisma.price.create({
       data: {
         productId: product.id,
         storeId: store.id,
-        price: k.retailPrice,
+        listPrice: k.retailPrice,
+        paidPrice: null,
+        promotionType: null,
         source: "kamis",
         ...(metadata ? { metadata: metadata as Prisma.InputJsonValue } : {}),
       } as Prisma.PriceUncheckedCreateInput,

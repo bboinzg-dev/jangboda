@@ -10,8 +10,6 @@ export type ParsedReceiptItem = {
   promotionType?: string;   // "할인" | "1+1" | "2+1" 등
   barcode?: string;         // EAN-13 등 GTIN — 다음 줄에 바코드 출력되는 영수증(킴스클럽 등)
   quantity: number;
-  // [DEPRECATED] price — Phase 6에서 제거. 호환성 위해 paidPrice ?? listPrice와 동기화.
-  price: number;
 };
 
 export type ParsedReceipt = {
@@ -195,7 +193,7 @@ function parseClovaResponse(json: unknown): ParsedReceipt {
       const price = numOf(it.price?.price);
       const count = numOf(it.count) || 1;
       if (!name || price <= 0) continue;
-      items.push({ rawName: name, price, listPrice: price, quantity: count });
+      items.push({ rawName: name, listPrice: price, quantity: count });
     }
   }
 
@@ -547,7 +545,6 @@ function parseReceiptText(text: string): ParsedReceipt {
       cur = {
         rawName: s.rawName,
         listPrice: s.listPrice,
-        price: s.listPrice, // 호환성 (Phase 6에서 제거)
         quantity: s.quantity,
       };
     } else if (s.kind === "barcode" && cur) {
@@ -563,8 +560,6 @@ function parseReceiptText(text: string): ParsedReceipt {
         if (totalAfter > 0) cur.paidPrice = Math.round(totalAfter / cur.quantity);
       }
       if (s.info.promotionType) cur.promotionType = s.info.promotionType;
-      // 호환 필드 동기화
-      cur.price = cur.paidPrice ?? cur.listPrice;
     }
     // ignore는 그룹에 영향 없음
   }
@@ -586,10 +581,10 @@ function mockOcr(): ParsedReceipt {
       storeHint: "롯데마트 잠실점",
       receiptDate: new Date().toISOString().slice(0, 10),
       items: [
-        { rawName: "신라면 5입", price: 4480, listPrice: 4480, quantity: 1 },
-        { rawName: "서울우유 1L", price: 2890, listPrice: 2890, quantity: 2 },
-        { rawName: "햇반 12입", price: 13800, listPrice: 13800, quantity: 1 },
-        { rawName: "삼다수 2L 6입", price: 6980, listPrice: 6980, quantity: 1 },
+        { rawName: "신라면 5입", listPrice: 4480, quantity: 1 },
+        { rawName: "서울우유 1L", listPrice: 2890, quantity: 2 },
+        { rawName: "햇반 12입", listPrice: 13800, quantity: 1 },
+        { rawName: "삼다수 2L 6입", listPrice: 6980, quantity: 1 },
       ],
       totalAmount: 4480 + 2890 * 2 + 13800 + 6980,
       rawText: "[Mock OCR] 롯데마트 잠실점 영수증",
@@ -598,10 +593,10 @@ function mockOcr(): ParsedReceipt {
       storeHint: "이마트 성수점",
       receiptDate: new Date().toISOString().slice(0, 10),
       items: [
-        { rawName: "진라면 매운맛 5입", price: 3480, listPrice: 3480, quantity: 1 },
-        { rawName: "매일 저지방우유", price: 2580, listPrice: 2580, quantity: 1 },
-        { rawName: "동원참치 살코기 3캔", price: 5580, listPrice: 5580, quantity: 1 },
-        { rawName: "계란 30구", price: 8580, listPrice: 8580, quantity: 1 },
+        { rawName: "진라면 매운맛 5입", listPrice: 3480, quantity: 1 },
+        { rawName: "매일 저지방우유", listPrice: 2580, quantity: 1 },
+        { rawName: "동원참치 살코기 3캔", listPrice: 5580, quantity: 1 },
+        { rawName: "계란 30구", listPrice: 8580, quantity: 1 },
       ],
       totalAmount: 3480 + 2580 + 5580 + 8580,
       rawText: "[Mock OCR] 이마트 성수점 영수증",
@@ -610,9 +605,9 @@ function mockOcr(): ParsedReceipt {
       storeHint: "홈플러스 잠실점",
       receiptDate: new Date().toISOString().slice(0, 10),
       items: [
-        { rawName: "스팸 200g 4개", price: 12300, listPrice: 12300, quantity: 1 },
-        { rawName: "찌개두부 300g", price: 2280, listPrice: 2280, quantity: 2 },
-        { rawName: "코카콜라 1.5", price: 2880, listPrice: 2880, quantity: 1 },
+        { rawName: "스팸 200g 4개", listPrice: 12300, quantity: 1 },
+        { rawName: "찌개두부 300g", listPrice: 2280, quantity: 2 },
+        { rawName: "코카콜라 1.5", listPrice: 2880, quantity: 1 },
       ],
       totalAmount: 12300 + 2280 * 2 + 2880,
       rawText: "[Mock OCR] 홈플러스 잠실점 영수증",
@@ -641,7 +636,7 @@ export function mergeReceipts(receipts: ParsedReceipt[]): ParsedReceipt {
     if (!out.receiptDate && r.receiptDate) out.receiptDate = r.receiptDate;
     if (!out.totalAmount && r.totalAmount) out.totalAmount = r.totalAmount;
     for (const it of r.items) {
-      const key = `${it.rawName}|${it.price}`;
+      const key = `${it.rawName}|${it.listPrice}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.items.push(it);
