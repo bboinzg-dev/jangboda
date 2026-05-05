@@ -84,13 +84,23 @@ export function parseUnit(unit: string): Quantity | null {
     return { value: total, unit: "ml", basisLabel: "1L당", basisDenominator: 1000 };
   }
 
-  // 무게/부피 없이 개수만 있는 경우 (예: "30구", "10개")
+  // 무게/부피 없이 개수만 있는 경우 (예: "30구", "10개", "1포기", "1마리")
   const count = cleaned.match(COUNT_PATTERN);
   if (count) {
+    // 매치된 단위 키워드 그대로 라벨에 사용 — "1포기당", "1마리당", "1병당" 등
+    // ("ea"/"EA" 같은 영문은 "1개당"으로 통일)
+    const rawWord = count[0].replace(/[\d\s]/g, "");
+    const HANGUL_MAP: Record<string, string> = {
+      ea: "개",
+      EA: "개",
+      입: "개",
+      개입: "개",
+    };
+    const unitWord = HANGUL_MAP[rawWord] ?? rawWord;
     return {
       value: parseInt(count[1], 10),
       unit: "count",
-      basisLabel: "1개당",
+      basisLabel: `1${unitWord}당`,
       basisDenominator: 1,
     };
   }

@@ -4,6 +4,7 @@ import { formatWon } from "@/lib/format";
 import { unitPriceValue } from "@/lib/units";
 import { notFound } from "next/navigation";
 import { isOnlineStore } from "@/components/SourceBadge";
+import { isOnlineOnlyChain } from "@/lib/onlineMalls";
 import PriceAlertButton from "@/components/PriceAlertButton";
 import PriceHistoryChart from "@/components/PriceHistoryChart";
 import PriceListClient, { type PriceRowData } from "@/components/PriceListClient";
@@ -130,15 +131,15 @@ export default async function ProductDetailPage({
   if (!data) return notFound();
   const { product, prices, history } = data;
 
-  const offlineRows = prices.filter((p) => !p.online);
-  const onlineRows = prices.filter((p) => p.online);
-
   // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
 
-  // outlier 판정 — 단가(unit) 기반 우선, 못 파싱하면 가격 자체 median ±50% fallback
-  // (PriceListClient의 분리 로직과 동일 기준 — 매장 카드와 헤더 숫자 일관성)
-  // 양배추 1포기처럼 unit 파싱이 안 되는 케이스도 보호되도록 이중 안전장치.
+  // outlier 판정 — 단가(unit) 기반 우선, 못 파싱하면 가격 자체 median fallback
+  // (양배추 1포기 등 unit 파싱 가능 케이스도 안전망으로 둘 다 적용)
+  // bound 비대칭: low=×0.3 (정상 저가 보호 — GS더프레시 정상가가 outlier로 안 빠지게)
+  //               high=×1.5 (호가 적극 컷)
+  const LOW_RATIO = 0.3;
+  const HIGH_RATIO = 1.5;
   const validUnitPrices = prices
     .map((p) => unitPriceValue(p.price, product.unit))
     .filter((v): v is number => v !== null && v > 0)
@@ -147,7 +148,6 @@ export default async function ProductDetailPage({
     validUnitPrices.length >= 3
       ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
       : null;
-  // 단가 파싱 실패한 경우 가격 자체로 fallback (호가 보호용)
   const validPricesSorted = prices
     .map((p) => p.price)
     .filter((x) => x > 0)
@@ -157,17 +157,23 @@ export default async function ProductDetailPage({
       ? validPricesSorted[Math.floor(validPricesSorted.length / 2)]
       : null;
   const isUnitOutlier = (price: number): boolean => {
-    // 1순위: 단가 기반 (정밀)
     if (upMedian !== null) {
       const u = unitPriceValue(price, product.unit);
-      if (u !== null) return u < upMedian * 0.5 || u > upMedian * 1.5;
+      if (u !== null) return u < upMedian * LOW_RATIO || u > upMedian * HIGH_RATIO;
     }
-    // 2순위: 가격 자체 (호가 fallback)
     if (priceMedian !== null) {
-      return price < priceMedian * 0.5 || price > priceMedian * 1.5;
+      return price < priceMedian * LOW_RATIO || price > priceMedian * HIGH_RATIO;
     }
     return false;
   };
+
+  // 온라인 섹션의 호가 사전 컷 — PriceListClient는 onlineRows length가 적으면(<3)
+  // 자체 median 계산이 비활성되므로, page level에서 호가성 chain의 outlier를 미리 제거.
+  // 옥션·G마켓·기타 온라인몰 같은 곳의 비정상 호가가 매장 카드에 그대로 노출되는 문제 방지.
+  const offlineRows = prices.filter((p) => !p.online);
+  const onlineRows = prices.filter(
+    (p) => p.online && !(isUnitOutlier(p.price) && isOnlineOnlyChain(p.chainName))
+  );
 
   // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
   // 시세(KAMIS) 제외 + 단가 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.

@@ -115,12 +115,15 @@ export default function PriceListClient({
       : null;
 
   // 한 행이 outlier인지 — 단가 기반 1순위, 가격 기반 2순위
+  // bound 비대칭: low=×0.3 (정상 저가 보호), high=×1.5 (호가 적극 컷)
+  const LOW_RATIO = 0.3;
+  const HIGH_RATIO = 1.5;
   const isRowOutlier = (price: number, up: number | null): boolean => {
     if (median !== null && up !== null) {
-      return up < median * 0.5 || up > median * 1.5;
+      return up < median * LOW_RATIO || up > median * HIGH_RATIO;
     }
     if (priceMedian !== null) {
-      return price < priceMedian * 0.5 || price > priceMedian * 1.5;
+      return price < priceMedian * LOW_RATIO || price > priceMedian * HIGH_RATIO;
     }
     return false;
   };
