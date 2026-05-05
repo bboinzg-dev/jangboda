@@ -25,6 +25,16 @@ function recentMonthKeys(n: number): string[] {
   return keys;
 }
 
+type FrequentProduct = {
+  productId: string;
+  productName: string;
+  count: number;          // 구매 횟수 (≥3건만 노출)
+  lastDate: Date;
+  daysSinceLast: number;  // 마지막 구매 후 N일
+  avgInterval: number | null;  // 평균 구매 주기 (일). null이면 데이터 부족
+  isDue: boolean;         // "곧 살 때" — daysSinceLast >= avgInterval * 0.85
+};
+
 type BudgetData = {
   thisMonthTotal: number;
   // 핵심 KPI — 가계부 헤더의 4개 카드
@@ -47,6 +57,7 @@ type BudgetData = {
     minPrice: number;
     diff: number;
   }[];
+  frequentProducts: FrequentProduct[];  // 자주 사는 상품 + 곧 살 때
   receipts: {
     id: string;
     storeName: string;
@@ -179,6 +190,49 @@ async function getBudget(userId: string): Promise<BudgetData> {
     }
   }
 
+  // 자주 사는 상품 (단골) + 평균 주기 계산 → "곧 살 때" 알림
+  // - 같은 productId 등장 횟수 ≥3건만 단골
+  // - 평균 주기 = 구매일 간격의 산술평균
+  // - "곧 살 때" = 마지막 구매 후 평균 주기의 85% 이상 경과
+  const productPurchases = new Map<string, { name: string; dates: Date[] }>();
+  for (const p of valid) {
+    if (!p.product) continue;
+    const cur = productPurchases.get(p.productId) ?? { name: p.product.name, dates: [] };
+    cur.dates.push(p.createdAt);
+    productPurchases.set(p.productId, cur);
+  }
+  const frequentProducts: FrequentProduct[] = [];
+  for (const [productId, { name, dates }] of productPurchases) {
+    if (dates.length < 3) continue;
+    dates.sort((a, b) => a.getTime() - b.getTime());
+    const intervals: number[] = [];
+    for (let i = 1; i < dates.length; i++) {
+      const diff = (dates[i].getTime() - dates[i - 1].getTime()) / (1000 * 60 * 60 * 24);
+      if (diff > 0) intervals.push(diff);
+    }
+    const avgInterval = intervals.length > 0
+      ? Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length)
+      : null;
+    const lastDate = dates[dates.length - 1];
+    const daysSinceLast = Math.round((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    const isDue = avgInterval !== null && daysSinceLast >= avgInterval * 0.85;
+    frequentProducts.push({
+      productId,
+      productName: name,
+      count: dates.length,
+      lastDate,
+      daysSinceLast,
+      avgInterval,
+      isDue,
+    });
+  }
+  // "곧 살 때" 우선, 그 다음 횟수 desc
+  frequentProducts.sort((a, b) => {
+    if (a.isDue !== b.isDue) return a.isDue ? -1 : 1;
+    return b.count - a.count;
+  });
+  const topFrequent = frequentProducts.slice(0, 8);
+
   // 본인이 산 가격 중 가장 비싼 것 vs 최저가 비교 — 같은 상품 여러 번이면 최고 지불 사용
   const myMaxByProduct = new Map<string, { paid: number; productName: string }>();
   for (const p of valid) {
@@ -258,6 +312,7 @@ async function getBudget(userId: string): Promise<BudgetData> {
     byCategory,
     byStore,
     overpaid,
+    frequentProducts: topFrequent,
     receipts,
     totalCount: valid.length,
   };
@@ -436,6 +491,55 @@ export default async function BudgetPage() {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* 자주 사는 상품 — 단골 + "곧 살 때" 알림 */}
+      {data.frequentProducts.length > 0 && (
+        <section className="bg-white border border-line rounded-xl p-5">
+          <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
+            🔁 자주 사는 상품
+            <span className="text-xs text-ink-3 font-normal">
+              ({data.frequentProducts.length}건)
+            </span>
+          </h2>
+          <ul className="space-y-2">
+            {data.frequentProducts.map((fp) => (
+              <li key={fp.productId}>
+                <Link
+                  href={`/products/${fp.productId}`}
+                  className="block bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-ink-1 truncate">
+                          {fp.productName}
+                        </span>
+                        {fp.isDue && (
+                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-medium shrink-0">
+                            🔔 곧 살 때
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-ink-3 mt-1 flex items-center gap-2 flex-wrap">
+                        <span>
+                          {fp.count}회 구매 · 마지막{" "}
+                          <span className="font-medium text-ink-2">{fp.daysSinceLast}일 전</span>
+                        </span>
+                        {fp.avgInterval !== null && (
+                          <span>
+                            · 평균 {fp.avgInterval}일마다
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-ink-3 shrink-0">›</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
