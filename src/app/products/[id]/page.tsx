@@ -134,10 +134,19 @@ export default async function ProductDetailPage({
   // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
 
-  // outlier 판정 — 단가(unit) 기반 우선, 못 파싱하면 가격 자체 median fallback
-  // (양배추 1포기 등 unit 파싱 가능 케이스도 안전망으로 둘 다 적용)
-  // bound 비대칭: low=×0.3 (정상 저가 보호 — GS더프레시 정상가가 outlier로 안 빠지게)
-  //               high=×1.5 (호가 적극 컷)
+  // outlier 판정 — source 신뢰도 기반
+  //
+  // 정책: "가격으로 자르지 않고 source 신뢰도로 자른다"
+  // - parsa(한국소비자원)/kamis/stats_official/receipt/manual/seed/csv = 검증된 source → outlier 적용 X
+  //   (백화점·전문점이 정상적으로 비싸게 파는 케이스도 그대로 통과)
+  // - naver(호가성) 또는 ONLINE_ONLY_CHAINS(옥션·G마켓·기타 온라인몰) = 호가 가능성
+  //   → median 기준 outlier 적용
+  //
+  // bound 비대칭: low=×0.3 (정상 저가 관대), high=×1.5 (호가 적극 컷)
+  const NOISY_SOURCES = new Set(["naver"]);
+  const isNoisyRow = (source: string, chainName: string) =>
+    NOISY_SOURCES.has(source) || isOnlineOnlyChain(chainName);
+
   const LOW_RATIO = 0.3;
   const HIGH_RATIO = 1.5;
   const validUnitPrices = prices
@@ -156,7 +165,9 @@ export default async function ProductDetailPage({
     validPricesSorted.length >= 3
       ? validPricesSorted[Math.floor(validPricesSorted.length / 2)]
       : null;
-  const isUnitOutlier = (price: number): boolean => {
+  const isUnitOutlier = (price: number, source: string, chainName: string): boolean => {
+    // 신뢰 source는 가격대 무관 통과 — 백화점 정상가 보존
+    if (!isNoisyRow(source, chainName)) return false;
     if (upMedian !== null) {
       const u = unitPriceValue(price, product.unit);
       if (u !== null) return u < upMedian * LOW_RATIO || u > upMedian * HIGH_RATIO;
@@ -167,21 +178,20 @@ export default async function ProductDetailPage({
     return false;
   };
 
-  // 온라인 섹션의 호가 사전 컷 — PriceListClient는 onlineRows length가 적으면(<3)
-  // 자체 median 계산이 비활성되므로, page level에서 호가성 chain의 outlier를 미리 제거.
+  // 온라인 섹션의 호가 사전 컷 — 호가성(naver/온라인전용chain)인데 outlier면 page level에서 미리 제거.
   // 옥션·G마켓·기타 온라인몰 같은 곳의 비정상 호가가 매장 카드에 그대로 노출되는 문제 방지.
   // 제외 건수는 별도로 보존 → "아직 없음"이 아니라 "N건 호가성 자동 제외"로 정직하게 표시.
   const offlineRows = prices.filter((p) => !p.online);
   const allOnlineRows = prices.filter((p) => p.online);
   const onlineRows = allOnlineRows.filter(
-    (p) => !(isUnitOutlier(p.price) && isOnlineOnlyChain(p.chainName))
+    (p) => !isUnitOutlier(p.price, p.source, p.chainName)
   );
   const onlineHiddenCount = allOnlineRows.length - onlineRows.length;
 
   // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
-  // 시세(KAMIS) 제외 + 단가 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.
+  // 시세(KAMIS) 제외 + 호가성 source의 outlier 제외. 표시되지 않은 값이 max를 잡는 모순 방지.
   const headlinePrices = prices
-    .filter((p) => !isMarketRate(p.source) && !isUnitOutlier(p.price))
+    .filter((p) => !isMarketRate(p.source) && !isUnitOutlier(p.price, p.source, p.chainName))
     .map((p) => p.price)
     .filter((x) => x > 0);
   // 모두 outlier로 빠진 극단 케이스 — raw로 fallback
@@ -192,10 +202,10 @@ export default async function ProductDetailPage({
   const excludedCount = fallbackPrices.length - headlinePrices.length;
 
   const offlineMarket = offlineRows.filter(
-    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price)
+    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price, r.source, r.chainName)
   );
   const onlineMarket = onlineRows.filter(
-    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price)
+    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price, r.source, r.chainName)
   );
   const winnerSection =
     offlineMarket.length > 0 && onlineMarket.length > 0

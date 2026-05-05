@@ -114,11 +114,21 @@ export default function PriceListClient({
       ? validRawPrices[Math.floor(validRawPrices.length / 2)]
       : null;
 
-  // 한 행이 outlier인지 — 단가 기반 1순위, 가격 기반 2순위
-  // bound 비대칭: low=×0.3 (정상 저가 보호), high=×1.5 (호가 적극 컷)
+  // outlier 판정 — source 신뢰도 기반 (가격으로 자르지 않음)
+  // - parsa/kamis/stats_official/receipt/manual/seed/csv = 검증 → outlier 적용 X (백화점 정상가 보존)
+  // - naver(호가성) 또는 ONLINE_ONLY_CHAINS = 호가 가능성 → median 기준 컷
+  // bound 비대칭: low=×0.3 (정상 저가 관대), high=×1.5 (호가 적극 컷)
+  const NOISY_SOURCES = new Set(["naver"]);
   const LOW_RATIO = 0.3;
   const HIGH_RATIO = 1.5;
-  const isRowOutlier = (price: number, up: number | null): boolean => {
+  const isRowOutlier = (
+    price: number,
+    up: number | null,
+    source: string,
+    chainName: string,
+  ): boolean => {
+    // 신뢰 source는 통과
+    if (!NOISY_SOURCES.has(source) && !isOnlineOnlyChain(chainName)) return false;
     if (median !== null && up !== null) {
       return up < median * LOW_RATIO || up > median * HIGH_RATIO;
     }
@@ -129,10 +139,10 @@ export default function PriceListClient({
   };
 
   const sorted = withUnitPrice
-    .filter((x) => !isRowOutlier(x.row.price, x.unitPrice))
+    .filter((x) => !isRowOutlier(x.row.price, x.unitPrice, x.row.source, x.row.chainName))
     .map((x) => x.row);
   const allOutliers = withUnitPrice
-    .filter((x) => isRowOutlier(x.row.price, x.unitPrice))
+    .filter((x) => isRowOutlier(x.row.price, x.unitPrice, x.row.source, x.row.chainName))
     .map((x) => x.row);
   // 온라인 전용 chain(쿠팡/옥션/G마켓/네이버쇼핑/기타 온라인몰 등)의 outlier는
   // 패키지 차이가 아니라 호가성 등록일 가능성 큼 — 보조 섹션에서도 hide.
