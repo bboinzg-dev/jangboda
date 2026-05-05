@@ -250,6 +250,71 @@ async function callGoogleVision(imageBase64: string): Promise<ParsedReceipt> {
   return parseReceiptText(fullText);
 }
 
+// ────────────────────────────────────────────────────────
+// 영수증 라인 분류 — Phase 2: 바코드/할인/행사를 직전 상품에 묶기 위한 스캐너
+// ────────────────────────────────────────────────────────
+
+// EAN-13(국내 880xxx 포함), EAN-8, ITF-14, UPC-12 — 바코드 단독 라인 인식
+// OCR row 그룹화에서 바코드만 따로 떨어지는 경우(킴스클럽 영수증 등)를 노림.
+// 라인이 거의 숫자만 있고 길이 8/12/13/14 중 하나면 바코드로 본다.
+const BARCODE_RE = /^\s*(\d{8}|\d{12}|\d{13}|\d{14})\s*$/;
+
+// 가격 패턴 — 1,000원 / 1000 / 12,800원
+const PRICE_RE_GLOBAL = /([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*원?/g;
+
+// 할인 라인 패턴들 (한국 마트/편의점 사례 기반)
+// 패턴 A: 킴스클럽 — "(할인 -11,820 ) 7,980" (음수 할인액 + 할인 후 결과가)
+const DISCOUNT_PAREN_RE = /\(\s*할인\s*-\s*([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})\s*\)/;
+// 패턴 B: 롯데마트 — "[번들] 50% -1,645", "[L_할인] 3000원 -3,000", "[할인쿠폰] 20% -3,980"
+const DISCOUNT_BRACKET_RE = /\[\s*([^\]]*?(?:할인|쿠폰|번들|행사|이벤트)[^\]]*?)\s*\]/;
+// 음수 할인 금액(라인에서 마지막 음수 가격)
+const NEG_AMOUNT_RE = /-\s*([1-9]\d{0,2}(?:,\d{3})+|\d{3,7})/g;
+// 할인 라벨 안의 % 또는 정액 추출
+const PERCENT_RE = /(\d{1,3})\s*%/;
+const FIXED_AMOUNT_RE = /(\d{1,3}(?:,\d{3})+|\d{3,7})\s*원/;
+
+type DiscountInfo = {
+  amount?: number;          // 절대값 (예: 11820, 1645)
+  afterPrice?: number;      // 할인 후 결과가 (있으면, 예: 킴스클럽 7,980)
+  promotionType?: string;   // "할인", "번들 50%", "쿠폰 20%", "할인 3,000원" 등
+};
+
+// 라인이 할인 라인인지 판별 + 할인 정보 추출
+// 반환: null이면 할인 라인 아님
+function parseDiscountLine(line: string): DiscountInfo | null {
+  // 패턴 A: (할인 -11,820)
+  const parenMatch = line.match(DISCOUNT_PAREN_RE);
+  if (parenMatch) {
+    const amount = parseInt(parenMatch[1].replace(/,/g, ""), 10);
+    // 라인에 있는 모든 양수 가격 중 마지막 = 할인 후 결과가일 가능성
+    const allPrices = [...line.matchAll(PRICE_RE_GLOBAL)]
+      .map((m) => parseInt(m[1].replace(/,/g, ""), 10))
+      .filter((n) => n > 0 && n < 10_000_000);
+    // 할인액 외의 마지막 가격 → 결과가
+    const afterPrice = allPrices.filter((n) => n !== amount).slice(-1)[0];
+    return { amount, afterPrice, promotionType: "할인" };
+  }
+
+  // 패턴 B: [번들] 50%, [L_할인] 3000원, [할인쿠폰] 20%
+  const bracketMatch = line.match(DISCOUNT_BRACKET_RE);
+  if (bracketMatch) {
+    const label = bracketMatch[1].replace(/_/g, " ").trim();
+    const negMatches = [...line.matchAll(NEG_AMOUNT_RE)];
+    const amount = negMatches.length
+      ? parseInt(negMatches[negMatches.length - 1][1].replace(/,/g, ""), 10)
+      : undefined;
+    // 라벨에서 비율/정액 보강
+    const pct = line.match(PERCENT_RE)?.[1];
+    const fixed = line.match(FIXED_AMOUNT_RE)?.[1]?.replace(/,/g, "");
+    let promo = label.replace(/^L\s*/i, "").trim(); // "L 할인" → "할인"
+    if (pct) promo = `${promo} ${pct}%`;
+    else if (fixed) promo = `${promo} ${parseInt(fixed, 10).toLocaleString()}원`;
+    return { amount, promotionType: promo };
+  }
+
+  return null;
+}
+
 // 영수증 텍스트 → 구조화된 ParsedReceipt 휴리스틱 파서
 // 한국 영수증의 일반적 형태:
 //   매장명 (보통 첫 줄 또는 큰 글씨)
@@ -382,48 +447,94 @@ function parseReceiptText(text: string): ParsedReceipt {
   // 콤마 포함된 가격(이름에서 제거할 때 사용) — "콤비네이션 피자 415G 9,900" → 단가 9,900 제거
   const COMMA_PRICE_RE = /[1-9]\d{0,2}(?:,\d{3})+\s*원?/g;
 
-  // 품목 줄 추출 — 보수적으로
-  const items: ParsedReceiptItem[] = [];
-  for (const l of lines) {
-    if (containsTotal(l)) continue; // 합계/소계 (공백 무시)
-    if (META_KEYWORDS_FILTER.some((k) => l.includes(k))) continue;
-    if (storeHint && l === storeHint) continue;
-    if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) continue;
-    if (CARD_NUM_RE.test(l)) continue;
-    if (LARGE_NUM_RE.test(l)) continue;
-    if (ADDRESS_RE.test(l)) continue; // 주소 (~번지/~번길)
-    if (MASKED_PII_RE.test(l)) continue; // 별표(*) 마스킹 — 이름/카드 가림표시
-    if (CUSTOMER_NAME_RE.test(l)) continue; // "홍길동님:" 형태
-    if (NEGATIVE_PRICE_RE.test(l)) continue; // 할인/마이너스 라인
-    // 한글 글자가 2자 이상 들어있어야 (한글 없는 라인은 메타정보일 가능성 ↑)
-    const hangul = l.match(/[가-힣]/g)?.length ?? 0;
-    if (hangul < 2) continue;
+  // ────────────────────────────────────────────────────────
+  // 품목 추출 — 2단계 스캐너 + 그룹 빌더
+  // 1단계: 각 라인을 product/barcode/discount/ignore로 분류
+  // 2단계: product 등장 시 새 그룹 시작 → 후속 barcode/discount를 직전 그룹에 묶음
+  //         (paidPrice = 할인 적용 후 단가, promotionType = 행사 라벨)
+  // ────────────────────────────────────────────────────────
+  type ScannedLine =
+    | { kind: "product"; rawName: string; listPrice: number; quantity: number }
+    | { kind: "barcode"; barcode: string }
+    | { kind: "discount"; info: DiscountInfo }
+    | { kind: "ignore" };
 
-    // 가격 매칭
+  const scanned: ScannedLine[] = lines.map((l): ScannedLine => {
+    // 우선순위 1: 할인 라인은 META 키워드("할인") 컷보다 먼저 잡아야 직전 상품에 묶을 수 있음
+    const disc = parseDiscountLine(l);
+    if (disc) return { kind: "discount", info: disc };
+
+    // 우선순위 2: 바코드 단독 라인 (LARGE_NUM_RE보다 먼저)
+    const bm = l.match(BARCODE_RE);
+    if (bm) return { kind: "barcode", barcode: bm[1] };
+
+    // 그 외 일반 메타/필터들
+    if (containsTotal(l)) return { kind: "ignore" };
+    if (META_KEYWORDS_FILTER.some((k) => l.includes(k))) return { kind: "ignore" };
+    if (storeHint && l === storeHint) return { kind: "ignore" };
+    if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) return { kind: "ignore" };
+    if (CARD_NUM_RE.test(l)) return { kind: "ignore" };
+    if (LARGE_NUM_RE.test(l)) return { kind: "ignore" };
+    if (ADDRESS_RE.test(l)) return { kind: "ignore" };
+    if (MASKED_PII_RE.test(l)) return { kind: "ignore" };
+    if (CUSTOMER_NAME_RE.test(l)) return { kind: "ignore" };
+    if (NEGATIVE_PRICE_RE.test(l)) return { kind: "ignore" }; // discount로 못 잡힌 음수 라인
+
+    const hangul = l.match(/[가-힣]/g)?.length ?? 0;
+    if (hangul < 2) return { kind: "ignore" };
+
     const matches = [...l.matchAll(PRICE_RE)];
-    if (matches.length === 0) continue;
+    if (matches.length === 0) return { kind: "ignore" };
 
     const lastMatch = matches[matches.length - 1];
-    const priceStr = lastMatch[1];
-    const price = parseInt(priceStr.replace(/,/g, ""), 10);
-    // 가격 sanity — 마트 영수증 SKU는 보통 100~200,000원
-    if (!price || price < 100 || price > 200_000) continue;
+    const listPrice = parseInt(lastMatch[1].replace(/,/g, ""), 10);
+    if (!listPrice || listPrice < 100 || listPrice > 200_000) return { kind: "ignore" };
 
     // 품목명 추출
     let name = l.replace(lastMatch[0], "").trim();
-    // 이름에 남은 단가(콤마 포함 숫자, 예: 9,900) 모두 제거 — 단위(415G)는 보존
     name = name.replace(COMMA_PRICE_RE, " ");
     name = name.replace(/^\d+\s+/, "");
     name = name.replace(/\s+x?\s*\d+$/i, "");
-    name = name.replace(/^[*#]+|[*#]+$/g, "").trim(); // 면세표시(*) 등 제거
-    name = name.replace(/\s+/g, " ").trim(); // 중간 공백 정리
-    // 한글 핵심 토큰 추출 — 영문/숫자만 남으면 메타정보
+    name = name.replace(/^[*#]+|[*#]+$/g, "").trim();
+    name = name.replace(/\s+/g, " ").trim();
     const nameHangul = name.match(/[가-힣]/g)?.length ?? 0;
-    if (nameHangul < 2) continue;
-    if (name.length < 2) continue;
+    if (nameHangul < 2) return { kind: "ignore" };
+    if (name.length < 2) return { kind: "ignore" };
 
-    items.push({ rawName: name, price, listPrice: price, quantity: 1 });
+    return { kind: "product", rawName: name, listPrice, quantity: 1 };
+  });
+
+  // 2단계: 그룹 빌딩
+  const items: ParsedReceiptItem[] = [];
+  let cur: ParsedReceiptItem | null = null;
+  for (const s of scanned) {
+    if (s.kind === "product") {
+      if (cur) items.push(cur);
+      cur = {
+        rawName: s.rawName,
+        listPrice: s.listPrice,
+        price: s.listPrice, // 호환성 (Phase 6에서 제거)
+        quantity: s.quantity,
+      };
+    } else if (s.kind === "barcode" && cur) {
+      cur.barcode = s.barcode;
+    } else if (s.kind === "discount" && cur) {
+      // 1) 결과가가 명시되면 그대로 (단가화: 영수증 결과가는 보통 합계)
+      // 2) 아니면 할인액으로 계산 — 단가 × 수량 - 할인액 → 단가
+      if (s.info.afterPrice != null && cur.quantity > 0) {
+        cur.paidPrice = Math.round(s.info.afterPrice / cur.quantity);
+      } else if (s.info.amount != null && cur.quantity > 0) {
+        const totalBefore = cur.listPrice * cur.quantity;
+        const totalAfter = totalBefore - s.info.amount;
+        if (totalAfter > 0) cur.paidPrice = Math.round(totalAfter / cur.quantity);
+      }
+      if (s.info.promotionType) cur.promotionType = s.info.promotionType;
+      // 호환 필드 동기화
+      cur.price = cur.paidPrice ?? cur.listPrice;
+    }
+    // ignore는 그룹에 영향 없음
   }
+  if (cur) items.push(cur);
 
   return {
     storeHint,
