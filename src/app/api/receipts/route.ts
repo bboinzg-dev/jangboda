@@ -99,13 +99,17 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // 각 품목을 카탈로그에 매칭
+  // 각 품목을 카탈로그에 매칭 — 바코드 있으면 1순위 정확 매칭
   const matches = await Promise.all(
     receipt.items.map(async (it) => ({
       rawName: it.rawName,
-      price: it.price,
+      price: it.price,                      // 호환 (= paidPrice ?? listPrice)
+      listPrice: it.listPrice,
+      paidPrice: it.paidPrice ?? null,
+      promotionType: it.promotionType ?? null,
+      barcode: it.barcode ?? null,
       quantity: it.quantity,
-      productId: await matchProduct(it.rawName),
+      productId: await matchProduct(it.rawName, it.barcode),
     }))
   );
 
@@ -137,10 +141,14 @@ export async function PATCH(req: NextRequest) {
     storeId: string;
     items: {
       productId: string | null;
-      price: number;
+      price: number;                      // 호환: 클라이언트가 listPrice/paidPrice 안 보내면 이걸 listPrice로
+      listPrice?: number;                 // 정가 (정상가)
+      paidPrice?: number | null;          // 행사/할인 적용 후 단가
+      promotionType?: string | null;      // "할인" | "1+1" | "2+1" | "번들 50%" 등
+      barcode?: string | null;            // EAN-8/12/13/14
       quantity: number;
-      rawName?: string; // 신규 등록 시 product name으로 사용
-      isNew?: boolean; // 신규 등록 의도
+      rawName?: string;                   // 신규 등록 시 product name으로 사용
+      isNew?: boolean;                    // 신규 등록 의도
     }[];
     receiptDate?: string; // YYYY-MM-DD — 영수증 거래일
   };
@@ -208,13 +216,28 @@ export async function PATCH(req: NextRequest) {
     // (사용자가 같은 영수증 두 번 등록해도 중복 안 생김)
     await tx.price.deleteMany({ where: { receiptId } });
 
+    // 가격 데이터 빌더 — listPrice/paidPrice/promotionType + price 호환 동기화
+    const buildPriceData = (it: (typeof items)[number]) => {
+      const listPrice = it.listPrice ?? it.price; // 클라가 listPrice 미전송하면 price를 정가로
+      const paidPrice = it.paidPrice ?? null;
+      const isOnSale = paidPrice != null && paidPrice < listPrice;
+      return {
+        listPrice,
+        paidPrice,
+        promotionType: it.promotionType ?? null,
+        // 호환 필드 (Phase 6에서 제거): paidPrice 있으면 그걸, 없으면 listPrice
+        price: paidPrice ?? listPrice,
+        isOnSale,
+      };
+    };
+
     // 1) 기존 매칭 항목 → Price 추가
     for (const it of validMatched) {
       await tx.price.create({
         data: {
           productId: it.productId!,
           storeId,
-          price: it.price,
+          ...buildPriceData(it),
           source: "receipt",
           contributorId: uploaderId,
           receiptId,
@@ -227,20 +250,32 @@ export async function PATCH(req: NextRequest) {
     // 2) 신규 등록 항목 → Product 생성 + Price 추가
     for (const it of validNew) {
       const cleanName = (it.rawName ?? "").trim().slice(0, 200);
-      // 같은 영수증에 같은 이름 중복 등록 방지: 이미 같은 이름의 product 있으면 그걸 사용
-      const existing = await tx.product.findFirst({
-        where: { name: cleanName },
-        select: { id: true },
-      });
-      let productId: string;
-      if (existing) {
-        productId = existing.id;
-      } else {
+      const cleanBarcode =
+        it.barcode && /^\d{8,14}$/.test(it.barcode.trim()) ? it.barcode.trim() : null;
+      // 바코드 우선 매칭 (영수증의 EAN과 같은 상품을 다른 사용자가 이미 등록한 경우)
+      let productId: string | null = null;
+      if (cleanBarcode) {
+        const byBarcode = await tx.product.findUnique({
+          where: { barcode: cleanBarcode },
+          select: { id: true },
+        });
+        if (byBarcode) productId = byBarcode.id;
+      }
+      // 그 다음 같은 이름 중복 방지
+      if (!productId) {
+        const existing = await tx.product.findFirst({
+          where: { name: cleanName },
+          select: { id: true },
+        });
+        if (existing) productId = existing.id;
+      }
+      if (!productId) {
         const created = await tx.product.create({
           data: {
             name: cleanName,
             unit: "1개", // 영수증에서 단위 추출이 어려운 경우 기본값
             category: "사용자 등록",
+            barcode: cleanBarcode, // 영수증에 바코드 있으면 신규 product에 같이 저장
           },
           select: { id: true },
         });
@@ -251,7 +286,7 @@ export async function PATCH(req: NextRequest) {
         data: {
           productId,
           storeId,
-          price: it.price,
+          ...buildPriceData(it),
           source: "receipt",
           contributorId: uploaderId,
           receiptId,
