@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "./AuthButton";
 
-// 데스크톱 nav — 핵심 4개 + 영수증 강조 버튼
-// 정부 혜택은 홈 카드로, 가계부·AI 증명사진·동기화는 /profile 도구함으로 이동
+// 데스크톱 nav — 핵심 5개 + 영수증 강조 버튼
+// 가계부는 영수증의 출구이자 핵심 가치 도구이므로 메인 nav에 노출 (이전엔 /profile 안에 묻혀 있었음)
 const NAV_ITEMS = [
   { href: "/search", label: "상품 검색" },
   { href: "/cart", label: "장보기" },
+  { href: "/budget", label: "📊 가계부" },
   { href: "/stores", label: "주변 매장" },
   { href: "/profile", label: "내 정보" },
 ];
