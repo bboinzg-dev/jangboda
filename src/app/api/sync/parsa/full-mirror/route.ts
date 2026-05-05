@@ -206,12 +206,17 @@ async function mirrorPrices(from: number, limit: number) {
     if (s.externalId) storeMap.set(s.externalId, s.id);
   }
 
-  // 6) Price row 생성
+  // 6) Price row 생성 — listPrice/paidPrice/promotionType 채움
+  // parsa 데이터: discountYn=true면 할인 적용가, plusoneYn=true면 1+1 행사
+  // 우선순위: 1+1 > 할인 (둘 다 true면 1+1로 표시)
   type PriceRow = {
     productId: string;
     storeId: string;
-    price: number;
-    isOnSale: boolean;
+    listPrice: number;
+    paidPrice: number | null;
+    promotionType: string | null;
+    price: number;        // 호환 (Phase 6 cleanup 시 제거)
+    isOnSale: boolean;    // 호환
     source: string;
     productUrl: string | null;
   };
@@ -224,11 +229,16 @@ async function mirrorPrices(from: number, limit: number) {
       pricesSkipped += 1;
       continue;
     }
+    const promotionType = p.plusoneYn ? "1+1" : p.discountYn ? "할인" : null;
+    const onSale = p.discountYn || p.plusoneYn;
     priceRows.push({
       productId,
       storeId,
+      listPrice: p.price,
+      paidPrice: onSale ? p.price : null, // parsa는 조사가가 곧 할인 적용가 → paidPrice도 동일
+      promotionType,
       price: p.price,
-      isOnSale: p.discountYn,
+      isOnSale: onSale,
       source: PRICE_SOURCE,
       productUrl: null,
     });

@@ -93,12 +93,27 @@ export async function POST(req: NextRequest) {
       createdStores++;
     }
 
+    // CSV 헤더에 listPrice/paidPrice/promotionType 옵셔널 지원
+    // 없으면 price를 listPrice로 사용 (기존 CSV 호환)
+    const listPriceCsv = parseInt((r.listPrice ?? "").replace(/[,원\s]/g, ""), 10);
+    const paidPriceCsv = parseInt((r.paidPrice ?? "").replace(/[,원\s]/g, ""), 10);
+    const isOnSale = (r.isOnSale ?? "").toLowerCase() === "true";
+    const listPrice = listPriceCsv && !isNaN(listPriceCsv) ? listPriceCsv : priceNum;
+    const paidPrice =
+      paidPriceCsv && !isNaN(paidPriceCsv)
+        ? paidPriceCsv
+        : isOnSale
+          ? priceNum
+          : null;
     await prisma.price.create({
       data: {
         productId,
         storeId,
-        price: priceNum,
-        isOnSale: (r.isOnSale ?? "").toLowerCase() === "true",
+        listPrice,
+        paidPrice,
+        promotionType: r.promotionType?.trim() || null,
+        price: paidPrice ?? listPrice,
+        isOnSale: paidPrice != null && paidPrice < listPrice ? true : isOnSale,
         source: sourceLabel,
       },
     });
