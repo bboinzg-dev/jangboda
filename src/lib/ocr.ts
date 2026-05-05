@@ -530,7 +530,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   // 영수증 메타정보 키워드 — 품목이 아니므로 제외
   // (주소/연락처/카드정보/결제정보/광고문구 등)
   const META_KEYWORDS_FILTER = [
-    "주소", "전화", "TEL", "Tel", "사업자",
+    "주소", "전화", "TEL", "Tel", "사업자", "시업자", "사 업자", "대표자", "POS",
     "카드번호", "카드사", "매입사", "가맹점", "발행",
     "사용금액", "할부", "승인", "응답", "거래일시",
     "매출", "부가세", "결제금액", "현금영수증",
@@ -567,6 +567,10 @@ export function parseReceiptText(text: string): ParsedReceipt {
   const NEGATIVE_PRICE_RE = /-\s*[1-9]\d{0,2}(?:,\d{3})+/;
   // 콤마 포함된 가격(이름에서 제거할 때 사용) — "콤비네이션 피자 415G 9,900" → 단가 9,900 제거
   const COMMA_PRICE_RE = /[1-9]\d{0,2}(?:,\d{3})+\s*원?/g;
+  // 라인 시작이 "메타라벨:..." 형태면 영수증 메타정보 — 사업자/전화/총계/카드번호/주소 등
+  // META_KEYWORDS_FILTER가 OCR 오인식("사업자"→"시업자")으로 못 잡는 케이스도 컷.
+  // 정상 product는 "이름:가격" 형태로 거의 안 들어옴 → 안전.
+  const META_COLON_RE = /^[가-힣A-Za-z\s]{1,8}\s*[:：]\s*\S/;
 
   // ────────────────────────────────────────────────────────
   // 품목 추출 — 2단계 스캐너 + 그룹 빌더
@@ -603,6 +607,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
     // 그 외 일반 메타/필터들
     if (containsTotal(l)) return { kind: "ignore" };
     if (META_KEYWORDS_FILTER.some((k) => l.includes(k))) return { kind: "ignore" };
+    if (META_COLON_RE.test(l)) return { kind: "ignore" }; // "사업자:...", "전화:...", "총 계:..." 등
     if (storeHint && l === storeHint) return { kind: "ignore" };
     if (receiptDate && l.includes(receiptDate.replace(/-/g, "."))) return { kind: "ignore" };
     if (CARD_NUM_RE.test(l)) return { kind: "ignore" };
