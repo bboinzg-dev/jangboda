@@ -4,6 +4,7 @@ import { parseReceipt, mergeReceipts, type OcrSource } from "@/lib/ocr";
 import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
+import { lookupByBarcode, type FoodSafetyItem } from "@/lib/foodsafety";
 
 // Vercel 함수 timeout — OCR(CLOVA/Vision) + storage 업로드 + 매칭까지 60초 허용
 export const maxDuration = 60;
@@ -201,6 +202,26 @@ export async function PATCH(req: NextRequest) {
     return d;
   })();
 
+  // 신규 product용 식약처 enrichment — 트랜잭션 전 병렬 fetch (트랜잭션 시간 보호)
+  // 각 lookup 3초 timeout. 실패하면 null (영수증 OCR 이름 그대로 사용).
+  // 같은 바코드 product가 이미 DB에 있으면 enrich 안 함 (트랜잭션 안에서 체크).
+  const enrichmentMap = new Map<(typeof validNew)[number], FoodSafetyItem | null>();
+  await Promise.all(
+    validNew.map(async (it) => {
+      const bc = it.barcode && /^\d{8,14}$/.test(it.barcode.trim()) ? it.barcode.trim() : null;
+      if (!bc) return;
+      try {
+        const result = await Promise.race<FoodSafetyItem | null>([
+          lookupByBarcode(bc),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]);
+        if (result) enrichmentMap.set(it, result);
+      } catch {
+        // 식약처 API 실패는 silent — 영수증 OCR 이름으로 fallback
+      }
+    }),
+  );
+
   let newProductsCreated = 0;
   let pricesCreated = 0;
 
@@ -238,6 +259,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 2) 신규 등록 항목 → Product 생성 + Price 추가
+    //    바코드 있는 신규 product는 식약처 C005/I2570 lookup으로 자동 enrich
+    //    (정확한 이름/제조사/식품유형/카테고리/소비기한 자동 채움 — 사용자가 입력한 영수증 이름은 OCR 오류 多)
+    //
+    // enrichment는 트랜잭션 시간 보호를 위해 트랜잭션 밖에서 미리 fetch.
+    // 각 lookup 3초 timeout, 병렬.
     for (const it of validNew) {
       const cleanName = (it.rawName ?? "").trim().slice(0, 200);
       const cleanBarcode =
@@ -260,13 +286,33 @@ export async function PATCH(req: NextRequest) {
         if (existing) productId = existing.id;
       }
       if (!productId) {
+        // 식약처 enrich — 바코드 있을 때만 lookup
+        // 매칭 실패해도 기본값으로 fallback (영수증 OCR 이름 그대로)
+        const enriched = enrichmentMap.get(it) ?? null;
+        const productData = {
+          name: enriched?.productName?.trim() || cleanName,
+          manufacturer: enriched?.manufacturer?.trim() || null,
+          unit: "1개",
+          category: enriched?.category?.minor || enriched?.foodType || "사용자 등록",
+          barcode: cleanBarcode,
+          // metadata에 식약처 정보 보존 (소비기한/주소/카테고리 트리/식품유형)
+          metadata: enriched
+            ? ({
+                foodsafety: {
+                  productName: enriched.productName,
+                  manufacturer: enriched.manufacturer,
+                  foodType: enriched.foodType,
+                  category: enriched.category,
+                  shelfLife: enriched.shelfLife,
+                  manufacturerAddress: enriched.manufacturerAddress,
+                  reportNo: enriched.reportNo,
+                  industry: enriched.industry,
+                },
+              } as never)
+            : undefined,
+        };
         const created = await tx.product.create({
-          data: {
-            name: cleanName,
-            unit: "1개", // 영수증에서 단위 추출이 어려운 경우 기본값
-            category: "사용자 등록",
-            barcode: cleanBarcode, // 영수증에 바코드 있으면 신규 product에 같이 저장
-          },
+          data: productData,
           select: { id: true },
         });
         productId = created.id;
