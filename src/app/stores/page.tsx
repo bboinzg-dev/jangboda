@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import type { StoreMarker } from "@/components/StoresMap";
@@ -17,6 +17,7 @@ import EmptyState from "@/components/EmptyState";
 import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
 import { IconPin } from "@/components/icons";
+import { haversineKm } from "@/lib/distance";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -75,15 +76,11 @@ export default function StoresPage() {
     return () => clearTimeout(t);
   }, [discoverMsg]);
 
-  async function load(lat?: number, lng?: number) {
+  async function load(_lat?: number, _lng?: number) {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (lat && lng) {
-      params.set("lat", String(lat));
-      params.set("lng", String(lng));
-      params.set("radius", "20");
-    }
-    const res = await fetch(`/api/stores?${params}`);
+    // /api/stores는 사용자 위치 무관 — 모두 동일 응답으로 CDN 캐시 적중률 ↑
+    // 거리 계산은 클라이언트(useMemo) 측에서 위치 변경 시 즉시 처리
+    const res = await fetch("/api/stores");
     const data = await res.json();
     setStores(data.stores);
     setLoading(false);
@@ -249,12 +246,29 @@ export default function StoresPage() {
     }
   }
 
-  // 카테고리 + 즐겨찾기 필터 적용
-  const filtered = stores.filter((s) => {
-    if (filter === "favorite") return favoriteIds.has(s.id);
-    if (filter === "all") return true;
-    return s.chainCategory === filter;
-  });
+  // 카테고리 + 즐겨찾기 필터 적용 + 위치 있으면 거리 계산·정렬·20km 반경 필터 (클라이언트 측)
+  // 서버 응답은 사용자 위치 무관(CDN 캐시 적중) → 클라이언트가 위치 변경 시 즉시 재계산
+  const filtered = useMemo(() => {
+    let list = stores.filter((s) => {
+      if (filter === "favorite") return favoriteIds.has(s.id);
+      if (filter === "all") return true;
+      return s.chainCategory === filter;
+    });
+    if (loc && loc.lat != null && loc.lng != null) {
+      list = list.map((s) => ({
+        ...s,
+        distanceKm:
+          s.lat != null && s.lng != null
+            ? haversineKm(loc.lat, loc.lng, s.lat, s.lng)
+            : null,
+      }));
+      // 20km 반경 + 가까운 순
+      list = list
+        .filter((s) => (s.distanceKm ?? Infinity) <= 20)
+        .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+    }
+    return list;
+  }, [stores, filter, favoriteIds, loc]);
 
   return (
     <div className="space-y-4">

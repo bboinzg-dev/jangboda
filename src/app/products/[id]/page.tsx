@@ -18,7 +18,8 @@ import SeafoodTracePanel from "@/components/SeafoodTracePanel";
 import FoodSafetyPanel from "@/components/FoodSafetyPanel";
 import ProductImage from "@/components/ProductImage";
 
-export const revalidate = 30;
+// 가격은 보통 매시간 cron으로만 갱신 → 5분 ISR + 30분 SWR로 캐시 적중률 ↑
+export const revalidate = 300;
 
 type PriceRow = PriceRowData;
 

@@ -1,20 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { distanceKm } from "@/lib/geo";
 
-// GET /api/stores?lat=37.5&lng=127.1&radius=5
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const lat = parseFloat(searchParams.get("lat") ?? "");
-  const lng = parseFloat(searchParams.get("lng") ?? "");
-  const radius = parseFloat(searchParams.get("radius") ?? "10");
-
+// GET /api/stores
+// 사용자 위치는 받지 않음 — 모두에게 동일한 응답이라 CDN 캐시 적중률 100%.
+// 거리 계산·정렬·반경 필터는 클라이언트(haversineKm) 측에서 처리.
+export async function GET() {
   const stores = await prisma.store.findMany({
-    include: { chain: true },
+    select: {
+      id: true,
+      name: true,
+      chainId: true,
+      address: true,
+      lat: true,
+      lng: true,
+      hours: true,
+      chain: { select: { name: true, category: true, logoUrl: true } },
+    },
   });
 
-  // priceCount = unique productId 수 (같은 product 여러 가격은 1건으로)
-  // (매장 상세 페이지의 표시와 일관)
+  // priceCount = unique productId 수 (같은 product 여러 가격은 1건)
+  // distinct 쿼리 한 번 — DB가 SQL 측 DISTINCT로 처리 (메모리 dedup보다 효율적)
   const distinctPairs = await prisma.price.findMany({
     distinct: ["storeId", "productId"],
     select: { storeId: true },
@@ -24,14 +29,14 @@ export async function GET(req: NextRequest) {
     storeUniqueProducts.set(p.storeId, (storeUniqueProducts.get(p.storeId) ?? 0) + 1);
   }
 
-  // chainId별 unique product 합계 — store가 0건일 때 chain fallback 표시
+  // chainId별 unique product 합계 — 매장 0건일 때 chain fallback 표시용
   const chainTotals = new Map<string, number>();
   for (const s of stores) {
     const c = storeUniqueProducts.get(s.id) ?? 0;
     chainTotals.set(s.chainId, (chainTotals.get(s.chainId) ?? 0) + c);
   }
 
-  let result = stores.map((s) => ({
+  const result = stores.map((s) => ({
     id: s.id,
     name: s.name,
     chainId: s.chainId,
@@ -44,20 +49,16 @@ export async function GET(req: NextRequest) {
     hours: s.hours,
     priceCount: storeUniqueProducts.get(s.id) ?? 0,
     chainPriceCount: chainTotals.get(s.chainId) ?? 0,
-    distanceKm: !isNaN(lat) && !isNaN(lng) ? distanceKm(lat, lng, s.lat, s.lng) : null,
+    // distanceKm은 클라이언트에서 계산 (lat/lng 받았으니 즉시)
+    distanceKm: null as number | null,
   }));
-
-  if (!isNaN(lat) && !isNaN(lng)) {
-    result = result
-      .filter((s) => (s.distanceKm ?? Infinity) <= radius)
-      .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
-  }
 
   return NextResponse.json(
     { stores: result },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=600",
+        // 매장 정보는 거의 안 바뀜 (월 1회 sync) → 10분 CDN + 1시간 SWR
+        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600",
       },
     }
   );

@@ -5,6 +5,7 @@ import { formatWon } from "@/lib/format";
 import { unitPriceParts, unitPriceValue } from "@/lib/units";
 import OnboardingCard from "@/components/OnboardingCard";
 import BudgetSummaryWidget from "@/components/BudgetSummaryWidget";
+import PrefetchCommonAPIs from "@/components/PrefetchCommonAPIs";
 import RecallTicker from "@/components/RecallTicker";
 import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
@@ -239,6 +240,9 @@ export default async function HomePage() {
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
+
+      {/* 사이트 진입 시 백그라운드 prefetch — /cart, /stores, /search 가면 캐시 적중 */}
+      <PrefetchCommonAPIs />
 
       {/* 가계부 위젯 — 로그인 사용자에게 이번 달 KPI 미니 카드 (client-side fetch, ISR 보존) */}
       <BudgetSummaryWidget />

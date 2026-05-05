@@ -72,13 +72,22 @@ export async function GET() {
         }
       : null;
 
-  return NextResponse.json({
-    ok: true,
-    authed: true,
-    hasData: true,
-    thisMonth,
-    savedAmount,
-    topCategory,
-    totalCount: myPrices.length,
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      authed: true,
+      hasData: true,
+      thisMonth,
+      savedAmount,
+      topCategory,
+      totalCount: myPrices.length,
+    },
+    {
+      headers: {
+        // 같은 user의 가계부 요약 — 1분 브라우저 캐시 + 5분 SWR
+        // 영수증 등록 후 즉시 반영은 부담 없는 trade-off (1분 차이)
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }
