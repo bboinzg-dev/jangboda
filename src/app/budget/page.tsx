@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { formatWon } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
+import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,18 @@ function recentMonthKeys(n: number): string[] {
 
 type BudgetData = {
   thisMonthTotal: number;
+  // 핵심 KPI — 가계부 헤더의 4개 카드
+  kpi: {
+    thisMonth: number;             // 이번 달 총 지출
+    lastMonth: number;             // 지난 달 총 지출 (비교용)
+    monthDeltaPct: number | null;  // (thisMonth - lastMonth) / lastMonth * 100
+    savedAmount: number;           // 행사가로 산 누적 절약액 = Σ(listPrice - paidPrice)
+    promoCount: number;            // 행사가로 구매한 건수
+    totalPriceCount: number;       // 전체 등록 건수
+    storeCount: number;            // 다녀본 매장 수
+  };
   monthly: { key: string; total: number }[];
-  byCategory: { category: string; total: number }[];
+  byCategory: { category: BudgetCategory; total: number; color: string }[];
   byStore: { storeName: string; chainName: string; total: number }[];
   overpaid: {
     productId: string;
@@ -75,12 +86,36 @@ async function getBudget(userId: string): Promise<BudgetData> {
   const paidOf = (p: { paidPrice: number | null; listPrice: number | null }) =>
     p.paidPrice ?? p.listPrice ?? 0;
 
-  // 이번 달 합계
+  // 이번 달 / 지난 달 합계 — KPI 비교용
   const now = new Date();
   const curKey = monthKey(now);
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastKey = monthKey(lastMonthDate);
   const thisMonthTotal = valid
     .filter((p) => monthKey(p.createdAt) === curKey)
     .reduce((s, p) => s + paidOf(p), 0);
+  const lastMonthTotal = valid
+    .filter((p) => monthKey(p.createdAt) === lastKey)
+    .reduce((s, p) => s + paidOf(p), 0);
+  const monthDeltaPct =
+    lastMonthTotal > 0
+      ? Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100)
+      : null;
+
+  // 누적 절약액 — 행사가로 산 모든 건의 (listPrice - paidPrice) 합산
+  // 사용자에게 "행사 활용으로 N원 아꼈어요" 보상감 신호
+  let savedAmount = 0;
+  let promoCount = 0;
+  for (const p of valid) {
+    if (p.paidPrice != null && p.listPrice != null && p.paidPrice < p.listPrice) {
+      savedAmount += p.listPrice - p.paidPrice;
+      promoCount++;
+    }
+  }
+  const totalPriceCount = valid.length;
+  const storeCount = new Set(
+    valid.map((p) => p.store?.id).filter((id): id is string => !!id),
+  ).size;
 
   // 최근 6개월 월별 합계
   const keys = recentMonthKeys(6);
@@ -93,14 +128,19 @@ async function getBudget(userId: string): Promise<BudgetData> {
   }
   const monthly = keys.map((k) => ({ key: k, total: monthlyMap.get(k) ?? 0 }));
 
-  // 카테고리별
-  const catMap = new Map<string, number>();
+  // 카테고리별 — 메가 카테고리(신선식품/유제품/가공즉석/음료/...)로 정상화
+  // ("참가격 등록 상품" / "사용자 등록" 같은 무의미한 출처 메타 그룹화 해소)
+  const catMap = new Map<BudgetCategory, number>();
   for (const p of valid) {
-    const c = p.product?.category ?? "기타";
-    catMap.set(c, (catMap.get(c) ?? 0) + paidOf(p));
+    const cat = budgetCategoryOf(p.product?.name ?? "", p.product?.category);
+    catMap.set(cat, (catMap.get(cat) ?? 0) + paidOf(p));
   }
   const byCategory = Array.from(catMap.entries())
-    .map(([category, total]) => ({ category, total }))
+    .map(([category, total]) => ({
+      category,
+      total,
+      color: CATEGORY_COLORS[category],
+    }))
     .sort((a, b) => b.total - a.total);
 
   // 매장별 상위 5
@@ -204,6 +244,15 @@ async function getBudget(userId: string): Promise<BudgetData> {
 
   return {
     thisMonthTotal,
+    kpi: {
+      thisMonth: thisMonthTotal,
+      lastMonth: lastMonthTotal,
+      monthDeltaPct,
+      savedAmount,
+      promoCount,
+      totalPriceCount,
+      storeCount,
+    },
     monthly,
     byCategory,
     byStore,
@@ -249,41 +298,89 @@ export default async function BudgetPage() {
 
   const maxMonthly = Math.max(...data.monthly.map((m) => m.total), 1);
   const totalCategorySum = data.byCategory.reduce((s, c) => s + c.total, 0) || 1;
-
-  // 카테고리별 색상 팔레트 (Tailwind safe)
-  const palette = [
-    "bg-rose-400",
-    "bg-amber-400",
-    "bg-emerald-400",
-    "bg-sky-400",
-    "bg-violet-400",
-    "bg-pink-400",
-    "bg-lime-400",
-    "bg-stone-400",
-  ];
+  const promoRate =
+    data.kpi.totalPriceCount > 0
+      ? Math.round((data.kpi.promoCount / data.kpi.totalPriceCount) * 100)
+      : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">가계부</h1>
+        <h1 className="text-2xl font-bold">📊 가계부</h1>
         <Link
           href="/upload"
-          className="text-sm text-brand-600 hover:underline"
+          className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg font-medium"
         >
           + 영수증 추가
         </Link>
       </div>
 
-      {/* 이번 달 합계 */}
-      <header className="bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-xl p-6">
-        <div className="text-xs text-brand-700 font-medium">
-          이번 달 ({new Date().getMonth() + 1}월) 소비
+      {/* 4-KPI 헤더 — 가계부의 핵심 지표를 한눈에 */}
+      <header className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* 1. 이번 달 지출 — primary */}
+        <div className="bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-xl p-4">
+          <div className="text-[11px] text-brand-700 font-medium">
+            이번 달 ({new Date().getMonth() + 1}월) 지출
+          </div>
+          <div className="text-xl md:text-2xl font-extrabold text-brand-700 mt-1 tabular-nums">
+            {formatWon(data.kpi.thisMonth)}
+          </div>
+          {data.kpi.monthDeltaPct !== null && (
+            <div className="text-[11px] text-stone-600 mt-1">
+              지난달{" "}
+              <span
+                className={
+                  data.kpi.monthDeltaPct > 0
+                    ? "text-rose-600 font-medium"
+                    : data.kpi.monthDeltaPct < 0
+                    ? "text-emerald-600 font-medium"
+                    : "text-ink-3"
+                }
+              >
+                {data.kpi.monthDeltaPct > 0 ? "▲" : data.kpi.monthDeltaPct < 0 ? "▼" : "─"}
+                {Math.abs(data.kpi.monthDeltaPct)}%
+              </span>
+            </div>
+          )}
         </div>
-        <div className="text-3xl font-bold text-brand-700 mt-1">
-          {formatWon(data.thisMonthTotal)}
+
+        {/* 2. 누적 절약 — 행사가 활용 보상 */}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <div className="text-[11px] text-emerald-700 font-medium">
+            🎉 누적 절약
+          </div>
+          <div className="text-xl md:text-2xl font-extrabold text-emerald-700 mt-1 tabular-nums">
+            {formatWon(data.kpi.savedAmount)}
+          </div>
+          <div className="text-[11px] text-stone-600 mt-1">행사가로 아낀 합</div>
         </div>
-        <div className="text-xs text-stone-500 mt-1">
-          총 {data.totalCount}건의 가격 기록 기반
+
+        {/* 3. 행사 활용 빈도 */}
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+          <div className="text-[11px] text-rose-700 font-medium">
+            행사 활용
+          </div>
+          <div className="text-xl md:text-2xl font-extrabold text-rose-700 mt-1 tabular-nums">
+            {data.kpi.promoCount}
+            <span className="text-sm text-rose-600 font-medium">/{data.kpi.totalPriceCount}건</span>
+          </div>
+          <div className="text-[11px] text-stone-600 mt-1">
+            할인·번들·1+1 ({promoRate}%)
+          </div>
+        </div>
+
+        {/* 4. 매장 다양성 */}
+        <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
+          <div className="text-[11px] text-sky-700 font-medium">
+            🏪 다녀본 매장
+          </div>
+          <div className="text-xl md:text-2xl font-extrabold text-sky-700 mt-1 tabular-nums">
+            {data.kpi.storeCount}
+            <span className="text-sm text-sky-600 font-medium">곳</span>
+          </div>
+          <div className="text-[11px] text-stone-600 mt-1">
+            총 {data.totalCount}건 등록
+          </div>
         </div>
       </header>
 
@@ -319,25 +416,24 @@ export default async function BudgetPage() {
         </div>
       </section>
 
-      {/* 카테고리별 */}
+      {/* 카테고리별 — 메가 카테고리(신선식품/유제품/음료/...) 정상화 */}
       <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">카테고리별 소비</h2>
-        {/* 가로 도넛-대용 스택 바 */}
+        <h2 className="font-bold mb-3">🥕 카테고리별 소비</h2>
+        {/* 가로 스택 바 */}
         <div className="flex h-3 rounded-full overflow-hidden bg-stone-100 mb-4">
-          {data.byCategory.slice(0, 8).map((c, i) => {
+          {data.byCategory.map((c) => {
             const pct = (c.total / totalCategorySum) * 100;
             return (
               <div
                 key={c.category}
-                className={palette[i % palette.length]}
-                style={{ width: `${pct}%` }}
+                style={{ width: `${pct}%`, backgroundColor: c.color }}
                 title={`${c.category}: ${formatWon(c.total)}`}
               />
             );
           })}
         </div>
         <ul className="space-y-1.5 text-sm">
-          {data.byCategory.slice(0, 8).map((c, i) => {
+          {data.byCategory.map((c) => {
             const pct = ((c.total / totalCategorySum) * 100).toFixed(1);
             return (
               <li
@@ -346,9 +442,8 @@ export default async function BudgetPage() {
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                      palette[i % palette.length]
-                    }`}
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: c.color }}
                   />
                   <span className="truncate">{c.category}</span>
                 </span>
