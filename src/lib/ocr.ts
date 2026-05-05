@@ -13,7 +13,8 @@ export type ParsedReceiptItem = {
 };
 
 export type ParsedReceipt = {
-  storeHint?: string; // OCR이 추측한 마트 이름
+  storeHint?: string;       // OCR이 추측한 마트 이름
+  storeAddress?: string;    // 영수증의 "주소:" 라인 — 분점 식별용 (도로명+번지 매칭이 이름보다 정확)
   items: ParsedReceiptItem[];
   totalAmount?: number;
   receiptDate?: string;
@@ -405,6 +406,17 @@ function parseReceiptText(text: string): ParsedReceipt {
     if (first && first.length <= 20 && /[가-힣]/.test(first)) storeHint = first;
   }
 
+  // 매장 주소 추출 — "주소:..." 라인 (분점 매칭에 활용 — 이름보다 정확)
+  // OCR row 그룹화로 "주소:서울시 강동구 구천면로 189, ..." 형태로 합쳐 들어옴
+  let storeAddress: string | undefined;
+  for (const l of lines.slice(0, 12)) {
+    const m = l.match(/주\s*소\s*[:：]\s*(.+)$/);
+    if (m && m[1].trim().length >= 5) {
+      storeAddress = m[1].trim();
+      break;
+    }
+  }
+
   // 날짜 찾기 — YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
   let receiptDate: string | undefined;
   for (const l of lines) {
@@ -650,6 +662,7 @@ function parseReceiptText(text: string): ParsedReceipt {
 
   return {
     storeHint,
+    storeAddress,
     receiptDate,
     totalAmount,
     items,
@@ -716,6 +729,7 @@ export function mergeReceipts(receipts: ParsedReceipt[]): ParsedReceipt {
   const rawTexts: string[] = [];
   for (const r of receipts) {
     if (!out.storeHint && r.storeHint) out.storeHint = r.storeHint;
+    if (!out.storeAddress && r.storeAddress) out.storeAddress = r.storeAddress;
     if (!out.receiptDate && r.receiptDate) out.receiptDate = r.receiptDate;
     if (!out.totalAmount && r.totalAmount) out.totalAmount = r.totalAmount;
     for (const it of r.items) {

@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 매장 추론
-  const storeId = await matchStore(receipt.storeHint);
+  // 매장 추론 — 도로명+번지 우선, 그 다음 이름 부분 매칭, 마지막에 분점 번호 제거 매칭
+  const storeId = await matchStore(receipt.storeHint, receipt.storeAddress);
 
   // Supabase Storage — 첫 번째 이미지만 대표로 저장 (영수증 record는 1개)
   const primaryImage = imagesBase64[0];

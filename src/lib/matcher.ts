@@ -104,7 +104,45 @@ export async function matchProduct(
   return bestMatch?.id ?? null;
 }
 
-export async function matchStore(hint: string | undefined): Promise<string | null> {
+// 분점 번호 제거 — "천호2점" → "천호점", "잠실1호점" → "잠실점"
+// 영수증은 보통 "천호점"으로만 표기, DB는 "천호2점" 같이 분점 번호 포함된 케이스 매칭용
+function looseNormalize(s: string): string {
+  return normalize(s)
+    .replace(/(\d+)호점/g, "점")
+    .replace(/(\d+)점/g, "점");
+}
+
+// 영수증/매장 주소에서 도로명+번지 토큰 추출 — "구천면로 189", "테헤란로 152" 등
+// 같은 도로명+번지면 분점 번호 표기 차이 무관 같은 매장으로 확정.
+// "...로", "...길", "...대로" 모두 지원.
+const ROAD_TOKEN_RE = /([가-힣A-Za-z0-9]+(?:로|대로|길))\s*(\d+(?:-\d+)?)/g;
+function extractRoadTokens(address: string | undefined | null): string[] {
+  if (!address) return [];
+  const tokens: string[] = [];
+  for (const m of address.matchAll(ROAD_TOKEN_RE)) {
+    tokens.push(`${m[1]}${m[2]}`); // "구천면로189" 형태로 정규화
+  }
+  return tokens;
+}
+
+export async function matchStore(
+  hint: string | undefined,
+  address?: string,
+): Promise<string | null> {
+  // 0순위: 주소(도로명+번지) 매칭 — 가장 robust
+  // 영수증 "서울시 강동구 구천면로 189"가 DB store.address와 도로명+번지 공유하면 같은 매장 확정
+  // 분점 번호("천호점" vs "천호2점") 표기 차이 무관
+  const hintTokens = extractRoadTokens(address);
+  if (hintTokens.length > 0) {
+    const stores = await prisma.store.findMany({
+      select: { id: true, name: true, address: true },
+    });
+    for (const s of stores) {
+      const storeTokens = extractRoadTokens(s.address);
+      if (storeTokens.some((t) => hintTokens.includes(t))) return s.id;
+    }
+  }
+
   if (!hint) return null;
   const norm = normalize(hint);
   if (norm.length < 2) return null;
@@ -112,15 +150,25 @@ export async function matchStore(hint: string | undefined): Promise<string | nul
   const stores = await prisma.store.findMany({
     select: { id: true, name: true },
   });
-  // 정확 일치 우선
+  // 1순위: 정규화 후 정확 일치
   for (const s of stores) {
     if (normalize(s.name) === norm) return s.id;
   }
-  // 부분 일치
+  // 2순위: 정규화 후 부분 일치
   for (const s of stores) {
     const sn = normalize(s.name);
     if (sn.length < 2) continue;
     if (norm.includes(sn) || sn.includes(norm)) return s.id;
+  }
+  // 3순위: 분점 번호 제거 후 매칭 ("킴스클럽 천호점" ↔ "킴스클럽 천호2점")
+  const looseHint = looseNormalize(hint);
+  if (looseHint.length >= 2) {
+    for (const s of stores) {
+      const sn = looseNormalize(s.name);
+      if (sn.length < 2) continue;
+      if (sn === looseHint) return s.id;
+      if (sn.includes(looseHint) || looseHint.includes(sn)) return s.id;
+    }
   }
   return null;
 }
