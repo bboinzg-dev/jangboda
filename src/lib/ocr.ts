@@ -70,17 +70,40 @@ async function callClovaOcr(imageBase64: string): Promise<ParsedReceipt> {
 
   const json = await res.json();
 
-  // 1순위: Receipt OCR 구조화된 응답이 있으면 그걸로
+  // 두 파서 병행 호출 후 더 풍부한(할인/바코드/promotionType 정보 잡힌) 쪽 우선
+  // - Receipt OCR 구조화 응답: subResults.items 단순 파싱 (할인 라인 묶기 X)
+  // - 텍스트 파서: extractClovaPlainText로 row 그룹화한 평문에서 그룹 빌더로 할인/바코드 추출
+  // CLOVA Receipt가 storeInfo/totalPrice 같은 메타는 잘 잡지만 할인 라인은 못 묶는 경우(킴스클럽 등)
+  // 텍스트 파서가 paidPrice/promotionType/barcode 채움 → items는 텍스트 쪽, 메타는 구조화 쪽 fallback.
   const structured = parseClovaResponse(json);
+  const fullText = extractClovaPlainText(json);
+  const textParsed = fullText.trim() ? parseReceiptText(fullText) : null;
+
+  if (textParsed && textParsed.items.length > 0) {
+    const structRichness = structured.items.filter(
+      (i) => i.paidPrice != null || i.barcode || i.promotionType
+    ).length;
+    const textRichness = textParsed.items.filter(
+      (i) => i.paidPrice != null || i.barcode || i.promotionType
+    ).length;
+    // 텍스트 파서가 할인/바코드를 더 잡았으면 그쪽 items 사용 + 구조화 메타 보강
+    if (textRichness > structRichness) {
+      return {
+        items: textParsed.items,
+        storeHint: structured.storeHint || textParsed.storeHint,
+        receiptDate: structured.receiptDate || textParsed.receiptDate,
+        totalAmount: structured.totalAmount || textParsed.totalAmount,
+        rawText: textParsed.rawText || structured.rawText,
+      };
+    }
+  }
+
+  // 구조화 응답이 충분하면 그대로
   if (structured.items.length > 0 || structured.storeHint) {
     return structured;
   }
-
-  // 2순위: General/Custom OCR — fields[] 또는 inferText에서 텍스트 합쳐서 휴리스틱 파서
-  const fullText = extractClovaPlainText(json);
-  if (fullText.trim()) {
-    return parseReceiptText(fullText);
-  }
+  // 구조화가 비었으면 텍스트 파서 폴백
+  if (textParsed) return textParsed;
 
   return { items: [], rawText: JSON.stringify(json).slice(0, 300) };
 }
