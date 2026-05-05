@@ -5,6 +5,7 @@ import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
 import { lookupByBarcode, type FoodSafetyItem } from "@/lib/foodsafety";
+import { matchBrand, generateAliasCandidates } from "@/lib/brandRules";
 
 // Vercel 함수 timeout — OCR(CLOVA/Vision) + storage 업로드 + 매칭까지 60초 허용
 export const maxDuration = 60;
@@ -287,13 +288,26 @@ export async function PATCH(req: NextRequest) {
       }
       if (!productId) {
         // 식약처 enrich — 바코드 있을 때만 lookup
+        // brand 사전 매칭 — enriched 없거나 누락 필드 보강 (cron 안 기다리고 즉시)
         // 매칭 실패해도 기본값으로 fallback (영수증 OCR 이름 그대로)
         const enriched = enrichmentMap.get(it) ?? null;
+        const finalName = enriched?.productName?.trim() || cleanName;
+        const brandMatch = matchBrand(finalName);
+
         const productData = {
-          name: enriched?.productName?.trim() || cleanName,
-          manufacturer: enriched?.manufacturer?.trim() || null,
+          name: finalName,
+          // 식약처가 brand는 안 줌 → brand 사전 결과만 적용
+          brand: brandMatch?.brand ?? null,
+          // 식약처 lookup이 우선, 없으면 brand 사전 fallback
+          manufacturer: enriched?.manufacturer?.trim() || brandMatch?.manufacturer || null,
+          origin: brandMatch?.origin ?? null,
           unit: "1개",
-          category: enriched?.category?.minor || enriched?.foodType || "사용자 등록",
+          // 카테고리 우선순위: 식약처 minor → 식약처 foodType → brand 사전 → "사용자 등록"
+          category:
+            enriched?.category?.minor ||
+            enriched?.foodType ||
+            brandMatch?.category ||
+            "사용자 등록",
           barcode: cleanBarcode,
           // metadata에 식약처 정보 보존 (소비기한/주소/카테고리 트리/식품유형)
           metadata: enriched
@@ -317,6 +331,22 @@ export async function PATCH(req: NextRequest) {
         });
         productId = created.id;
         newProductsCreated++;
+
+        // alias 자동 생성 — 다음 영수증 OCR 매칭률 향상
+        // (예: "CJ 햇반 백미밥" 외에 "햇반 백미밥", "햇반"도 alias 등록)
+        const aliasCandidates = generateAliasCandidates(
+          productData.name,
+          productData.brand,
+        );
+        for (const alias of aliasCandidates) {
+          try {
+            await tx.productAlias.create({
+              data: { productId: created.id, alias },
+            });
+          } catch {
+            // ProductAlias.alias @@unique 충돌 — silent skip (이미 다른 product 사용 중)
+          }
+        }
       }
       await tx.price.create({
         data: {

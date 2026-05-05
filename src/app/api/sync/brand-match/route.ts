@@ -23,23 +23,41 @@ async function handle(req: NextRequest) {
   const startedAt = Date.now();
   const TIME_BUDGET_MS = 50_000;
   try {
+    // category가 "참가격 등록 상품"이거나 비어있는 product는 brand 매칭 시 category도 갱신
     const products = await prisma.product.findMany({
-      where: { OR: [{ brand: null }, { manufacturer: null }, { origin: null }] },
-      select: { id: true, name: true, brand: true, manufacturer: true, origin: true },
+      where: {
+        OR: [
+          { brand: null },
+          { manufacturer: null },
+          { origin: null },
+          { category: "참가격 등록 상품" },
+          { category: "사용자 등록" },
+        ],
+      },
+      select: { id: true, name: true, brand: true, manufacturer: true, origin: true, category: true },
     });
     let updated = 0;
     let processed = 0;
+    let categoriesUpdated = 0;
     const byBrand = new Map<string, number>();
+
+    // 카테고리가 일반 라벨(참가격 등록 상품 / 사용자 등록)일 때만 정상화 — 명시적 카테고리는 보존
+    const isGenericCategory = (c: string) =>
+      c === "참가격 등록 상품" || c === "사용자 등록";
 
     for (const p of products) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       processed++;
       const m = matchBrand(p.name);
       if (!m) continue;
-      const data: { brand?: string; manufacturer?: string; origin?: string } = {};
+      const data: { brand?: string; manufacturer?: string; origin?: string; category?: string } = {};
       if (!p.brand) data.brand = m.brand;
       if (!p.manufacturer) data.manufacturer = m.manufacturer;
       if (!p.origin && m.origin) data.origin = m.origin;
+      if (m.category && isGenericCategory(p.category)) {
+        data.category = m.category;
+        categoriesUpdated++;
+      }
       if (Object.keys(data).length === 0) continue;
       try {
         await prisma.product.update({ where: { id: p.id }, data });
@@ -86,6 +104,7 @@ async function handle(req: NextRequest) {
       ok: true,
       candidatesScanned: processed,
       updated,
+      categoriesUpdated,
       aliasesCreated,
       byBrand: Object.fromEntries(byBrand),
       durationMs: Date.now() - startedAt,
