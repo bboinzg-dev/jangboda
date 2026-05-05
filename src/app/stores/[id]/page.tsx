@@ -95,35 +95,48 @@ export default async function StoreDetailPage({
         </Link>
       </div>
 
-      <header className="bg-white border border-stone-200 rounded-xl p-6">
-        <div className="flex items-center gap-4">
+      <header className="bg-white border border-stone-200 rounded-xl p-5 sm:p-6">
+        <div className="flex items-center gap-4 sm:gap-5">
           <ChainLogo
             src={store.chain.logoUrl}
             name={store.chain.name}
-            size={72}
+            size={80}
           />
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-brand-600 font-medium flex items-center gap-1">
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full font-medium">
               <span>{icon}</span>
               <span>{label}</span>
-              <span className="text-stone-300">·</span>
+              <span className="text-brand-300">·</span>
               <span>{store.chain.name}</span>
             </div>
-            <h1 className="text-2xl font-bold mt-1">{store.name}</h1>
-            <div className="text-stone-600 text-sm mt-1">{store.address}</div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold mt-1.5 text-ink-1 leading-tight truncate">
+              {store.name}
+            </h1>
+            <div className="text-stone-600 text-sm mt-1 truncate">{store.address}</div>
+            {store.hours && (
+              <div className="text-stone-500 text-xs mt-0.5">영업시간: {store.hours}</div>
+            )}
+          </div>
+          {/* 우측 통계 카드 — 데스크톱: 우측 정렬, 모바일: 다음 줄 */}
+          <div className="hidden sm:flex flex-col items-end shrink-0 border-l border-stone-200 pl-5">
+            <div className="text-[11px] text-stone-500">
+              {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
+            </div>
+            <div className="text-3xl font-extrabold text-brand-600 tabular-nums leading-none mt-0.5">
+              {items.length}
+              <span className="text-base text-brand-500 font-bold ml-0.5">건</span>
+            </div>
           </div>
         </div>
-        {store.hours && (
-          <div className="text-stone-500 text-xs mt-1">영업시간: {store.hours}</div>
-        )}
 
+        {/* 모바일 통계 + 길찾기 — 좌우 배치 */}
         <div className="mt-4 flex items-center gap-3">
-          <div>
-            <div className="text-xs text-stone-500">
-              {isFallback ? `같은 ${store.chain.name} 가격` : "등록 가격"}
+          <div className="sm:hidden">
+            <div className="text-[11px] text-stone-500">
+              {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
             </div>
-            <div className="text-2xl font-bold text-brand-600">
-              {items.length}건
+            <div className="text-2xl font-extrabold text-brand-600 tabular-nums">
+              {items.length}<span className="text-base ml-0.5">건</span>
             </div>
           </div>
           {showDirections && (
