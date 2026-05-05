@@ -563,8 +563,10 @@ export default function CartPage() {
           </div>
 
           {cart.length === 0 ? (
-            <div className="text-sm text-ink-3 text-center py-10 border border-dashed border-line-strong rounded-xl">
-              왼쪽에서 상품을 검색해서 추가하세요
+            <div className="text-[15px] text-ink-3 text-center py-10 border border-dashed border-line-strong rounded-xl px-4">
+              {/* 데스크톱은 좌우 2칼럼, 모바일은 세로 스택이라 안내 문구 분기 */}
+              <span className="hidden md:inline">왼쪽에서 상품을 검색해서 추가하세요</span>
+              <span className="md:hidden">위에서 상품을 검색해 추가하세요</span>
             </div>
           ) : (
             <ul className="space-y-2">
