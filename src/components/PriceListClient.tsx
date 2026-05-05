@@ -286,27 +286,19 @@ export default function PriceListClient({
                 <div className="text-right shrink-0 ml-3">
                   {(() => {
                     const uparts = unitPriceParts(p.price, unit);
-                    if (uparts) {
-                      // 단가를 메인 — 사용자가 한 눈에 비교 가능
-                      return (
-                        <>
-                          <div className="text-[10px] text-ink-3 font-medium leading-none">
-                            {uparts.basis}
-                          </div>
-                          <div className="text-[20px] font-extrabold tabular-nums tracking-tight text-ink-1 font-mono leading-tight">
-                            {uparts.amount}
-                          </div>
-                          <div className="text-[11px] text-ink-3 tabular-nums leading-none">
-                            실판매가 {formatWon(p.price)}
-                          </div>
-                        </>
-                      );
-                    }
-                    // 단가 파싱 불가 시 가격만
+                    // 실판매가를 메인 — 품목명에 이미 용량(1.5L 등)이 포함되어 있어
+                    // 사용자가 가장 먼저 알고 싶은 건 "이 매장에서 사면 얼마"
                     return (
-                      <div className="text-[22px] font-extrabold tabular-nums tracking-tight text-ink-1">
-                        {formatWon(p.price)}
-                      </div>
+                      <>
+                        <div className="text-[22px] font-extrabold tabular-nums tracking-tight text-ink-1 leading-tight">
+                          {formatWon(p.price)}
+                        </div>
+                        {uparts && (
+                          <div className="text-[11px] text-ink-3 tabular-nums leading-none mt-0.5">
+                            {uparts.basis} {uparts.amount}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                   {/* 최근 행사가 — paidPrice가 listPrice보다 작고 14일 이내 등록된 경우만 표시
