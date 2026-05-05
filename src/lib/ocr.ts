@@ -565,32 +565,42 @@ function parseReceiptText(text: string): ParsedReceipt {
     // - 마지막 가격(19,800) = 합계
     // - 첫 가격(9,900) = 단가 (listPrice)
     // - 가운데 짧은 숫자(2) = 수량
-    // 단가가 있으면 listPrice = 단가로, quantity는 추출, 합계는 할인 그룹 빌더에서 사용
-    const allPrices = matches.map((m) => parseInt(m[1].replace(/,/g, ""), 10));
+    //
+    // 단가/수량 분석에는 "콤마 포함된 가격만" 사용 (예: "415G"의 "415"가 가격으로 오인 방지).
+    // 영수증의 의미있는 가격은 거의 항상 콤마 포함(1,000원 이상)이라 안전.
+    const STRICT_PRICE_RE = /([1-9]\d{0,2}(?:,\d{3})+)\s*원?/g;
+    const strictMatches = [...l.matchAll(STRICT_PRICE_RE)];
     const lastMatch = matches[matches.length - 1];
-    const totalPrice = allPrices[allPrices.length - 1];
-    let listPrice = totalPrice;
+    let listPrice = parseInt(lastMatch[1].replace(/,/g, ""), 10);
     let quantity = 1;
-    if (allPrices.length >= 2) {
-      // 첫 가격을 단가로, 단가×수량 = 합계 인지 확인
-      const firstPrice = allPrices[0];
-      // 라인에서 단가와 합계 사이의 작은 숫자 = 수량 후보
-      const between = l
-        .substring(matches[0].index! + matches[0][0].length, lastMatch.index!)
-        .match(/\b(\d{1,3})\b/);
-      const qtyCandidate = between ? parseInt(between[1], 10) : null;
+
+    if (strictMatches.length >= 2) {
+      const firstStrict = parseInt(strictMatches[0][1].replace(/,/g, ""), 10);
+      const lastStrict = parseInt(
+        strictMatches[strictMatches.length - 1][1].replace(/,/g, ""),
+        10
+      );
+      const between = l.substring(
+        strictMatches[0].index! + strictMatches[0][0].length,
+        strictMatches[strictMatches.length - 1].index!
+      );
+      const qtyMatch = between.match(/\b(\d{1,3})\b/);
+      const qtyCandidate = qtyMatch ? parseInt(qtyMatch[1], 10) : null;
       if (
         qtyCandidate &&
         qtyCandidate >= 1 &&
         qtyCandidate <= 99 &&
-        firstPrice * qtyCandidate === totalPrice
+        firstStrict * qtyCandidate === lastStrict
       ) {
-        listPrice = firstPrice;
+        listPrice = firstStrict;
         quantity = qtyCandidate;
-      } else if (firstPrice * 2 === totalPrice) {
+      } else if (firstStrict * 2 === lastStrict) {
         // 수량 누락 케이스 추측: 단가×2 = 합계면 수량 2
-        listPrice = firstPrice;
+        listPrice = firstStrict;
         quantity = 2;
+      } else {
+        // 단가/수량 검증 실패 → 합계만 신뢰 (listPrice = lastStrict)
+        listPrice = lastStrict;
       }
     }
     if (listPrice < 100 || listPrice > 200_000) return { kind: "ignore" };
