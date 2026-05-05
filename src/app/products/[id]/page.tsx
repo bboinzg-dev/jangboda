@@ -136,8 +136,9 @@ export default async function ProductDetailPage({
   // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
 
-  // 단가 outlier 판정 — 단가 median ±50% 벗어난 가격은 통계 비교 제외
-  // (PriceListClient의 분리 로직과 동일 기준 — 매장 카드와 헤더 숫자 일관성 확보)
+  // outlier 판정 — 단가(unit) 기반 우선, 못 파싱하면 가격 자체 median ±50% fallback
+  // (PriceListClient의 분리 로직과 동일 기준 — 매장 카드와 헤더 숫자 일관성)
+  // 양배추 1포기처럼 unit 파싱이 안 되는 케이스도 보호되도록 이중 안전장치.
   const validUnitPrices = prices
     .map((p) => unitPriceValue(p.price, product.unit))
     .filter((v): v is number => v !== null && v > 0)
@@ -146,13 +147,26 @@ export default async function ProductDetailPage({
     validUnitPrices.length >= 3
       ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
       : null;
-  const lowBound = upMedian !== null ? upMedian * 0.5 : null;
-  const highBound = upMedian !== null ? upMedian * 1.5 : null;
+  // 단가 파싱 실패한 경우 가격 자체로 fallback (호가 보호용)
+  const validPricesSorted = prices
+    .map((p) => p.price)
+    .filter((x) => x > 0)
+    .sort((a, b) => a - b);
+  const priceMedian =
+    validPricesSorted.length >= 3
+      ? validPricesSorted[Math.floor(validPricesSorted.length / 2)]
+      : null;
   const isUnitOutlier = (price: number): boolean => {
-    if (lowBound === null || highBound === null) return false;
-    const u = unitPriceValue(price, product.unit);
-    if (u === null) return false;
-    return u < lowBound || u > highBound;
+    // 1순위: 단가 기반 (정밀)
+    if (upMedian !== null) {
+      const u = unitPriceValue(price, product.unit);
+      if (u !== null) return u < upMedian * 0.5 || u > upMedian * 1.5;
+    }
+    // 2순위: 가격 자체 (호가 fallback)
+    if (priceMedian !== null) {
+      return price < priceMedian * 0.5 || price > priceMedian * 1.5;
+    }
+    return false;
   };
 
   // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —

@@ -89,10 +89,9 @@ export default function PriceListClient({
     return a.price - b.price;
   });
 
-  // 단가 outlier 분리 — 같은 SKU여도 매장별 패키지가 다른 경우(예: 코스트코 대용량 박스)
+  // outlier 분리 — 단가(unit) 기반 우선, 못 파싱하면 가격 median 기반 fallback
   // 비교 정확도 위해 본 리스트에서 빼고 별도 섹션으로 표시.
-  // 기준: 단가가 중앙값의 ±50% 범위 밖 (0.5~1.5). row 3개 이상일 때만 적용.
-  // 양배추 15kg 박스 vs 양배추 1개 같은 케이스를 잡아냄
+  // 양배추 15kg 박스 vs 양배추 1포기 같은 케이스 + naver 호가 둘 다 잡아냄
   const withUnitPrice = sortedAll.map((r) => ({
     row: r,
     unitPrice: unitPriceValue(r.price, unit),
@@ -105,25 +104,32 @@ export default function PriceListClient({
     validUnitPrices.length >= 3
       ? validUnitPrices[Math.floor(validUnitPrices.length / 2)]
       : null;
-  // ±50% — 묶음판매/대용량 박스 더 적극적으로 분리
-  const lowBound = median !== null ? median * 0.5 : null;
-  const highBound = median !== null ? median * 1.5 : null;
+  // unit 파싱 실패 시 가격 자체 median fallback (1포기/1통/1마리 등)
+  const validRawPrices = sortedAll
+    .map((r) => r.price)
+    .filter((x) => x > 0)
+    .sort((a, b) => a - b);
+  const priceMedian =
+    validRawPrices.length >= 3
+      ? validRawPrices[Math.floor(validRawPrices.length / 2)]
+      : null;
+
+  // 한 행이 outlier인지 — 단가 기반 1순위, 가격 기반 2순위
+  const isRowOutlier = (price: number, up: number | null): boolean => {
+    if (median !== null && up !== null) {
+      return up < median * 0.5 || up > median * 1.5;
+    }
+    if (priceMedian !== null) {
+      return price < priceMedian * 0.5 || price > priceMedian * 1.5;
+    }
+    return false;
+  };
 
   const sorted = withUnitPrice
-    .filter(
-      (x) =>
-        median === null ||
-        x.unitPrice === null ||
-        (x.unitPrice >= (lowBound as number) && x.unitPrice <= (highBound as number))
-    )
+    .filter((x) => !isRowOutlier(x.row.price, x.unitPrice))
     .map((x) => x.row);
   const allOutliers = withUnitPrice
-    .filter(
-      (x) =>
-        median !== null &&
-        x.unitPrice !== null &&
-        (x.unitPrice < (lowBound as number) || x.unitPrice > (highBound as number))
-    )
+    .filter((x) => isRowOutlier(x.row.price, x.unitPrice))
     .map((x) => x.row);
   // 온라인 전용 chain(쿠팡/옥션/G마켓/네이버쇼핑/기타 온라인몰 등)의 outlier는
   // 패키지 차이가 아니라 호가성 등록일 가능성 큼 — 보조 섹션에서도 hide.

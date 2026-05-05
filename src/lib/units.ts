@@ -27,9 +27,12 @@ const G_PATTERN = /(\d+(?:\.\d+)?)\s*(?:g|그램)/i;
 const KG_PATTERN = /(\d+(?:\.\d+)?)\s*kg/i;
 const ML_PATTERN = /(\d+(?:\.\d+)?)\s*ml/i;
 const L_PATTERN = /(\d+(?:\.\d+)?)\s*[lL](?![a-z])/;
-const COUNT_PATTERN = /(\d+)\s*(?:개|입|개입|구|봉|병|캔|팩|매|롤|장|EA|ea)/;
+// 한국 농수산물·생필품 단위 — "1포기", "2통", "10송이", "1마리", "1단" 등을
+// 1개 단위 단가 비교에 포함시켜야 outlier 판정이 작동함 (이전엔 파싱 실패 → null).
+// 양배추/수박/포도/생선/시금치 같은 카테고리에서 호가성 outlier가 안 잡혔던 결함 수정.
+const COUNT_PATTERN = /(\d+)\s*(?:개|입|개입|구|봉|병|캔|팩|매|롤|장|EA|ea|포기|통|송이|마리|단|박스|박|자루|봉지|줄|쪽|모|판|상자|박스)/;
 
-const MULTIPLIER_PATTERN = /(\d+)\s*(?:개입|개|입|봉|병|캔|팩|매|롤|장|EA|ea)/;
+const MULTIPLIER_PATTERN = /(\d+)\s*(?:개입|개|입|봉|병|캔|팩|매|롤|장|EA|ea|포기|통|송이|마리|단|박스|박|자루|봉지|줄|쪽|모|판|상자)/;
 
 function extractWeight(unit: string): number | null {
   const kg = unit.match(KG_PATTERN);
