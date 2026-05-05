@@ -63,21 +63,14 @@ async function getStoreDetail(id: string) {
     }
   }
 
-  // 카테고리별로 그룹
-  const items = Array.from(latestByProduct.values());
-  const byCategory = new Map<string, typeof items>();
-  for (const it of items) {
-    const cat = it.product.category;
-    const arr = byCategory.get(cat) ?? [];
-    arr.push(it);
-    byCategory.set(cat, arr);
-  }
-  const categories = Array.from(byCategory.entries()).map(([cat, list]) => ({
-    category: cat,
-    items: list.sort((a, b) => a.product.name.localeCompare(b.product.name)),
-  }));
+  // 단일 리스트로 정렬 (이름순) — 카테고리 그룹화 제거
+  // (기존엔 product.category로 그룹화했으나 카테고리가 "참가격 등록 상품"/"사용자 등록"
+  //  같은 출처 메타라 사용자에게 무의미한 분리였음. 가격은 모두 영수증 source라 동일.)
+  const items = Array.from(latestByProduct.values()).sort((a, b) =>
+    a.product.name.localeCompare(b.product.name),
+  );
 
-  return { store, items, categories, isFallback };
+  return { store, items, isFallback };
 }
 
 export default async function StoreDetailPage({
@@ -87,7 +80,7 @@ export default async function StoreDetailPage({
 }) {
   const data = await getStoreDetail(params.id);
   if (!data) return notFound();
-  const { store, items, categories, isFallback } = data;
+  const { store, items, isFallback } = data;
 
   const cat = store.chain.category || "mart";
   const icon = CATEGORY_ICONS[cat] ?? "🛒";
@@ -157,85 +150,81 @@ export default async function StoreDetailPage({
           </Link>
         </div>
       ) : (
-        <section className="space-y-6">
-          {categories.map(({ category, items: catItems }) => (
-            <div key={category}>
-              <h2 className="font-bold text-sm text-stone-700 mb-2">
-                {category} <span className="text-stone-400">({catItems.length})</span>
-              </h2>
-              <ul className="space-y-2">
-                {catItems.map((p) => {
-                  const tag = freshnessTag(p.createdAt);
-                  const lp = p.listPrice ?? 0;
-                  const upl = unitPriceLabel(lp, p.product.unit);
-                  // 영수증 거래일 절대 날짜 (Price.createdAt = 영수증 거래일)
-                  const dateStr = p.createdAt.toLocaleDateString("ko-KR", {
-                    month: "numeric",
-                    day: "numeric",
-                    weekday: "short",
-                  });
-                  const isReceipt = p.source === "receipt";
-                  return (
-                    <li
-                      key={p.id}
-                      className="bg-white border border-stone-200 rounded-lg p-4 flex justify-between items-center gap-3"
-                    >
-                      <Link
-                        href={`/products/${p.product.id}`}
-                        className="min-w-0 flex-1 hover:underline flex items-center gap-3"
-                      >
-                        <ProductImage
-                          src={p.product.imageUrl}
-                          alt={p.product.name}
-                          size={48}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium leading-snug line-clamp-2 text-ink-1">
-                            {p.product.name}
-                          </div>
-                          <div className="text-xs text-stone-500 truncate mt-0.5">
-                            {p.product.unit}
-                            {p.product.brand ? ` · ${p.product.brand}` : ""}
-                          </div>
-                        </div>
-                      </Link>
-                      <div className="text-right shrink-0">
-                        <div className="font-semibold">{formatWon(lp)}</div>
-                        {upl && (
-                          <div className="text-[11px] text-stone-500">{upl}</div>
-                        )}
-                        {/* 최근 14일 이내 행사가 있으면 보조 표시 — "이 매장이 가끔 할인하는구나" 신호 */}
-                        {p.paidPrice != null &&
-                          p.paidPrice < lp &&
-                          Date.now() - p.createdAt.getTime() <
-                            14 * 24 * 60 * 60 * 1000 && (
-                            <div className="mt-1 text-[11px] text-rose-600 font-medium">
-                              💰 행사가 {formatWon(p.paidPrice)}
-                              {p.promotionType ? ` (${p.promotionType})` : ""}
-                            </div>
-                          )}
-                        <div className="flex gap-1 justify-end items-center mt-0.5 flex-wrap">
-                          <SourceBadge source={p.source} />
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
-                          >
-                            {tag.label}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500 mt-0.5">
-                          {isReceipt ? "🧾 영수증 거래일 " : ""}
-                          <span className="font-medium tabular-nums">{dateStr}</span>
-                          <span className="text-stone-400 ml-1">
-                            ({formatRelativeDate(p.createdAt)})
-                          </span>
-                        </div>
+        <section>
+          <h2 className="font-bold text-sm text-stone-700 mb-2">
+            등록 가격 <span className="text-stone-400">({items.length}건)</span>
+          </h2>
+          <ul className="space-y-2">
+            {items.map((p) => {
+              const tag = freshnessTag(p.createdAt);
+              const lp = p.listPrice ?? 0;
+              const upl = unitPriceLabel(lp, p.product.unit);
+              // 영수증 거래일 절대 날짜 (Price.createdAt = 영수증 거래일)
+              const dateStr = p.createdAt.toLocaleDateString("ko-KR", {
+                month: "numeric",
+                day: "numeric",
+                weekday: "short",
+              });
+              const isReceipt = p.source === "receipt";
+              return (
+                <li
+                  key={p.id}
+                  className="bg-white border border-stone-200 rounded-lg p-4 flex justify-between items-center gap-3"
+                >
+                  <Link
+                    href={`/products/${p.product.id}`}
+                    className="min-w-0 flex-1 hover:underline flex items-center gap-3"
+                  >
+                    <ProductImage
+                      src={p.product.imageUrl}
+                      alt={p.product.name}
+                      size={48}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium leading-snug line-clamp-2 text-ink-1">
+                        {p.product.name}
                       </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                      <div className="text-xs text-stone-500 truncate mt-0.5">
+                        {p.product.unit}
+                        {p.product.brand ? ` · ${p.product.brand}` : ""}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="text-right shrink-0">
+                    <div className="font-semibold">{formatWon(lp)}</div>
+                    {upl && (
+                      <div className="text-[11px] text-stone-500">{upl}</div>
+                    )}
+                    {/* 최근 14일 이내 행사가 있으면 보조 표시 — "이 매장이 가끔 할인하는구나" 신호 */}
+                    {p.paidPrice != null &&
+                      p.paidPrice < lp &&
+                      Date.now() - p.createdAt.getTime() <
+                        14 * 24 * 60 * 60 * 1000 && (
+                        <div className="mt-1 text-[11px] text-rose-600 font-medium">
+                          💰 행사가 {formatWon(p.paidPrice)}
+                          {p.promotionType ? ` (${p.promotionType})` : ""}
+                        </div>
+                      )}
+                    <div className="flex gap-1 justify-end items-center mt-0.5 flex-wrap">
+                      <SourceBadge source={p.source} />
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
+                      >
+                        {tag.label}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-500 mt-0.5">
+                      {isReceipt ? "🧾 영수증 거래일 " : ""}
+                      <span className="font-medium tabular-nums">{dateStr}</span>
+                      <span className="text-stone-400 ml-1">
+                        ({formatRelativeDate(p.createdAt)})
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
     </div>
