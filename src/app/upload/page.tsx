@@ -354,15 +354,16 @@ export default function UploadPage() {
                   className="w-full max-h-[60vh] rounded-xl border border-line object-contain bg-surface-muted"
                 />
                 {/* 회전 가이드 + 버튼 — 누운 영수증 OCR 인식률 0% 회피 */}
-                <div className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800">
+                <div className="flex items-center gap-2 text-sm bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 text-amber-800 flex-wrap">
                   <span className="shrink-0">⚠️</span>
-                  <span className="flex-1">
+                  <span className="flex-1 min-w-[160px]">
                     글씨가 <strong>똑바로 서있게</strong> 보여야 OCR이 정확합니다.
                   </span>
+                  {/* 터치 타겟 44x44 이상 — 모바일 손가락 정확도 보장 */}
                   <button
                     type="button"
                     onClick={() => rotateImage(-90)}
-                    className="shrink-0 px-2 py-1 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-medium"
+                    className="shrink-0 inline-flex items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-semibold text-sm"
                     aria-label="왼쪽으로 90도 회전"
                   >
                     ↶ 90°
@@ -370,7 +371,7 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={() => rotateImage(90)}
-                    className="shrink-0 px-2 py-1 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-medium"
+                    className="shrink-0 inline-flex items-center justify-center min-w-[44px] min-h-[44px] px-3 py-2 bg-white border border-amber-300 rounded text-amber-900 hover:bg-amber-100 font-semibold text-sm"
                     aria-label="오른쪽으로 90도 회전"
                   >
                     90° ↷
@@ -433,11 +434,12 @@ export default function UploadPage() {
                           >
                             ×
                           </button>
-                          <div className="absolute bottom-1 right-1 flex gap-0.5">
+                          {/* 모바일 터치 타겟 — 36x36px (추가 사진은 작게 보이지만 회전은 자주 안 누름) */}
+                          <div className="absolute bottom-1 right-1 flex gap-1">
                             <button
                               type="button"
                               onClick={() => rotateExtraAt(idx, -90)}
-                              className="w-6 h-6 bg-white/90 hover:bg-white text-ink-2 rounded text-[10px]"
+                              className="inline-flex items-center justify-center w-9 h-9 bg-white/90 hover:bg-white text-ink-2 rounded text-base shadow-sm"
                               aria-label="90도 왼쪽 회전"
                             >
                               ↶
@@ -445,7 +447,7 @@ export default function UploadPage() {
                             <button
                               type="button"
                               onClick={() => rotateExtraAt(idx, 90)}
-                              className="w-6 h-6 bg-white/90 hover:bg-white text-ink-2 rounded text-[10px]"
+                              className="inline-flex items-center justify-center w-9 h-9 bg-white/90 hover:bg-white text-ink-2 rounded text-base shadow-sm"
                               aria-label="90도 오른쪽 회전"
                             >
                               ↷
@@ -687,10 +689,11 @@ export default function UploadPage() {
                               setItems(next);
                             }}
                             aria-label="상품 매칭"
-                            className={`w-full px-2 py-1 border rounded text-xs ${
+                            // 매칭 상태가 한눈에 보이도록 배경색까지 적용
+                            className={`w-full px-2 py-1.5 border-2 rounded text-xs font-medium ${
                               ok
-                                ? "border-emerald-300 bg-white"
-                                : "border-amber-300 bg-white"
+                                ? "border-emerald-400 bg-emerald-50 text-emerald-900"
+                                : "border-amber-400 bg-amber-50 text-amber-900"
                             }`}
                           >
                             {/* 매칭된 항목: 첫 옵션을 "그대로 등록"으로 명확히. 변경하고 싶을 때만 아래 옵션 선택 */}

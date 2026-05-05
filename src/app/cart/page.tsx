@@ -847,8 +847,8 @@ export default function CartPage() {
         </div>
       )}
 
-      {/* 모바일 하단 고정 비교 버튼 */}
-      <div className="md:hidden fixed bottom-16 left-0 right-0 px-4 z-30 pointer-events-none">
+      {/* 모바일 하단 고정 비교 버튼 — BottomNav(약 60px) + 위로 튀어나온 primary 버튼(16px) 회피 */}
+      <div className="md:hidden fixed bottom-[80px] left-0 right-0 px-4 z-30 pointer-events-none" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <button
           onClick={compare}
           disabled={loading || cart.length === 0}

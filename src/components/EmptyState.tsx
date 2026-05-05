@@ -47,11 +47,11 @@ export default function EmptyState({
           {icon}
         </div>
       )}
-      <h2 className="font-bold text-base md:text-lg text-stone-900 mb-1">
+      <h2 className="font-bold text-lg md:text-xl text-stone-900 mb-2">
         {title}
       </h2>
       {description && (
-        <div className="text-sm text-stone-500 mb-5 leading-relaxed max-w-md mx-auto">
+        <div className="text-[15px] md:text-base text-stone-600 mb-6 leading-relaxed max-w-md mx-auto">
           {description}
         </div>
       )}
@@ -64,8 +64,8 @@ export default function EmptyState({
               href={a.href}
               className={
                 a.primary
-                  ? "inline-block bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm shadow-sm"
-                  : "inline-block bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-5 py-2.5 rounded-lg font-medium text-sm"
+                  ? "inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg font-semibold text-[15px] shadow-sm min-h-[44px]"
+                  : "inline-flex items-center justify-center bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 px-6 py-3 rounded-lg font-medium text-[15px] min-h-[44px]"
               }
             >
               {a.label}
