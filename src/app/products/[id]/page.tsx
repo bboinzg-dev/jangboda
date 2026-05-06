@@ -277,7 +277,12 @@ export default async function ProductDetailPage({
   // - "기타 온라인몰" (canonicalMallName 미매칭) — 마이너 셀러는 같은 product 이름이라도
   //   사양이 다른 경우 多 (예: 12개입 vs 24개입). 단위 검증 못 하므로 항상 hide.
   // 제외 건수는 별도로 보존 → "아직 없음"이 아니라 "N건 호가성 자동 제외"로 정직하게 표시.
-  const offlineRows = prices.filter((p) => !p.online);
+  //
+  // KAMIS 시세는 매장 가격이 아니라 공공 시세(전국 평균) — "오프라인 매장"에 섞이면
+  // 사용자가 매장 가격으로 오해함. 별도 marketRateRows로 분리해 "📊 공공 시세 (참고)"로 표시.
+  const allOfflineRows = prices.filter((p) => !p.online);
+  const marketRateRows = allOfflineRows.filter((p) => isMarketRate(p.source));
+  const offlineRows = allOfflineRows.filter((p) => !isMarketRate(p.source));
   const allOnlineRows = prices.filter((p) => p.online);
   const onlineRows = allOnlineRows.filter(
     (p) =>
@@ -286,10 +291,10 @@ export default async function ProductDetailPage({
   );
   const onlineHiddenCount = allOnlineRows.length - onlineRows.length;
 
-  // 헤더 "전체 최저가/최고가/가격차"는 매장 카드 리스트와 동일한 기준으로 계산 —
-  // 시세(KAMIS) 제외 + 호가성 source의 outlier 제외 + "기타 온라인몰" 제외.
-  // "기타 온라인몰"은 단위(12개입 vs 24개입)가 검증 안 되어 같은 product에 다른 사양 가격이 묶임 →
-  // 매장 카드 리스트에서도 hide 중이라 헤더 통계도 일관되게 제외해야 함.
+  // 헤더 "전체 최저가/최고가/가격차"는 사용자가 실제로 보는 가격(visibleRows)만으로 계산.
+  // 안 보이는 가격(KAMIS 시세 / 호가성 outlier / 기타 온라인몰)이 통계에 들어가면
+  // "최고가 21,900원이 어디서 나왔지?" 인지 부조화 발생. fallback 없음 — 비교 가능 가격이
+  // 0건이면 헤더 통계 자체를 숨기고 안내 메시지만 표시.
   const headlinePrices = prices
     .filter(
       (p) =>
@@ -299,19 +304,16 @@ export default async function ProductDetailPage({
     )
     .map((p) => p.price)
     .filter((x) => x > 0);
-  // 모두 outlier로 빠진 극단 케이스 — raw로 fallback
-  const fallbackPrices = prices.map((p) => p.price).filter((x) => x > 0);
-  const statPool = headlinePrices.length > 0 ? headlinePrices : fallbackPrices;
-  const minPrice = statPool.length > 0 ? Math.min(...statPool) : 0;
-  const maxPrice = statPool.length > 0 ? Math.max(...statPool) : 0;
-  const excludedCount = fallbackPrices.length - headlinePrices.length;
+  const allPositivePrices = prices.map((p) => p.price).filter((x) => x > 0);
+  const minPrice = headlinePrices.length > 0 ? Math.min(...headlinePrices) : 0;
+  const maxPrice = headlinePrices.length > 0 ? Math.max(...headlinePrices) : 0;
+  const excludedCount = allPositivePrices.length - headlinePrices.length;
 
+  // offlineRows는 이미 marketRate 제외됨, onlineRows는 이미 outlier·기타온라인몰 제외됨
   const offlineMarket = offlineRows.filter(
-    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price, r.source, r.chainName)
+    (r) => !isUnitOutlier(r.price, r.source, r.chainName)
   );
-  const onlineMarket = onlineRows.filter(
-    (r) => !isMarketRate(r.source) && !isUnitOutlier(r.price, r.source, r.chainName)
-  );
+  const onlineMarket = onlineRows;
   const winnerSection =
     offlineMarket.length > 0 && onlineMarket.length > 0
       ? Math.min(...offlineMarket.map((r) => r.price)) <
@@ -496,7 +498,7 @@ export default async function ProductDetailPage({
           </div>
         )}
 
-        {prices.length > 0 && (
+        {headlinePrices.length > 0 ? (
           <>
             <div className="mt-4 grid grid-cols-3 gap-3">
               <PriceStat
@@ -517,11 +519,16 @@ export default async function ProductDetailPage({
             </div>
             {excludedCount > 0 && (
               <div className="mt-2 text-[11px] text-ink-3">
-                {statPool.length}건 비교 · 시세/이상치 {excludedCount}건 제외
+                {headlinePrices.length}건 비교 · 시세/이상치 {excludedCount}건 제외
               </div>
             )}
           </>
-        )}
+        ) : prices.length > 0 ? (
+          // 가격은 있는데 모두 시세/호가성/기타 온라인몰 — 비교용 데이터 부족
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+            아직 비교 가능한 매장 가격이 없어요. 영수증을 올리면 첫 가격으로 등록됩니다.
+          </div>
+        ) : null}
 
         {winnerSection && (
           <div className="mt-4 text-sm bg-brand-50 border border-brand-200 rounded-xl p-3">
@@ -551,8 +558,37 @@ export default async function ProductDetailPage({
         <PriceHistoryChart history={history} />
       </section>
 
+      {/* 공공 시세 (KAMIS) — 매장 가격이 아니라 전국 평균 시세, 별도 영역으로 분리.
+          매장 가격과 같은 칸에 두면 "어느 매장 가격이지?" 오해 발생. */}
+      {marketRateRows.length > 0 && (
+        <section className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <h2 className="font-bold text-emerald-900 mb-1 flex items-center gap-2 text-sm">
+            📊 공공 시세 (참고)
+            <span className="text-[11px] text-emerald-700 font-normal">
+              KAMIS 전국 평균 — 매장 가격 아님
+            </span>
+          </h2>
+          <div className="space-y-1 mt-2">
+            {marketRateRows.map((r) => (
+              <div
+                key={r.priceId}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-emerald-900">{r.chainName}</span>
+                <span className="font-bold tabular-nums text-emerald-900">
+                  {formatWon(r.price)}
+                  <span className="text-[11px] text-emerald-700 font-normal ml-1">
+                    {unitPriceLabel(r.price, product.unit)}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 가격 비교 — 핵심 가치, 헤더 바로 아래로 이동 */}
-      {/* 오프라인/온라인 모두 0건 — 통합 빈 상태 */}
+      {/* 오프라인 매장(시세 제외)/온라인 모두 0건 — 통합 빈 상태 */}
       {offlineRows.length === 0 && onlineRows.length === 0 ? (
         <EmptyState
           illustration="/illustrations/empty-cart.png"
@@ -560,6 +596,12 @@ export default async function ProductDetailPage({
           title="이 상품은 아직 매장에 등록되지 않았습니다"
           description={
             <>
+              {marketRateRows.length > 0 ? (
+                <>
+                  공공 시세는 위에 표시되지만, 실제 매장 가격은 아직 없어요.
+                  <br />
+                </>
+              ) : null}
               영수증을 올리거나 직접 입력해서 첫 가격을 등록해보세요.
               <br />
               온라인 쇼핑몰 가격은 네이버 쇼핑 동기화로 한 번에 가져올 수 있어요.

@@ -185,13 +185,18 @@ export async function POST(req: NextRequest) {
     }
 
     // mall 이름을 canonical로 변환 후 mall당 최저가 + 그 link 저장
+    //
+    // 비메이저 몰은 항상 skip — canonicalMallName 미매칭 셀러는 같은 product 이름이라도
+    // 사양·단위가 다른 경우 多 (예: 30구 친환경 계란 product에 10구 가격이 매핑되어
+    // 비교 부정확). UI에서 hide 중이지만 DB에 남으면 헤더 통계 누수·차트 노이즈 유발.
+    // onlyMajor 파라미터는 호환성 위해 유지하되, 비메이저는 무조건 차단.
     const byCanonical = new Map<
       string,
       { canonical: string; isMajor: boolean; price: number; productUrl: string }
     >();
     for (const it of items) {
       const { canonical, isMajor } = canonicalMallName(it.mallName);
-      if (onlyMajor && !isMajor) {
+      if (!isMajor) {
         skippedNonMajor++;
         continue;
       }
