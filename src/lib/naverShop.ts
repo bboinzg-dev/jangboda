@@ -142,3 +142,145 @@ export function pickLowestByMall(items: NaverShopItem[]): NaverShopItem[] {
   }
   return Array.from(byMall.values()).sort((a, b) => a.lprice - b.lprice);
 }
+
+// ─── enrich 전용 (백필 / 영수증 등록 폴백) ────────────────────────────────
+//
+// 네이버 쇼핑에서 상품명·바코드로 검색하여 이미지·brand·category 추출.
+// 식약처(C005/I2570)는 가공식품 53,242건만 커버하므로 베이커리·PB·즉석식품 등은
+// 네이버 폴백으로 채움.
+
+export type NaverEnrichResult = {
+  cleanedQuery: string;
+  title: string | null;       // best-match 상품명 (HTML strip됨)
+  brand: string | null;
+  category: string | null;    // "식품/가공식품/즉석식품" 형태
+  imageUrl: string | null;
+  productLink: string | null;
+  mallName: string | null;
+  matchScore: number;         // 0~1 — 결과 신뢰도
+};
+
+// OCR 잡음 정리 — 영수증 자동 등록 시 발생하는 패턴들
+//   "C_ 자연애찬_일반" → "자연애찬"
+//   "닥터유 에너지바(40g)" → "닥터유 에너지바"
+//   "스팸 클래식 200G x 2" → "스팸 클래식"
+//
+// 주의: 괄호 안이 단위/포장 표기일 때만 제거.
+//   "돼지고기(삼겹살)" 처럼 부위/속성이면 보존 (정보 손실 방지)
+function cleanOcrName(rawName: string): string {
+  let s = rawName.trim();
+  // 앞뒤의 단일 알파벳 + 언더스코어 제거 ("C_ 자연애찬" → "자연애찬")
+  s = s.replace(/^[A-Za-z]{1,2}_+\s*/, "");
+  // "_일반" / "_기획" / "_특가" 같은 옵션 표식 제거
+  s = s.replace(/_(?:일반|기획|특가|행사|할인|무료배송|증정|set|set\d+)$/gi, "");
+  // 괄호 안이 단위·포장 표기일 때만 제거 (숫자 + 단위, 또는 "n개입" 같은 것)
+  // "(40g)", "(3개입)", "(4개)", "(250ml)" → 제거
+  // "(삼겹살)", "(등심)" 등 한글-only는 보존
+  s = s.replace(
+    /\(\s*\d+(?:\.\d+)?\s*(?:g|kg|ml|l|개입|개|매|입|봉|팩|박스|set)\s*\)/gi,
+    " ",
+  );
+  // 단위 표기 제거 (괄호 없는 형태)
+  s = s.replace(/\b\d+(?:\.\d+)?\s*(?:g|kg|ml|l|개입|개|매|입|봉|팩|박스|set)\b/gi, " ");
+  // multi-pack 표기
+  s = s.replace(/\b[xX×]\s*\d+\b/g, " ");
+  // 트레일링 언더스코어
+  s = s.replace(/_+/g, " ");
+  // 다중 공백 정리
+  s = s.replace(/\s+/g, " ").trim();
+  return s || rawName.trim();
+}
+
+// 한·영 정규화 — 매칭 점수용
+function normalizeForMatch(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, "").replace(/[^가-힣a-z0-9]/g, "");
+}
+
+// 토큰 overlap (정규화 후) — 검색어 토큰이 candidate에 얼마나 들어있나
+function tokenOverlapRatio(query: string, candidate: string): number {
+  const qTokens = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2);
+  if (qTokens.length === 0) return 0;
+  const cNorm = normalizeForMatch(candidate);
+  let hit = 0;
+  for (const t of qTokens) {
+    if (cNorm.includes(normalizeForMatch(t))) hit++;
+  }
+  return hit / qTokens.length;
+}
+
+// 네이버 쇼핑 결과에서 best item 선정
+// - multi-pack 제외 (가격이 N배라 매칭 부정확)
+// - title이 검색어와 토큰 겹침 ≥ 60% 인 것 우선
+// - 동점이면 lprice 낮은 (인기·정상가 상품일 가능성)
+function pickBestEnrichItem(
+  items: NaverShopItem[],
+  cleanedQuery: string,
+): { item: NaverShopItem; score: number } | null {
+  if (items.length === 0) return null;
+  let best: { item: NaverShopItem; score: number } | null = null;
+  for (const it of items) {
+    if (isMultiPack(it.title)) continue;
+    const score = tokenOverlapRatio(cleanedQuery, it.title);
+    if (score < 0.4) continue; // 너무 낮으면 skip — 엉뚱한 매칭 방지
+    if (!best || score > best.score || (score === best.score && it.lprice > 0 && it.lprice < best.item.lprice)) {
+      best = { item: it, score };
+    }
+  }
+  return best;
+}
+
+// 상품명(필요시 바코드)으로 네이버 쇼핑에서 enrich 정보 추출.
+// 검색 실패/결과 불충분 시 null 반환 — 호출 측에서 다른 폴백 사용.
+//
+// 조용한 timeout: 3.5초 (UI flow에서 호출되어도 응답 지연 최소)
+export async function enrichByName(
+  rawName: string,
+  options?: { barcode?: string; timeoutMs?: number },
+): Promise<NaverEnrichResult | null> {
+  const id = process.env.NAVER_SHOP_CLIENT_ID;
+  const secret = process.env.NAVER_SHOP_CLIENT_SECRET;
+  if (!id || !secret) return null;
+
+  const cleaned = cleanOcrName(rawName);
+  if (cleaned.length < 2) return null;
+
+  const timeoutMs = options?.timeoutMs ?? 3500;
+
+  // 검색 후보 — 바코드(있으면 먼저, 한국몰들은 매칭률 낮지만 시도) → cleaned name
+  const queries: string[] = [];
+  if (options?.barcode && /^\d{8,14}$/.test(options.barcode)) {
+    queries.push(options.barcode);
+  }
+  queries.push(cleaned);
+
+  for (const q of queries) {
+    try {
+      const items = await Promise.race<NaverShopItem[]>([
+        callNaverApi(q, id, secret),
+        new Promise<NaverShopItem[]>((resolve) =>
+          setTimeout(() => resolve([]), timeoutMs),
+        ),
+      ]);
+      if (items.length === 0) continue;
+      const best = pickBestEnrichItem(items, cleaned);
+      if (!best) continue;
+      const it = best.item;
+      return {
+        cleanedQuery: cleaned,
+        title: it.title || null,
+        brand: it.brand?.trim() || null,
+        category: it.category?.trim() || null,
+        imageUrl: it.image || null,
+        productLink: it.link || null,
+        mallName: it.mallName || null,
+        matchScore: best.score,
+      };
+    } catch {
+      // silent — 다음 쿼리 시도
+    }
+  }
+  return null;
+}

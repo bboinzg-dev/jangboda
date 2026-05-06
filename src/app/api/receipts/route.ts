@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { parseReceipt, mergeReceipts, type OcrSource } from "@/lib/ocr";
 import { matchProduct, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
 import { lookupByBarcode, type FoodSafetyItem } from "@/lib/foodsafety";
+import { enrichByName, type NaverEnrichResult } from "@/lib/naverShop";
 import { matchBrand, generateAliasCandidates } from "@/lib/brandRules";
 
 // Vercel 함수 timeout — OCR(CLOVA/Vision) + storage 업로드 + 매칭까지 60초 허용
@@ -203,28 +205,53 @@ export async function PATCH(req: NextRequest) {
     return d;
   })();
 
-  // 신규 product용 식약처 enrichment — 트랜잭션 전 병렬 fetch (트랜잭션 시간 보호)
-  // 각 lookup 3초 timeout. 실패하면 null (영수증 OCR 이름 그대로 사용).
-  // 같은 바코드 product가 이미 DB에 있으면 enrich 안 함 (트랜잭션 안에서 체크).
+  // 신규 product용 enrichment — 트랜잭션 전 병렬 fetch (트랜잭션 시간 보호)
+  //
+  // 우선순위:
+  //   1) 식약처 C005/I2570 (가공식품 53,242건, 무료) — 정확하지만 베이커리·PB·즉석식품 미커버
+  //   2) 네이버 쇼핑 검색 (이미지·brand·category, 무료 일 25,000건) — 식약처 미커버 영역 보강
+  //
+  // 각 lookup 3초 timeout, 모든 신규 항목 병렬. 실패하면 null → brand 사전 매칭으로 fallback.
   const enrichmentMap = new Map<(typeof validNew)[number], FoodSafetyItem | null>();
+  const naverEnrichMap = new Map<(typeof validNew)[number], NaverEnrichResult | null>();
   await Promise.all(
     validNew.map(async (it) => {
       const bc = it.barcode && /^\d{8,14}$/.test(it.barcode.trim()) ? it.barcode.trim() : null;
-      if (!bc) return;
-      try {
-        const result = await Promise.race<FoodSafetyItem | null>([
-          lookupByBarcode(bc),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
-        ]);
-        if (result) enrichmentMap.set(it, result);
-      } catch {
-        // 식약처 API 실패는 silent — 영수증 OCR 이름으로 fallback
+      const cleanName = (it.rawName ?? "").trim();
+      // 1) 식약처 — 바코드 있을 때만
+      if (bc) {
+        try {
+          const fs = await Promise.race<FoodSafetyItem | null>([
+            lookupByBarcode(bc),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          ]);
+          if (fs) {
+            enrichmentMap.set(it, fs);
+            return; // 식약처 성공이면 네이버 skip — API 호출 절약
+          }
+        } catch {
+          // silent fallthrough → 네이버 시도
+        }
+      }
+      // 2) 네이버 쇼핑 — 이름이 너무 짧거나 비어있으면 skip
+      if (cleanName.length >= 2) {
+        try {
+          const nv = await enrichByName(cleanName, {
+            barcode: bc ?? undefined,
+            timeoutMs: 3000,
+          });
+          if (nv) naverEnrichMap.set(it, nv);
+        } catch {
+          // silent — brand 사전 매칭으로 fallback
+        }
       }
     }),
   );
 
   let newProductsCreated = 0;
   let pricesCreated = 0;
+  // 영향받은 productId 모음 — 트랜잭션 후 캐시 무효화에 사용
+  const affectedProductIds = new Set<string>();
 
   await prisma.$transaction(async (tx) => {
     await tx.receipt.update({
@@ -256,6 +283,7 @@ export async function PATCH(req: NextRequest) {
           ...(priceCreatedAt ? { createdAt: priceCreatedAt } : {}),
         },
       });
+      affectedProductIds.add(it.productId!);
       pricesCreated++;
     }
 
@@ -287,41 +315,68 @@ export async function PATCH(req: NextRequest) {
         if (existing) productId = existing.id;
       }
       if (!productId) {
-        // 식약처 enrich — 바코드 있을 때만 lookup
-        // brand 사전 매칭 — enriched 없거나 누락 필드 보강 (cron 안 기다리고 즉시)
-        // 매칭 실패해도 기본값으로 fallback (영수증 OCR 이름 그대로)
+        // enrich 결과 통합 — 식약처 우선 → 네이버 쇼핑 폴백 → brand 사전 매칭
         const enriched = enrichmentMap.get(it) ?? null;
-        const finalName = enriched?.productName?.trim() || cleanName;
+        const naver = naverEnrichMap.get(it) ?? null;
+
+        // 이름 우선순위: 식약처 정확명 → 네이버 매칭 title → 영수증 OCR 그대로
+        const finalName =
+          enriched?.productName?.trim() ||
+          naver?.title?.trim() ||
+          cleanName;
         const brandMatch = matchBrand(finalName);
 
         const productData = {
           name: finalName,
-          // 식약처가 brand는 안 줌 → brand 사전 결과만 적용
-          brand: brandMatch?.brand ?? null,
-          // 식약처 lookup이 우선, 없으면 brand 사전 fallback
-          manufacturer: enriched?.manufacturer?.trim() || brandMatch?.manufacturer || null,
+          // 식약처는 brand 안 줌 → 네이버 brand → brand 사전 순
+          brand: naver?.brand?.trim() || brandMatch?.brand || null,
+          // 제조사: 식약처가 가장 정확 (사업자명) → brand 사전 fallback
+          manufacturer:
+            enriched?.manufacturer?.trim() ||
+            brandMatch?.manufacturer ||
+            null,
           origin: brandMatch?.origin ?? null,
           unit: "1개",
-          // 카테고리 우선순위: 식약처 minor → 식약처 foodType → brand 사전 → "사용자 등록"
+          // 카테고리 우선순위: 식약처 minor → 식약처 foodType → 네이버 category → brand 사전 → 기본값
           category:
             enriched?.category?.minor ||
             enriched?.foodType ||
+            (naver?.category ? naver.category.split("/").pop()?.trim() : null) ||
             brandMatch?.category ||
             "사용자 등록",
           barcode: cleanBarcode,
-          // metadata에 식약처 정보 보존 (소비기한/주소/카테고리 트리/식품유형)
-          metadata: enriched
+          // 이미지: 네이버 enrich에서만 옴 — 식약처는 이미지 안 줌
+          imageUrl: naver?.imageUrl ?? null,
+          // metadata에 enrich 출처별 원본 보존 (디버깅/재매칭용)
+          metadata: (enriched || naver)
             ? ({
-                foodsafety: {
-                  productName: enriched.productName,
-                  manufacturer: enriched.manufacturer,
-                  foodType: enriched.foodType,
-                  category: enriched.category,
-                  shelfLife: enriched.shelfLife,
-                  manufacturerAddress: enriched.manufacturerAddress,
-                  reportNo: enriched.reportNo,
-                  industry: enriched.industry,
-                },
+                ...(enriched
+                  ? {
+                      foodsafety: {
+                        productName: enriched.productName,
+                        manufacturer: enriched.manufacturer,
+                        foodType: enriched.foodType,
+                        category: enriched.category,
+                        shelfLife: enriched.shelfLife,
+                        manufacturerAddress: enriched.manufacturerAddress,
+                        reportNo: enriched.reportNo,
+                        industry: enriched.industry,
+                      },
+                    }
+                  : {}),
+                ...(naver
+                  ? {
+                      naverShop: {
+                        title: naver.title,
+                        brand: naver.brand,
+                        category: naver.category,
+                        imageUrl: naver.imageUrl,
+                        productLink: naver.productLink,
+                        mallName: naver.mallName,
+                        matchScore: naver.matchScore,
+                      },
+                    }
+                  : {}),
               } as never)
             : undefined,
         };
@@ -359,6 +414,7 @@ export async function PATCH(req: NextRequest) {
           ...(priceCreatedAt ? { createdAt: priceCreatedAt } : {}),
         },
       });
+      affectedProductIds.add(productId);
       pricesCreated++;
     }
 
@@ -371,6 +427,20 @@ export async function PATCH(req: NextRequest) {
       });
     }
   });
+
+  // 캐시 무효화 — CDN/Next 데이터 캐시 stale 방지
+  // 영수증 등록 직후 사용자가 매장/상품 페이지 들어왔을 때 즉시 새 가격 보이도록
+  try {
+    revalidatePath("/stores");
+    revalidatePath(`/stores/${storeId}`);
+    revalidatePath("/api/stores");
+    for (const pid of affectedProductIds) {
+      revalidatePath(`/products/${pid}`);
+    }
+  } catch (e) {
+    // revalidate 실패는 응답 막지 않음 — 다음 SWR 주기에 자연 갱신됨
+    console.warn("[receipts] revalidatePath 실패:", (e as Error).message);
+  }
 
   return NextResponse.json({
     ok: true,
