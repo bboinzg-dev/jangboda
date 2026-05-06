@@ -7,6 +7,8 @@ import SourceBadge from "@/components/SourceBadge";
 import DirectionsButton from "@/components/DirectionsButton";
 import ChainLogo from "@/components/ChainLogo";
 import ProductImage from "@/components/ProductImage";
+import { resolveStoreHours } from "@/lib/chainHours";
+import { evaluateOpenStatus } from "@/lib/storeHours";
 
 export const revalidate = 60;
 
@@ -86,6 +88,9 @@ export default async function StoreDetailPage({
   const icon = CATEGORY_ICONS[cat] ?? "🛒";
   const label = CATEGORY_LABELS[cat] ?? "마트";
   const showDirections = store.lat > 0 && store.lng > 0;
+  // 영업시간 — store.hours 우선, 없으면 체인 default (이마트 10:00~23:00 등)
+  const resolvedHours = resolveStoreHours(store.hours, store.chain.name);
+  const openStatus = evaluateOpenStatus(resolvedHours.hours);
 
   return (
     <div className="space-y-6">
@@ -113,8 +118,26 @@ export default async function StoreDetailPage({
               {store.name}
             </h1>
             <div className="text-stone-600 text-sm mt-1 truncate">{store.address}</div>
-            {store.hours && (
-              <div className="text-stone-500 text-xs mt-0.5">영업시간: {store.hours}</div>
+            {/* 영업시간 + "지금 영업 중?" 상태. chain default 사용 시 라벨 명시 */}
+            {resolvedHours.hours && (
+              <div className="mt-1 space-y-0.5">
+                <div
+                  className={`text-xs font-medium ${
+                    openStatus.isOpen === true
+                      ? "text-emerald-700"
+                      : openStatus.isOpen === false
+                        ? "text-rose-600"
+                        : "text-stone-500"
+                  }`}
+                >
+                  {openStatus.label}
+                </div>
+                {resolvedHours.source === "chain" && (
+                  <div className="text-[10px] text-stone-400">
+                    체인 평균 영업시간{resolvedHours.note ? ` · ${resolvedHours.note}` : ""}
+                  </div>
+                )}
+              </div>
             )}
           </div>
           {/* 우측 통계 카드 — 데스크톱: 우측 정렬, 모바일: 다음 줄 */}

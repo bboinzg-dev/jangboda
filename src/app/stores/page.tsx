@@ -467,7 +467,8 @@ export default function StoresPage() {
                           </div>
                           <div className="font-semibold text-ink-1">{s.name}</div>
                           <div className="text-xs text-ink-3">{s.address}</div>
-                          {/* 영업시간 — "지금 영업 중?" 즉시 판단 (40-60대 사용자 핵심 정보) */}
+                          {/* 영업시간 — "지금 영업 중?" 즉시 판단 (40-60대 사용자 핵심 정보)
+                              체인 default(평균) 영업시간이면 회색 톤으로 부드럽게 표시 */}
                           {openStatus.rawHours && (
                             <div
                               className={`text-[11px] mt-0.5 font-medium ${
@@ -479,6 +480,11 @@ export default function StoresPage() {
                               }`}
                             >
                               {openStatus.label}
+                              {s.hoursSource === "chain" && (
+                                <span className="ml-1 text-[10px] text-ink-3 font-normal">
+                                  (체인 평균)
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

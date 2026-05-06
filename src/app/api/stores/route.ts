@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveStoreHours } from "@/lib/chainHours";
 
 // GET /api/stores
 // 사용자 위치는 받지 않음 — 모두에게 동일한 응답이라 CDN 캐시 적중률 100%.
@@ -36,22 +37,29 @@ export async function GET() {
     chainTotals.set(s.chainId, (chainTotals.get(s.chainId) ?? 0) + c);
   }
 
-  const result = stores.map((s) => ({
-    id: s.id,
-    name: s.name,
-    chainId: s.chainId,
-    chainName: s.chain.name,
-    chainCategory: s.chain.category,
-    chainLogoUrl: s.chain.logoUrl,
-    address: s.address,
-    lat: s.lat,
-    lng: s.lng,
-    hours: s.hours,
-    priceCount: storeUniqueProducts.get(s.id) ?? 0,
-    chainPriceCount: chainTotals.get(s.chainId) ?? 0,
-    // distanceKm은 클라이언트에서 계산 (lat/lng 받았으니 즉시)
-    distanceKm: null as number | null,
-  }));
+  const result = stores.map((s) => {
+    // store.hours가 null이면 체인 default로 보강 (이마트 10:00~23:00 등)
+    // hoursSource: "store"=DB raw, "chain"=체인 default, "unknown"=정보 없음
+    const resolved = resolveStoreHours(s.hours, s.chain.name);
+    return {
+      id: s.id,
+      name: s.name,
+      chainId: s.chainId,
+      chainName: s.chain.name,
+      chainCategory: s.chain.category,
+      chainLogoUrl: s.chain.logoUrl,
+      address: s.address,
+      lat: s.lat,
+      lng: s.lng,
+      hours: resolved.hours,
+      hoursSource: resolved.source, // 카드에서 "체인 평균" 라벨 표시용
+      hoursNote: resolved.note,
+      priceCount: storeUniqueProducts.get(s.id) ?? 0,
+      chainPriceCount: chainTotals.get(s.chainId) ?? 0,
+      // distanceKm은 클라이언트에서 계산 (lat/lng 받았으니 즉시)
+      distanceKm: null as number | null,
+    };
+  });
 
   return NextResponse.json(
     { stores: result },
