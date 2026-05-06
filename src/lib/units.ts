@@ -144,3 +144,34 @@ export function unitPriceParts(
     amount: `${Math.round(perUnit).toLocaleString("ko-KR")}원`,
   };
 }
+
+// ─── 단위 호환성 검사 (SKU 일치 검증용) ──────────────────────────────────
+//
+// 사용처: 네이버 sync, 영수증 enrich — 같은 product에 다른 SKU 가격이 매핑되는 것을 차단.
+// 예: product.unit = "30구" 인데 검색 결과 title이 "친환경 계란 10구" → 같은 product 아님
+//
+// 3-way 결과:
+//   - "compatible"   : 둘 다 파싱 + 카테고리 같음 + value 비율 0.7~1.3 이내
+//   - "incompatible" : 둘 다 파싱 + 카테고리 다름 또는 value 차이 큼
+//   - "unknown"      : 한쪽 또는 양쪽 파싱 실패 → 정보 부족 (관대하게 통과 처리)
+//
+// 호출 측 정책: incompatible은 차단, compatible/unknown은 통과
+export type UnitCompatibility = "compatible" | "incompatible" | "unknown";
+
+export function checkUnitCompatibility(
+  productUnit: string,
+  candidateText: string,
+): UnitCompatibility {
+  const a = parseUnit(productUnit);
+  const b = parseUnit(candidateText);
+  // 어느 한쪽이라도 파싱 실패 → 정보 부족, 관대하게 통과 처리
+  if (!a || !b) return "unknown";
+  // 카테고리(g/ml/count) 다르면 명백히 다른 SKU
+  if (a.unit !== b.unit) return "incompatible";
+  if (a.value <= 0 || b.value <= 0) return "unknown";
+  const ratio = b.value / a.value;
+  // 0.7~1.43 (1/0.7) 사이면 호환 — 동일 SKU의 표기 차이 정도 허용
+  // (예: "210g x 12" = 2520g vs "12개입 200g" = 2400g 같은 경계 케이스 통과)
+  if (ratio >= 0.7 && ratio <= 1.43) return "compatible";
+  return "incompatible";
+}

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { fetchNaverShop, pickLowestByMall } from "@/lib/naverShop";
 import { checkSyncAuth } from "@/lib/auth";
 import { canonicalMallName } from "@/lib/onlineMalls";
+import { checkUnitCompatibility } from "@/lib/units";
 
 // Vercel 함수 timeout — 네이버 API 호출 N회로 시간 소요. 60초까지 허용.
 export const maxDuration = 60;
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
       // outlier 필터
       // - 기존 샘플이 충분(3+)하면 ±70% 적용
       // - 부족하면 절대값 범위 (300원~500,000원)로 보수적 처리
-      const lowestByMall = pickLowestByMall(items).filter((it) => {
+      const priceFiltered = pickLowestByMall(items).filter((it) => {
         if (it.lprice <= 0) return false;
         if (existing.length >= 3 && avg !== null) {
           return it.lprice >= avg * 0.3 && it.lprice <= avg * 3;
@@ -149,7 +150,20 @@ export async function POST(req: NextRequest) {
         return it.lprice >= 300 && it.lprice <= 500_000;
       });
 
-      return { product, items: lowestByMall, usedMock };
+      // SKU 단위 일치 검증 — title에서 unit 추출 → product.unit과 비교
+      // "30구" product에 "10구" 가격이 매핑되는 등의 SKU mismatch 차단.
+      // unknown(단위 표현 없음)은 관대하게 통과 — 차단 너무 강하면 매칭률 0됨.
+      let unitMismatchCount = 0;
+      const lowestByMall = priceFiltered.filter((it) => {
+        const compat = checkUnitCompatibility(product.unit, it.title);
+        if (compat === "incompatible") {
+          unitMismatchCount++;
+          return false;
+        }
+        return true;
+      });
+
+      return { product, items: lowestByMall, usedMock, unitMismatchCount };
     })
   );
 
@@ -159,6 +173,10 @@ export async function POST(req: NextRequest) {
   let storesCreated = 0;
   let usedMockCount = 0;
   let skippedNonMajor = 0;
+  let skippedUnitMismatch = fetched.reduce(
+    (s, f) => s + (f.unitMismatchCount ?? 0),
+    0,
+  );
   let abortedEarly = false;
   const samples: Array<{ product: string; malls: string[] }> = [];
 
@@ -273,6 +291,7 @@ export async function POST(req: NextRequest) {
     storesCreated,
     usedMockCount,
     skippedNonMajor,
+    skippedUnitMismatch,
     abortedEarly,
     partial,
     processedThrough,
