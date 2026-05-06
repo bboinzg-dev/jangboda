@@ -17,6 +17,10 @@ type Product = {
   id: string;
   name: string;
   brand: string | null;
+  manufacturer?: string | null;
+  origin?: string | null;
+  grade?: string | null;
+  certifications?: string[] | null;
   category: string;
   unit: string;
   imageUrl?: string | null;
@@ -287,17 +291,45 @@ export default function SearchPage() {
                       <div className="text-xs text-ink-3">
                         {p.category}
                         {p.brand ? ` · ${p.brand}` : ""}
+                        {/* 제조사가 brand와 다르면 추가 표시 (예: 햇반 / CJ제일제당) */}
+                        {p.manufacturer &&
+                          p.manufacturer !== p.brand && (
+                            <span className="text-ink-3"> · {p.manufacturer}</span>
+                          )}
                       </div>
                       {/* 긴 상품명 2줄까지 노출 — 핵심 정보 손실 방지 */}
                       <div className="font-semibold text-ink-1 leading-snug line-clamp-2">
                         {p.name}
-                        {p.hasHaccp && (
-                          <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0 ml-1 align-middle">
-                            🏅 HACCP
-                          </span>
-                        )}
                       </div>
                       <div className="text-xs text-ink-3 mt-0.5">{p.unit}</div>
+                      {/* 신뢰도/품질 뱃지 — 원산지·등급·인증·HACCP (있는 것만) */}
+                      {(p.origin || p.grade || (p.certifications && p.certifications.length > 0) || p.hasHaccp) && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {p.origin && (
+                            <span className="inline-flex items-center text-[10px] bg-amber-50 text-amber-800 rounded px-1.5 py-0.5 font-medium">
+                              🌾 {p.origin}
+                            </span>
+                          )}
+                          {p.grade && (
+                            <span className="inline-flex items-center text-[10px] bg-amber-100 text-amber-900 rounded px-1.5 py-0.5 font-medium">
+                              {p.grade}
+                            </span>
+                          )}
+                          {p.certifications?.slice(0, 2).map((c) => (
+                            <span
+                              key={c}
+                              className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                          {p.hasHaccp && (
+                            <span className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">
+                              🏅 HACCP
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {/* 등록 chain 분포 — 같은 SKU인지 다른 SKU인지 사용자가 매장 분포로 판단 */}
                       {p.chains && p.chains.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">

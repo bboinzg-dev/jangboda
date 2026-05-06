@@ -186,6 +186,7 @@ async function getProductDetail(id: string) {
           chainName,
         }),
         trust: { count, latestDate },
+        metadata: (p.metadata as Record<string, unknown> | null) ?? null,
       });
     }
 
@@ -559,7 +560,8 @@ export default async function ProductDetailPage({
       </section>
 
       {/* 공공 시세 (KAMIS) — 매장 가격이 아니라 전국 평균 시세, 별도 영역으로 분리.
-          매장 가격과 같은 칸에 두면 "어느 매장 가격이지?" 오해 발생. */}
+          매장 가격과 같은 칸에 두면 "어느 매장 가격이지?" 오해 발생.
+          metadata에 changePct/previousPrice/weeklyAverage 있으면 변동 정보도 노출. */}
       {marketRateRows.length > 0 && (
         <section className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
           <h2 className="font-bold text-emerald-900 mb-1 flex items-center gap-2 text-sm">
@@ -568,21 +570,68 @@ export default async function ProductDetailPage({
               KAMIS 전국 평균 — 매장 가격 아님
             </span>
           </h2>
-          <div className="space-y-1 mt-2">
-            {marketRateRows.map((r) => (
-              <div
-                key={r.priceId}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-emerald-900">{r.chainName}</span>
-                <span className="font-bold tabular-nums text-emerald-900">
-                  {formatWon(r.price)}
-                  <span className="text-[11px] text-emerald-700 font-normal ml-1">
-                    {unitPriceLabel(r.price, product.unit)}
-                  </span>
-                </span>
-              </div>
-            ))}
+          <div className="space-y-3 mt-2">
+            {marketRateRows.map((r) => {
+              const meta = r.metadata as
+                | {
+                    changePct?: number;
+                    changeAmount?: number;
+                    previousPrice?: number;
+                    weeklyAverage?: number;
+                  }
+                | null;
+              const changePct = meta?.changePct;
+              const changeAmount = meta?.changeAmount;
+              const weeklyAvg = meta?.weeklyAverage;
+              const isUp = changePct != null && changePct > 0;
+              const isDown = changePct != null && changePct < 0;
+              const updatedDate = new Date(r.updatedAt);
+              return (
+                <div key={r.priceId} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-emerald-900">{r.chainName}</span>
+                    <span className="font-bold tabular-nums text-emerald-900">
+                      {formatWon(r.price)}
+                      <span className="text-[11px] text-emerald-700 font-normal ml-1">
+                        {unitPriceLabel(r.price, product.unit)}
+                      </span>
+                    </span>
+                  </div>
+                  {/* 전일대비 변동·주간평균·조사일 — metadata 있으면 노출 */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-emerald-800">
+                    {changePct != null && (
+                      <span
+                        className={`tabular-nums font-medium ${
+                          isUp
+                            ? "text-rose-700"
+                            : isDown
+                              ? "text-blue-700"
+                              : "text-emerald-700"
+                        }`}
+                      >
+                        {isUp ? "▲" : isDown ? "▼" : "—"}
+                        {Math.abs(changePct).toFixed(1)}%
+                        {changeAmount != null &&
+                          changeAmount !== 0 &&
+                          ` (${formatWon(Math.abs(changeAmount))})`}
+                      </span>
+                    )}
+                    {weeklyAvg != null && weeklyAvg > 0 && (
+                      <span className="tabular-nums">
+                        주간평균 {formatWon(weeklyAvg)}
+                      </span>
+                    )}
+                    <span className="ml-auto">
+                      {updatedDate.toLocaleDateString("ko-KR", {
+                        month: "numeric",
+                        day: "numeric",
+                      })}{" "}
+                      조사
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -678,27 +727,26 @@ export default async function ProductDetailPage({
         </>
       )}
 
-      {/* 부가 정보 패널 6종 — 기본 닫힘, 사용자가 클릭 시 펼침 */}
+      {/* 데이터 있는 부가 정보 패널 — details 밖에 직접 노출 (자체적으로 빈 데이터면 숨김)
+          식약처 등록 정보 / 영양 정보 / 원재료 정보가 채워진 product에서는
+          사용자가 클릭하지 않아도 즉시 보이도록 — "정보 풍부함"을 직관적으로 전달 */}
+      <FoodSafetyPanel data={product.metadata} />
+      <NutritionPanel productId={product.id} hideIfEmpty />
+      {product.category !== "농수산물" && (
+        <IngredientsPanel productId={product.id} hideIfEmpty />
+      )}
+
+      {/* 추가 이력추적 정보 — details 안에 정리 (펼쳐야 보임)
+          농수산물 이력·쇠고기·수산물·건강기능식품은 일부 카테고리만 해당하고
+          자체 미노출 처리되니 details에 묶어 헤더 노이즈 방지 */}
       <details className="group">
         <summary className="cursor-pointer p-4 bg-white border border-line rounded-xl font-semibold text-ink-1 flex items-center justify-between hover:bg-surface-muted">
-          <span>📋 상품 상세 정보 (원재료 · 영양 · 이력추적)</span>
+          <span>📋 이력추적 · 인증 (농산물 · 쇠고기 · 수산물 · 건강기능식품)</span>
           <span className="text-ink-3 transition-transform group-open:rotate-180">
             ▼
           </span>
         </summary>
         <div className="mt-3 space-y-6">
-          {/* 식약처 등록 정보 — 영수증 enrich로 metadata.foodsafety에 저장된 정보 노출
-              (제조사 주소·식품유형·카테고리 트리·소비기한·신고번호) */}
-          <FoodSafetyPanel data={product.metadata} />
-
-          {/* 원재료 정보 — 농수산물(KAMIS)은 C002에 데이터 없음 → 스킵 */}
-          {product.category !== "농수산물" && (
-            <IngredientsPanel productId={product.id} />
-          )}
-
-          {/* 영양 정보 — 식품영양성분DB는 가공식품/농수산물 모두 보유 → 모든 카테고리 표시 */}
-          <NutritionPanel productId={product.id} />
-
           {/* 농산물이력추적 — 농수산물(KAMIS)에만 표시 */}
           {product.category === "농수산물" && (
             <AgriTraceLookup productName={product.name} />

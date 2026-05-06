@@ -35,6 +35,10 @@ export async function GET(req: NextRequest) {
       id: true,
       name: true,
       brand: true,
+      manufacturer: true,
+      origin: true,
+      grade: true,
+      certifications: true,
       category: true,
       unit: true,
       hasHaccp: true,
@@ -117,6 +121,16 @@ export async function GET(req: NextRequest) {
           id: p.id,
           name: p.name,
           brand: p.brand,
+          // slim 모드는 /cart에서 가벼운 카드용 — manufacturer만 추가 (1줄), 나머지 누락
+          // full 모드는 검색·홈 카드용 — 전체 메타 노출
+          ...(slim
+            ? { manufacturer: p.manufacturer }
+            : {
+                manufacturer: p.manufacturer,
+                origin: p.origin,
+                grade: p.grade,
+                certifications: p.certifications ?? [],
+              }),
           category: p.category,
           unit: p.unit,
           priceCount: p._count.prices,

@@ -34,6 +34,9 @@ export type PriceRowData = {
   productUrl?: string | null; // 온라인 가격일 때 외부 구매 링크
   online: boolean;
   trust?: TrustInfo;
+  // KAMIS 시세 metadata — { changePct, changeAmount, previousPrice, weeklyAverage }
+  // 시세 박스에서 "전일대비 +0.36%" "주간평균 7,006원" 같은 정보 표시용
+  metadata?: Record<string, unknown> | null;
 };
 
 // 행사가 freshness — 영수증 등록 후 14일 이내만 "최근 행사" 표시

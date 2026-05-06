@@ -65,7 +65,14 @@ function formatVal(v: number, decimals: number): string {
   return fixed.replace(/\.?0+$/, "") || "0";
 }
 
-export default function NutritionPanel({ productId }: { productId: string }) {
+export default function NutritionPanel({
+  productId,
+  hideIfEmpty = false,
+}: {
+  productId: string;
+  /** true면 데이터 없을 때 컴포넌트 전체 미노출 (details 밖에서 사용 시 유용) */
+  hideIfEmpty?: boolean;
+}) {
   const [data, setData] = useState<NutritionLookupResult | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -92,6 +99,7 @@ export default function NutritionPanel({ productId }: { productId: string }) {
   }, [productId]);
 
   if (loading) {
+    if (hideIfEmpty) return null;
     return (
       <section className="bg-white border border-border rounded-xl p-4">
         <div className="h-5 w-28 bg-stone-100 rounded animate-pulse mb-3" />
@@ -101,6 +109,7 @@ export default function NutritionPanel({ productId }: { productId: string }) {
   }
 
   if (!data || !data.found || !data.nutrition) {
+    if (hideIfEmpty) return null;
     return (
       <section className="bg-white border border-border rounded-xl p-4">
         <h2 className="font-bold text-sm mb-1 text-stone-600">

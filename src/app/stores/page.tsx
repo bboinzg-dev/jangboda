@@ -18,6 +18,7 @@ import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
 import { IconPin } from "@/components/icons";
 import { haversineKm } from "@/lib/distance";
+import { evaluateOpenStatus } from "@/lib/storeHours";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;
@@ -440,6 +441,7 @@ export default function StoresPage() {
                   const cat = s.chainCategory || "mart";
                   const icon = CATEGORY_ICONS[cat] || "🛒";
                   const label = CATEGORY_LABELS[cat] || "마트";
+                  const openStatus = evaluateOpenStatus(s.hours);
                   return (
                     <li
                       key={s.id}
@@ -465,6 +467,20 @@ export default function StoresPage() {
                           </div>
                           <div className="font-semibold text-ink-1">{s.name}</div>
                           <div className="text-xs text-ink-3">{s.address}</div>
+                          {/* 영업시간 — "지금 영업 중?" 즉시 판단 (40-60대 사용자 핵심 정보) */}
+                          {openStatus.rawHours && (
+                            <div
+                              className={`text-[11px] mt-0.5 font-medium ${
+                                openStatus.isOpen === true
+                                  ? "text-emerald-700"
+                                  : openStatus.isOpen === false
+                                    ? "text-rose-600"
+                                    : "text-ink-3"
+                              }`}
+                            >
+                              {openStatus.label}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="relative z-10 mr-2 self-center pointer-events-auto">

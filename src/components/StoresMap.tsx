@@ -51,6 +51,7 @@ export type StoreMarker = {
   address: string;
   lat: number;
   lng: number;
+  hours?: string | null;     // 영업시간 — "10:00~22:00", "24시간" 등 (DB Store.hours)
   distanceKm?: number | null;
   priceCount?: number;
   chainPriceCount?: number; // 같은 chain의 다른 매장까지 합한 가격 수

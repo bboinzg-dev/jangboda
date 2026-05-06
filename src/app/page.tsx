@@ -132,6 +132,11 @@ async function getHomeData() {
       return {
         id: p.id,
         name: p.name,
+        brand: p.brand,
+        manufacturer: p.manufacturer,
+        origin: p.origin,
+        grade: p.grade,
+        certifications: p.certifications,
         category: p.category,
         unit: p.unit,
         min,
@@ -316,14 +321,46 @@ export default async function HomePage() {
                   {/* 카드 좌측 썸네일 — 네이버 쇼핑 동기화로 자동 채움 */}
                   <ProductImage src={c.imageUrl} alt={c.name} size={56} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-ink-3">{c.category}</div>
+                    <div className="text-xs text-ink-3">
+                      {c.category}
+                      {c.brand ? ` · ${c.brand}` : ""}
+                      {c.manufacturer && c.manufacturer !== c.brand && (
+                        <span> · {c.manufacturer}</span>
+                      )}
+                    </div>
                     {/* 긴 상품명도 2줄까지는 보이게 — 모바일에서 핵심 정보 손실 방지 */}
                     <div className="font-semibold line-clamp-2 leading-snug text-ink-1">{c.name}</div>
                     <div className="text-xs text-ink-3 mt-0.5">{c.unit}</div>
-                    {c.hasHaccp && (
-                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium mt-1">
-                        🏅 HACCP
-                      </span>
+                    {/* 신뢰도 뱃지 — 원산지·등급·인증·HACCP */}
+                    {(c.origin ||
+                      c.grade ||
+                      (c.certifications && c.certifications.length > 0) ||
+                      c.hasHaccp) && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {c.origin && (
+                          <span className="inline-flex items-center text-[10px] bg-amber-50 text-amber-800 rounded px-1.5 py-0.5 font-medium">
+                            🌾 {c.origin}
+                          </span>
+                        )}
+                        {c.grade && (
+                          <span className="inline-flex items-center text-[10px] bg-amber-100 text-amber-900 rounded px-1.5 py-0.5 font-medium">
+                            {c.grade}
+                          </span>
+                        )}
+                        {c.certifications?.slice(0, 2).map((cert) => (
+                          <span
+                            key={cert}
+                            className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium"
+                          >
+                            {cert}
+                          </span>
+                        ))}
+                        {c.hasHaccp && (
+                          <span className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">
+                            🏅 HACCP
+                          </span>
+                        )}
+                      </div>
                     )}
                     {/* 등록 chain 분포 — 매장 비교 가능성 가늠 */}
                     {c.chains.length > 0 && (
