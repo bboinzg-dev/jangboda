@@ -48,16 +48,37 @@ body {
 /* 재사용 가능한 유틸리티 컴포넌트 (reusable utility components) */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg transition;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold rounded-xl shadow-soft hover:shadow-raise transition;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 font-medium rounded-lg transition;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-line text-ink-2 hover:bg-surface-muted font-medium rounded-xl transition;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-danger hover:opacity-90 text-white font-semibold rounded-lg transition;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-danger hover:opacity-90 text-white font-semibold rounded-xl transition;
   }
   .input-base {
-    @apply w-full px-3 py-2 border border-border rounded-lg bg-white text-stone-900 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1 transition;
+    @apply w-full px-3 py-2 border border-line rounded-xl bg-white text-ink-1 placeholder:text-ink-3/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1 transition;
+  }
+  /* 표준 카드 — 흰 배경 + 옅은 보더 + soft shadow.
+     기존 `bg-white border border-stone-200 rounded-xl p-5` 같은 패턴 대체. */
+  .card {
+    @apply bg-white border border-line/70 rounded-2xl shadow-soft;
+  }
+  .card-hoverable {
+    @apply card transition hover:shadow-raise hover:border-line-strong/60;
+  }
+  /* 섹션 타이틀 — 가계부/마이페이지 등 H2에 일관 적용 */
+  .section-title {
+    @apply text-base md:text-lg font-bold text-ink-1 tracking-tight;
+  }
+  /* KPI 보조 카드 — 색감 한 줄(top accent) 위에 흰 배경.
+     예전엔 카드 전체를 emerald-50/rose-50/sky-50 으로 칠해서 컨피티 같았음. */
+  .kpi-card {
+    @apply relative bg-white border border-line/70 rounded-2xl p-4 md:p-5 shadow-soft overflow-hidden;
+  }
+  .kpi-card::before {
+    content: "";
+    @apply absolute inset-x-0 top-0 h-0.5 bg-current opacity-70;
   }
   .badge-success {
     @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-success-soft text-success-text rounded text-[11px] font-medium;

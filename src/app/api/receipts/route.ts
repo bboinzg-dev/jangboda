@@ -263,11 +263,15 @@ export async function PATCH(req: NextRequest) {
     // (사용자가 같은 영수증 두 번 등록해도 중복 안 생김)
     await tx.price.deleteMany({ where: { receiptId } });
 
-    // 가격 데이터 빌더 — listPrice/paidPrice/promotionType
+    // 가격 데이터 빌더 — listPrice/paidPrice/promotionType.
+    // Price 모델에 quantity 컬럼이 없어서(스키마 정책: paidPrice는 단가) 영수증의 N개 구매가
+    // 가계부 합계에 반영 안 되던 버그가 있었음 → metadata.quantity로 보존.
+    // 가계부에서 합계 계산 시 (paidPrice ?? listPrice) × (metadata.quantity ?? 1) 로 사용.
     const buildPriceData = (it: (typeof items)[number]) => ({
       listPrice: it.listPrice,
       paidPrice: it.paidPrice ?? null,
       promotionType: it.promotionType ?? null,
+      metadata: it.quantity && it.quantity > 1 ? { quantity: it.quantity } : undefined,
     });
 
     // 1) 기존 매칭 항목 → Price 추가
