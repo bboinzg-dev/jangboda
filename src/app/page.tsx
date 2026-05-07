@@ -24,6 +24,7 @@ export const revalidate = 60;
 async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.
   const sevenDaysAgo = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7);
+  const thirtyDaysAgo = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30);
   const [
     kamisPrices,
     statsPrices,
@@ -49,9 +50,9 @@ async function getHomeData() {
         include: { product: true },
         distinct: ["productId"],
       }),
-      // 회수·판매중지 (최근 7일)
+      // 회수·판매중지 — 7일 우선, 비면 30일까지 폴백 (단일 쿼리로 30일 fetch 후 클라이언트 측 판단)
       prisma.recall.findMany({
-        where: { registeredAt: { gte: sevenDaysAgo } },
+        where: { registeredAt: { gte: thirtyDaysAgo } },
         orderBy: { registeredAt: "desc" },
         take: 10,
       }),
@@ -175,12 +176,18 @@ async function getHomeData() {
     grade: r.grade,
   }));
 
+  // 라벨: 모든 결과가 7일 이내면 "최근 7일", 아니면 "최근 30일"
+  const recallWindowLabel =
+    recalls.length > 0 && recalls.every((r) => r.registeredAt >= sevenDaysAgo)
+      ? "최근 7일"
+      : "최근 30일";
+
   // 오늘의 시세 = KAMIS(농수산물) + 통계청(가공식품) 병합
-  return { tickerData, recallTickerData, priceCards, stats };
+  return { tickerData, recallTickerData, recallWindowLabel, priceCards, stats };
 }
 
 export default async function HomePage() {
-  const { tickerData, recallTickerData, priceCards, stats } = await getHomeData();
+  const { tickerData, recallTickerData, recallWindowLabel, priceCards, stats } = await getHomeData();
 
   return (
     <div className="space-y-8">
@@ -282,7 +289,7 @@ export default async function HomePage() {
               <h2 className="section-title flex items-center gap-2 text-danger-text">
                 <span aria-hidden>🚨</span> 회수·판매중지
                 <span className="hidden md:inline text-xs text-ink-3 font-normal">
-                  최근 7일
+                  {recallWindowLabel}
                 </span>
               </h2>
               <Link
