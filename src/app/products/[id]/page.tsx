@@ -27,6 +27,7 @@ type HistoryPoint = {
   date: Date;
   price: number;
   chainName: string;
+  source: string;
 };
 
 // 제조사명 정규화 — "(주)농심" / "농심㈜" / "농심 주식회사" 동일하게 (회수 fallback 매칭용)
@@ -190,7 +191,9 @@ async function getProductDetail(id: string) {
       });
     }
 
-    // 가격 추이용 history — 최근 60일, source != 'naver'
+    // 가격 추이용 history — 최근 60일, source != 'naver'.
+    // outlier·시세·기타 온라인몰 컷은 ProductDetailPage 본체에서 (median 기준이
+    // valid prices에 의존하므로 컴포넌트 단계에서 적용해야 헤더 통계와 기준 일치).
     const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
     const history: HistoryPoint[] = allPrices
       .filter(
@@ -199,13 +202,12 @@ async function getProductDetail(id: string) {
           p.source !== "naver" &&
           p.createdAt.getTime() >= sixtyDaysAgo
       )
-      .slice(-200) // 그래프 점 200개 limit (렌더 보호)
       .map((p) => ({
         date: p.createdAt,
         price: p.listPrice,
         chainName: p.store?.chain?.name ?? "(미상)",
-      }))
-      .reverse();
+        source: p.source,
+      }));
 
     return { product, prices: valid, history, recalls };
   } catch (e) {
@@ -309,6 +311,21 @@ export default async function ProductDetailPage({
   const minPrice = headlinePrices.length > 0 ? Math.min(...headlinePrices) : 0;
   const maxPrice = headlinePrices.length > 0 ? Math.max(...headlinePrices) : 0;
   const excludedCount = allPositivePrices.length - headlinePrices.length;
+
+  // 차트용 history — 헤더 통계와 동일한 기준으로 컷.
+  // (시세/기타 온라인몰/이상치 제거 → 카드 "3건 제외"와 차트가 따로 노는 부조화 차단)
+  // 마지막에 asc 정렬 후 최근 200건만 — desc raw에서 slice(-200)이면 가장 오래된 200건이
+  // 남는 역방향 버그를 회피.
+  const visibleHistory = history
+    .filter(
+      (h) =>
+        !isMarketRate(h.source) &&
+        h.chainName !== "기타 온라인몰" &&
+        !isUnitOutlier(h.price, h.source, h.chainName) &&
+        h.price > 0,
+    )
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(-200);
 
   // offlineRows는 이미 marketRate 제외됨, onlineRows는 이미 outlier·기타온라인몰 제외됨
   const offlineMarket = offlineRows.filter(
@@ -556,7 +573,7 @@ export default async function ProductDetailPage({
             (최근 60일, 매장별)
           </span>
         </h2>
-        <PriceHistoryChart history={history} />
+        <PriceHistoryChart history={visibleHistory} />
       </section>
 
       {/* 공공 시세 (KAMIS) — 매장 가격이 아니라 전국 평균 시세, 별도 영역으로 분리.
