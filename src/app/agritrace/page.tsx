@@ -77,7 +77,7 @@ export default async function AgriTracePage({
         </Link>
       </div>
 
-      <header className="bg-white border border-stone-200 rounded-xl p-5">
+      <header className="card p-5">
         <h1 className="text-xl font-bold flex items-center gap-2">
           🌱 농산물이력추적
         </h1>
@@ -149,7 +149,7 @@ export default async function AgriTracePage({
             return (
               <li
                 key={item.id}
-                className="bg-white border border-stone-200 rounded-xl p-4"
+                className="card p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">

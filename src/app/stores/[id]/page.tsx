@@ -102,12 +102,12 @@ export default async function StoreDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/stores" className="text-sm text-stone-500 hover:underline">
+        <Link href="/stores" className="text-sm text-ink-3 hover:underline">
           ← 주변 마트로
         </Link>
       </div>
 
-      <header className="bg-white border border-stone-200 rounded-xl p-5 sm:p-6">
+      <header className="card p-5 sm:p-6">
         <div className="flex items-center gap-4 sm:gap-5">
           <ChainLogo
             src={store.chain.logoUrl}
@@ -121,34 +121,31 @@ export default async function StoreDetailPage({
               <span className="text-brand-300">·</span>
               <span>{store.chain.name}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold mt-1.5 text-ink-1 leading-tight truncate">
+            <h1 className="text-2xl sm:text-3xl font-extrabold mt-1.5 text-ink-1 leading-tight truncate tracking-tight">
               {store.name}
             </h1>
-            <div className="text-stone-600 text-sm mt-1 truncate">{store.address}</div>
-            {/* 영업시간 + "지금 영업 중?" + 의무휴업 안내.
-                오늘 휴무면 영업 상태 위에 강조 표시 */}
+            <div className="text-ink-2 text-sm mt-1 truncate">{store.address}</div>
             {resolvedHours.hours && (
               <div className="mt-1 space-y-0.5">
                 {closedToday ? (
-                  <div className="text-xs font-medium text-rose-700">
+                  <div className="text-xs font-medium text-danger-text">
                     🛑 오늘 정기 휴무 (대형마트 의무휴업)
                   </div>
                 ) : (
                   <div
                     className={`text-xs font-medium ${
                       openStatus.isOpen === true
-                        ? "text-emerald-700"
+                        ? "text-success-text"
                         : openStatus.isOpen === false
-                          ? "text-rose-600"
-                          : "text-stone-500"
+                          ? "text-danger-text"
+                          : "text-ink-3"
                     }`}
                   >
                     {openStatus.label}
                   </div>
                 )}
-                {/* 다음 정기 휴무 안내 — 사용자가 미리 계획 가능 */}
                 {nextClosed && !closedToday && (
-                  <div className="text-[11px] text-amber-700">
+                  <div className="text-[11px] text-warning-text">
                     📅 다음 정기 휴무:{" "}
                     {nextClosed.toLocaleDateString("ko-KR", {
                       month: "numeric",
@@ -156,23 +153,22 @@ export default async function StoreDetailPage({
                       weekday: "short",
                     })}
                     {resolvedHours.closedNote && (
-                      <span className="text-stone-400 ml-1">
+                      <span className="text-ink-3 ml-1">
                         · {resolvedHours.closedNote}
                       </span>
                     )}
                   </div>
                 )}
                 {resolvedHours.source === "chain" && (
-                  <div className="text-[10px] text-stone-400">
+                  <div className="text-[10px] text-ink-3">
                     체인 평균 영업시간{resolvedHours.note ? ` · ${resolvedHours.note}` : ""}
                   </div>
                 )}
               </div>
             )}
           </div>
-          {/* 우측 통계 카드 — 데스크톱: 우측 정렬, 모바일: 다음 줄 */}
-          <div className="hidden sm:flex flex-col items-end shrink-0 border-l border-stone-200 pl-5">
-            <div className="text-[11px] text-stone-500">
+          <div className="hidden sm:flex flex-col items-end shrink-0 border-l border-line pl-5">
+            <div className="text-[11px] text-ink-3">
               {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
             </div>
             <div className="text-3xl font-extrabold text-brand-600 tabular-nums leading-none mt-0.5">
@@ -182,10 +178,9 @@ export default async function StoreDetailPage({
           </div>
         </div>
 
-        {/* 모바일 통계 + 길찾기 — 좌우 배치 */}
         <div className="mt-4 flex items-center gap-3">
           <div className="sm:hidden">
-            <div className="text-[11px] text-stone-500">
+            <div className="text-[11px] text-ink-3">
               {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
             </div>
             <div className="text-2xl font-extrabold text-brand-600 tabular-nums">
@@ -199,7 +194,7 @@ export default async function StoreDetailPage({
           )}
         </div>
         {isFallback && (
-          <div className="mt-3 text-xs bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-amber-800">
+          <div className="mt-3 text-xs bg-warning-soft border border-warning/30 rounded-xl px-3 py-2 text-warning-text">
             이 매장의 직접 등록 가격은 없어, 같은{" "}
             <strong>{store.chain.name}</strong> 다른 매장의 참고 가격을 보여드립니다.
             지점별 가격 차이가 있을 수 있어요.
@@ -208,24 +203,23 @@ export default async function StoreDetailPage({
       </header>
 
       {items.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-lg p-8 text-center text-stone-500 text-sm">
+        <div className="card p-8 text-center text-ink-3 text-sm">
           이 매장에 등록된 가격이 아직 없습니다.
           <br />
-          <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block">
+          <Link href="/upload" className="text-brand-600 hover:underline mt-2 inline-block font-medium">
             영수증을 올려 첫 가격을 등록해보세요 →
           </Link>
         </div>
       ) : (
         <section>
-          <h2 className="font-bold text-sm text-stone-700 mb-2">
-            등록 가격 <span className="text-stone-400">({items.length}건)</span>
+          <h2 className="section-title mb-2">
+            등록 가격 <span className="text-ink-3 font-normal text-sm">({items.length}건)</span>
           </h2>
           <ul className="space-y-2">
             {items.map((p) => {
               const tag = freshnessTag(p.createdAt);
               const lp = p.listPrice ?? 0;
               const upl = unitPriceLabel(lp, p.product.unit);
-              // 영수증 거래일 절대 날짜 (Price.createdAt = 영수증 거래일)
               const dateStr = p.createdAt.toLocaleDateString("ko-KR", {
                 month: "numeric",
                 day: "numeric",
@@ -235,7 +229,7 @@ export default async function StoreDetailPage({
               return (
                 <li
                   key={p.id}
-                  className="bg-white border border-stone-200 rounded-lg p-4 flex justify-between items-center gap-3"
+                  className="card p-4 flex justify-between items-center gap-3"
                 >
                   <Link
                     href={`/products/${p.product.id}`}
@@ -247,31 +241,30 @@ export default async function StoreDetailPage({
                       size={48}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium leading-snug line-clamp-2 text-ink-1">
+                      <div className="font-semibold leading-snug line-clamp-2 text-ink-1">
                         {p.product.name}
                       </div>
-                      <div className="text-xs text-stone-500 truncate mt-0.5">
+                      <div className="text-xs text-ink-3 truncate mt-0.5">
                         {p.product.unit}
                         {p.product.brand ? ` · ${p.product.brand}` : ""}
                       </div>
                       {p.product.barcode && (
-                        <div className="text-[10px] text-stone-400 font-mono mt-0.5 truncate">
+                        <div className="text-[10px] text-ink-3/70 font-mono mt-0.5 truncate">
                           📦 {p.product.barcode}
                         </div>
                       )}
                     </div>
                   </Link>
                   <div className="text-right shrink-0">
-                    <div className="font-semibold">{formatWon(lp)}</div>
+                    <div className="font-bold tabular-nums text-ink-1">{formatWon(lp)}</div>
                     {upl && (
-                      <div className="text-[11px] text-stone-500">{upl}</div>
+                      <div className="text-[11px] text-ink-3 tabular-nums">{upl}</div>
                     )}
-                    {/* 최근 14일 이내 행사가 있으면 보조 표시 — "이 매장이 가끔 할인하는구나" 신호 */}
                     {p.paidPrice != null &&
                       p.paidPrice < lp &&
                       Date.now() - p.createdAt.getTime() <
                         14 * 24 * 60 * 60 * 1000 && (
-                        <div className="mt-1 text-[11px] text-rose-600 font-medium">
+                        <div className="mt-1 text-[11px] text-danger-text font-medium">
                           💰 행사가 {formatWon(p.paidPrice)}
                           {p.promotionType ? ` (${p.promotionType})` : ""}
                         </div>
@@ -284,10 +277,10 @@ export default async function StoreDetailPage({
                         {tag.label}
                       </span>
                     </div>
-                    <div className="text-[11px] text-stone-500 mt-0.5">
+                    <div className="text-[11px] text-ink-3 mt-0.5">
                       {isReceipt ? "🧾 영수증 거래일 " : ""}
                       <span className="font-medium tabular-nums">{dateStr}</span>
-                      <span className="text-stone-400 ml-1">
+                      <span className="text-ink-3/70 ml-1">
                         ({formatRelativeDate(p.createdAt)})
                       </span>
                     </div>

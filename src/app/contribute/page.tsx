@@ -70,7 +70,7 @@ export default function ContributePage() {
         영수증이 없어도 본 가격을 직접 등록할 수 있어요.
       </p>
 
-      <div className="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
+      <div className="card p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">상품</label>
           <select

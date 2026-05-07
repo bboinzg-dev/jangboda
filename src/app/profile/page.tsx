@@ -170,15 +170,17 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. 사용자 정보 헤더 */}
-      <header className="bg-white border border-line rounded-xl p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-surface-muted flex items-center justify-center shrink-0">
-            <IconUser size={24} className="text-ink-2" />
+      {/* 1. 사용자 정보 헤더 — 인사 + 포인트/순위 + 활동 통계 한 카드로 통합 */}
+      <header className="card p-5 md:p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center shrink-0 shadow-soft">
+            <IconUser size={28} className="text-brand-600" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-ink-3">로그인 사용자</div>
-            <h1 className="text-lg font-bold text-ink-1 truncate">{display}</h1>
+            <div className="text-xs text-ink-3">반갑습니다</div>
+            <h1 className="text-xl md:text-2xl font-extrabold text-ink-1 truncate tracking-tight">
+              {display}
+            </h1>
             <div className="text-xs text-ink-3 truncate">{authUser.email}</div>
           </div>
           <div className="shrink-0">
@@ -186,43 +188,36 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* 포인트 / 순위 inline */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-line bg-surface-muted p-3">
+        {/* 4 통계 — 포인트·순위·등록·도움 한 줄 */}
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
             <div className="text-xs text-ink-3">포인트</div>
-            <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
+            <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
               {points.toLocaleString()}
             </div>
           </div>
-          <div className="rounded-xl border border-line bg-surface-muted p-3">
+          <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
             <div className="text-xs text-ink-3">순위</div>
-            <div className="text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
+            <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
               #{myRank}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
+            <div className="text-xs text-ink-3">올린 가격</div>
+            <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
+              {priceCount.toLocaleString()}
+              <span className="text-sm font-semibold text-ink-3 ml-1">건</span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
+            <div className="text-xs text-ink-3">도와준 이웃</div>
+            <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
+              {helpedCount.toLocaleString()}
+              <span className="text-sm font-semibold text-ink-3 ml-1">명</span>
             </div>
           </div>
         </div>
       </header>
-
-      {/* 2. 통계 카드 (NEW) */}
-      <section>
-        <h2 className="font-bold mb-3 text-ink-1">내 활동</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-xs text-ink-3 mb-1">내가 올린 가격</div>
-            <div className="text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
-              {priceCount.toLocaleString()}
-              <span className="text-sm font-medium text-ink-3 ml-1">건</span>
-            </div>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-4">
-            <div className="text-xs text-ink-3 mb-1">도와준 이웃</div>
-            <div className="text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
-              {helpedCount.toLocaleString()}
-              <span className="text-sm font-medium text-ink-3 ml-1">명</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 3. 즐겨찾기 매장 가로 스크롤 (NEW) */}
       <section>
@@ -242,7 +237,7 @@ export default async function ProfilePage() {
           </Link>
         </div>
         {favorites.length === 0 ? (
-          <div className="bg-white border border-line rounded-xl p-5 text-center">
+          <div className="card p-5 text-center">
             <div className="text-sm text-ink-2 mb-2">
               아직 즐겨찾기가 없어요
             </div>
@@ -251,7 +246,7 @@ export default async function ProfilePage() {
             </p>
             <Link
               href="/stores"
-              className="inline-flex items-center gap-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl font-medium"
+              className="inline-flex items-center gap-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-xl font-medium shadow-soft hover:shadow-raise transition"
             >
               <IconPin size={14} className="text-white" />
               주변 마트 둘러보기
@@ -263,7 +258,7 @@ export default async function ProfilePage() {
               {favorites.map((f) => (
                 <li
                   key={f.id}
-                  className="shrink-0 w-40 bg-white border border-line rounded-xl p-3 hover:border-line-strong"
+                  className="shrink-0 w-40 card-hoverable p-3"
                 >
                   <Link href={`/stores/${f.storeId}`} className="block">
                     <div className="flex items-center gap-2 mb-2">
@@ -297,7 +292,7 @@ export default async function ProfilePage() {
       <section>
         <Link
           href="/search"
-          className="card-clickable bg-white border border-line rounded-xl p-4 flex items-center gap-3 hover:border-line-strong"
+          className="card-clickable card p-4 flex items-center gap-3"
         >
           <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center shrink-0">
             <IconBell size={20} className="text-ink-2" />
@@ -321,7 +316,7 @@ export default async function ProfilePage() {
       <section>
         <Link
           href="/benefits/onboarding"
-          className="card-clickable bg-white border border-line rounded-xl p-4 flex items-center gap-3 hover:border-line-strong"
+          className="card-clickable card p-4 flex items-center gap-3"
         >
           <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center shrink-0">
             <IconPin size={20} className="text-ink-2" />
@@ -344,7 +339,7 @@ export default async function ProfilePage() {
       {/* 즐겨찾기 매장 풀 리스트 — 필요한 사용자만 펼침 */}
       {favorites.length > 0 && (
         <section>
-          <h2 className="font-bold mb-3 text-ink-1 inline-flex items-center gap-1.5">
+          <h2 className="section-title mb-3 inline-flex items-center gap-1.5">
             <IconStore size={18} className="text-ink-1" />
             즐겨찾기 전체
           </h2>
@@ -352,7 +347,7 @@ export default async function ProfilePage() {
             {favorites.map((f) => (
               <li
                 key={f.id}
-                className="bg-white border border-line rounded-xl p-3 flex justify-between items-center text-sm hover:border-line-strong"
+                className="card-hoverable p-3 flex justify-between items-center text-sm"
               >
                 <Link
                   href={`/stores/${f.storeId}`}
@@ -379,7 +374,7 @@ export default async function ProfilePage() {
 
       {/* 영수증 */}
       <section>
-        <h2 className="font-bold mb-3 text-ink-1 inline-flex items-center gap-1.5">
+        <h2 className="section-title mb-3 inline-flex items-center gap-1.5">
           <IconCamera size={18} className="text-ink-1" />내 영수증 (
           {myReceipts.length}건)
         </h2>
@@ -409,7 +404,7 @@ export default async function ProfilePage() {
               return (
                 <li
                   key={r.id}
-                  className="bg-white border border-line rounded-xl p-3 flex justify-between items-center text-sm hover:border-line-strong"
+                  className="card-hoverable p-3 flex justify-between items-center text-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {showThumb && (
@@ -441,7 +436,7 @@ export default async function ProfilePage() {
 
       {/* 내가 등록한 가격 */}
       <section>
-        <h2 className="font-bold mb-3 text-ink-1 inline-flex items-center gap-1.5">
+        <h2 className="section-title mb-3 inline-flex items-center gap-1.5">
           <IconCart size={18} className="text-ink-1" />
           내가 등록한 가격 ({myPrices.length}건)
         </h2>
@@ -468,7 +463,7 @@ export default async function ProfilePage() {
             {myPrices.map((p) => (
               <li
                 key={p.id}
-                className="bg-white border border-line rounded-xl p-3 flex justify-between items-center gap-3 text-sm hover:border-line-strong"
+                className="card p-3 flex justify-between items-center gap-3 text-sm hover:border-line-strong"
               >
                 <div className="min-w-0 flex-1">
                   {/* 긴 상품명 2줄까지 노출 */}
@@ -498,8 +493,8 @@ export default async function ProfilePage() {
 
       {/* 포인트 랭킹 */}
       <section>
-        <h2 className="font-bold mb-3 text-ink-1">포인트 랭킹 (Top 10)</h2>
-        <ul className="bg-white border border-line rounded-xl overflow-hidden">
+        <h2 className="section-title mb-3">포인트 랭킹 (Top 10)</h2>
+        <ul className="card overflow-hidden">
           {topUsers.map((u, i) => (
             <li
               key={u.id}
@@ -531,23 +526,23 @@ export default async function ProfilePage() {
 
       {/* 도구 섹션 — 모바일 사용자 접근성 */}
       <section>
-        <h2 className="font-bold mb-3 text-ink-1">도구</h2>
+        <h2 className="section-title mb-3">도구</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Link
             href="/benefits"
-            className="card-clickable bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col gap-1 hover:border-indigo-400"
+            className="card-clickable bg-gradient-to-br from-info-soft to-white border border-info/20 rounded-2xl p-4 flex flex-col gap-1 shadow-soft hover:shadow-raise hover:border-info/40 transition"
           >
-            <div className="text-sm font-semibold text-indigo-900 flex items-center justify-between gap-2">
+            <div className="text-sm font-bold text-info-text flex items-center justify-between gap-2">
               <span>🎁 정부 혜택</span>
-              <span className="text-indigo-500">›</span>
+              <span className="text-info">›</span>
             </div>
-            <small className="text-xs text-indigo-700">
+            <small className="text-xs text-info-text/80">
               내가 받을 수 있는 지원금 매칭
             </small>
           </Link>
           <Link
             href="/benefits/saved"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>★ 저장한 혜택</span>
@@ -559,7 +554,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/budget"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>📊 가계부</span>
@@ -571,7 +566,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/idphoto"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>📷 AI 증명사진</span>
@@ -583,7 +578,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/sync"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>🔄 데이터 동기화</span>
@@ -596,11 +591,11 @@ export default async function ProfilePage() {
 
       {/* 부가 정보 */}
       <section>
-        <h2 className="font-bold mb-3 text-ink-1">부가 정보</h2>
+        <h2 className="section-title mb-3">부가 정보</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <Link
             href="/recalls"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>⚠️ 회수·판매중지</span>
@@ -610,7 +605,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/agritrace"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>🌾 농산물 이력</span>
@@ -620,7 +615,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/health-functional"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>💊 건강기능식품</span>
@@ -630,7 +625,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/recipes"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>🍳 레시피</span>
@@ -640,7 +635,7 @@ export default async function ProfilePage() {
           </Link>
           <Link
             href="/parsa"
-            className="card-clickable bg-white border border-line rounded-xl p-4 flex flex-col gap-1 hover:border-line-strong"
+            className="card-clickable card p-4 flex flex-col gap-1"
           >
             <div className="text-sm font-semibold text-ink-1 flex items-center justify-between gap-2">
               <span>📊 공공 가격</span>

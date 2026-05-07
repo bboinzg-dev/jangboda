@@ -114,10 +114,12 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold text-ink-1 tracking-tight">상품 검색</h1>
+      <h1 className="text-2xl md:text-3xl font-extrabold text-ink-1 tracking-tight">
+        상품 검색
+      </h1>
 
       {/* sticky 헤더 — 검색 입력 + 카테고리 칩 */}
-      <div className="sticky top-0 z-10 bg-page/95 backdrop-blur-sm pb-2 -mx-4 px-4 space-y-3">
+      <div className="sticky top-0 z-10 bg-page/90 backdrop-blur-md pb-2 -mx-4 px-4 space-y-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -134,12 +136,12 @@ export default function SearchPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="예: 신라면, 우유, 햇반"
-              className="w-full pl-9 pr-4 py-2 border border-line-strong rounded-xl focus:outline-none focus:border-brand-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-line rounded-xl bg-white shadow-soft focus:outline-none focus:border-brand-400 focus:shadow-ring transition"
             />
           </div>
           <button
             type="submit"
-            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-xl"
+            className="bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-soft hover:shadow-raise transition"
           >
             검색
           </button>
@@ -278,7 +280,7 @@ export default function SearchPage() {
                 <Link
                   key={p.id}
                   href={`/products/${p.id}`}
-                  className="card-clickable relative bg-white border border-line rounded-xl p-4 pr-7 flex gap-3 items-start"
+                  className="card-clickable relative card p-4 pr-7 flex gap-3 items-start"
                 >
                   <ProductImage
                     src={p.imageUrl}
@@ -336,12 +338,12 @@ export default function SearchPage() {
                           {p.chains.map((c) => (
                             <span
                               key={c.name}
-                              className="inline-flex items-center text-[10px] bg-stone-100 text-stone-700 rounded px-1.5 py-0.5"
+                              className="inline-flex items-center text-[10px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                               title={`${c.name} ${c.count}매장`}
                             >
                               {c.name}
                               {c.count > 1 && (
-                                <span className="ml-0.5 text-stone-500">·{c.count}</span>
+                                <span className="ml-0.5 text-ink-3">·{c.count}</span>
                               )}
                             </span>
                           ))}
@@ -387,7 +389,7 @@ export default function SearchPage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-md border border-line-strong bg-white text-sm text-ink-2 hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 ← 이전
               </button>
@@ -400,7 +402,7 @@ export default function SearchPage() {
                   setPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-md border border-line-strong bg-white text-sm text-ink-2 hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 다음 →
               </button>

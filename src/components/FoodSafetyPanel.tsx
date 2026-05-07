@@ -36,7 +36,7 @@ export default function FoodSafetyPanel({ data }: { data: unknown }) {
   ].filter(Boolean) as string[];
 
   return (
-    <div className="bg-white border border-line rounded-xl p-4">
+    <div className="card p-4">
       <h3 className="font-semibold text-ink-1 mb-3 flex items-center gap-2">
         🏛️ 식약처 등록 정보
         <span className="text-[10px] text-ink-3 font-normal">

@@ -22,7 +22,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-border md:hidden"
+      className="fixed bottom-0 inset-x-0 z-30 bg-white/90 backdrop-blur-md border-t border-line/70 md:hidden shadow-[0_-2px_8px_rgba(27,24,21,0.04)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="하단 네비게이션"
     >
@@ -31,10 +31,10 @@ export default function BottomNav() {
           const active = isActive(t.href);
           if (t.primary) {
             return (
-              <li key={t.href} className="flex justify-center -mt-4">
+              <li key={t.href} className="flex justify-center -mt-5">
                 <Link
                   href={t.href}
-                  className="bg-brand-500 hover:bg-brand-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg text-xl"
+                  className="bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-raise text-xl ring-4 ring-white/80 transition"
                   aria-label={t.label}
                 >
                   {t.icon}
@@ -46,11 +46,15 @@ export default function BottomNav() {
             <li key={t.href}>
               <Link
                 href={t.href}
-                className={`flex flex-col items-center justify-center py-2 text-[11px] ${
-                  active ? "text-brand-600" : "text-stone-500"
+                className={`flex flex-col items-center justify-center py-2 text-[11px] transition ${
+                  active
+                    ? "text-brand-600 font-semibold"
+                    : "text-ink-3 hover:text-ink-2"
                 }`}
               >
-                <span className="text-xl leading-none mb-0.5">{t.icon}</span>
+                <span className="text-xl leading-none mb-0.5" aria-hidden>
+                  {t.icon}
+                </span>
                 <span>{t.label}</span>
               </Link>
             </li>

@@ -127,7 +127,7 @@ export default function SyncPage() {
         )}
       </div>
 
-      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-3">
+      <section className="card p-6 space-y-3">
         <div>
           <h2 className="font-bold">📊 KAMIS 농수산물 시세 (수동)</h2>
           <p className="text-xs text-stone-500 mt-1">
@@ -148,7 +148,7 @@ export default function SyncPage() {
         )}
       </section>
 
-      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-3">
+      <section className="card p-6 space-y-3">
         <div>
           <h2 className="font-bold">🛍️ 네이버 쇼핑 (수동)</h2>
           <p className="text-xs text-stone-500 mt-1">
@@ -172,7 +172,7 @@ export default function SyncPage() {
         )}
       </section>
 
-      <section className="bg-white border border-stone-200 rounded-xl p-6 space-y-3">
+      <section className="card p-6 space-y-3">
         <div>
           <h2 className="font-bold">📋 CSV 일괄 임포트</h2>
           <p className="text-xs text-stone-500 mt-1">

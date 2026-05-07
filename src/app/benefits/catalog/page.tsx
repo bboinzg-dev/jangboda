@@ -145,7 +145,7 @@ export default async function BenefitsCatalogPage({
       {/* 필터 폼 — Form GET 방식 (클라 JS 없이 동작) */}
       <form
         method="get"
-        className="bg-white border border-stone-200 rounded-xl p-4 space-y-3"
+        className="card p-4 space-y-3"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* 검색어 */}

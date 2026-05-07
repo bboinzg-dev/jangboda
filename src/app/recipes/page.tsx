@@ -147,7 +147,7 @@ export default async function RecipesPage({
 
       {/* 결과 카드 그리드 */}
       {recipes.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
+        <div className="card p-8 text-center">
           <div className="text-4xl mb-3">🍽️</div>
           <h2 className="font-bold mb-1">조건에 맞는 레시피가 없어요</h2>
           <p className="text-sm text-stone-500">
@@ -160,7 +160,7 @@ export default async function RecipesPage({
             <Link
               key={r.id}
               href={`/recipes/${r.id}`}
-              className="card-clickable bg-white border border-stone-200 rounded-xl overflow-hidden hover:shadow-md transition flex flex-col"
+              className="card-clickable card overflow-hidden hover:shadow-md transition flex flex-col"
             >
               <div className="aspect-square bg-stone-100 relative overflow-hidden">
                 {r.imageMain ? (
