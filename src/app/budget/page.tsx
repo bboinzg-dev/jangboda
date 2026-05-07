@@ -49,8 +49,9 @@ type BudgetData = {
     monthDeltaPct: number | null;  // (thisMonth - lastMonth) / lastMonth * 100
     lastYearTotal: number;         // 작년 같은 달 지출
     yearDeltaPct: number | null;   // 작년 동월 대비 변화율
-    savedAmount: number;           // 행사가로 산 누적 절약액 = Σ(listPrice - paidPrice)
+    savedAmount: number;           // 행사가로 산 누적 절약액 = Σ(listPrice - paidPrice) × 수량
     promoCount: number;            // 행사가로 구매한 건수
+    promoBase: number;             // listPrice가 있는 행 = "행사 활용률" 분모
     totalPriceCount: number;       // 전체 등록 건수
     storeCount: number;            // 다녀본 매장 수
   };
@@ -76,8 +77,9 @@ type BudgetData = {
     items: {
       productId: string;
       name: string;
-      price: number;
-      quantity: number;
+      price: number;       // 단가 (정가 또는 행사가)
+      quantity: number;    // metadata.quantity (옛 데이터는 1)
+      lineTotal: number;   // 단가 × 수량 — 영수증 합계 산출용
       category: string;
       isOverride: boolean;
     }[];
@@ -117,9 +119,23 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
     return true;
   });
 
-  // 사용자가 실제 지불한 금액 = paidPrice (행사 적용가) ?? listPrice (정가)
-  const paidOf = (p: { paidPrice: number | null; listPrice: number | null }) =>
-    p.paidPrice ?? p.listPrice ?? 0;
+  // 영수증의 quantity는 Price 컬럼이 아니라 metadata.quantity 로 보존 (수량 컬럼 없는 스키마).
+  // 신규 영수증부터만 보존되므로 기존 데이터는 quantity=1로 fallback.
+  const quantityOf = (p: { metadata: unknown }) => {
+    const m = p.metadata as { quantity?: number } | null | undefined;
+    const q = m?.quantity;
+    return typeof q === "number" && q > 1 ? q : 1;
+  };
+  // 사용자가 실제 지불한 총액 = (행사가 ?? 정가) × 수량.
+  // 단가 합산만 하면 같은 상품 N개 구매가 1개 값으로 들어가는 버그 → quantity 반영.
+  const paidOf = (p: {
+    paidPrice: number | null;
+    listPrice: number | null;
+    metadata: unknown;
+  }) => (p.paidPrice ?? p.listPrice ?? 0) * quantityOf(p);
+  // 시장 비교용 정가 단가 (× 수량) — overpaid 계산을 listPrice 기준으로 통일하기 위해 사용
+  const listPaidOf = (p: { listPrice: number | null; metadata: unknown }) =>
+    (p.listPrice ?? 0) * quantityOf(p);
 
   // 이번 달 / 지난 달 합계 — KPI 비교용
   const now = new Date();
@@ -137,14 +153,18 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
       ? Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100)
       : null;
 
-  // 누적 절약액 — 행사가로 산 모든 건의 (listPrice - paidPrice) 합산
-  // 사용자에게 "행사 활용으로 N원 아꼈어요" 보상감 신호
+  // 누적 절약액 — 행사가로 산 모든 건의 (listPrice - paidPrice) × 수량 합산.
+  // 사용자에게 "행사 활용으로 N원 아꼈어요" 보상감 신호.
   let savedAmount = 0;
   let promoCount = 0;
+  let promoBase = 0; // listPrice가 있는 행만 분모로 — "행사 활용률" 의미를 정확히
   for (const p of valid) {
-    if (p.paidPrice != null && p.listPrice != null && p.paidPrice < p.listPrice) {
-      savedAmount += p.listPrice - p.paidPrice;
-      promoCount++;
+    if (p.listPrice != null && p.listPrice > 0) {
+      promoBase++;
+      if (p.paidPrice != null && p.paidPrice < p.listPrice) {
+        savedAmount += (p.listPrice - p.paidPrice) * quantityOf(p);
+        promoCount++;
+      }
     }
   }
   const totalPriceCount = valid.length;
@@ -286,14 +306,20 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
   });
   const topFrequent = frequentProducts.slice(0, 8);
 
-  // 본인이 산 가격 중 가장 비싼 것 vs 최저가 비교 — 같은 상품 여러 번이면 최고 지불 사용
-  const myMaxByProduct = new Map<string, { paid: number; productName: string }>();
+  // 본인이 산 정가 단가 중 최대 vs 시장 정가 최저 — listPrice 기준으로 통일.
+  // (옛 코드는 본인 paidPrice(행사가) vs 시장 listPrice(정가) 비교라 행사가로 잘 산 경우도
+  //  "더 비싸게 샀다"고 표시되던 부조화 → 본인도 listPrice 기준으로 맞춤)
+  const myMaxByProduct = new Map<
+    string,
+    { listPrice: number; productName: string }
+  >();
   for (const p of valid) {
+    const list = p.listPrice ?? 0;
+    if (list <= 0) continue;
     const cur = myMaxByProduct.get(p.productId);
-    const myPaid = paidOf(p);
-    if (!cur || myPaid > cur.paid) {
+    if (!cur || list > cur.listPrice) {
       myMaxByProduct.set(p.productId, {
-        paid: myPaid,
+        listPrice: list,
         productName: p.product?.name ?? "(이름 없음)",
       });
     }
@@ -301,13 +327,13 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
   const overpaid = Array.from(myMaxByProduct.entries())
     .map(([productId, v]) => {
       const minInfo = minByProduct.get(productId);
-      const minPrice = minInfo?.listPrice ?? v.paid;
+      const minPrice = minInfo?.listPrice ?? v.listPrice;
       return {
         productId,
         productName: v.productName,
-        paid: v.paid,
+        paid: v.listPrice,
         minPrice,
-        diff: v.paid - minPrice,
+        diff: v.listPrice - minPrice,
         minStoreName: minInfo?.storeName,
         minChainName: minInfo?.chainName,
       };
@@ -340,16 +366,19 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
         p.product?.name ?? "",
         p.product?.category,
       );
+      const unit = p.paidPrice ?? p.listPrice ?? 0;
+      const q = quantityOf(p);
       return {
         productId: p.productId,
         name: p.product?.name ?? "(이름 없음)",
-        price: p.paidPrice ?? p.listPrice ?? 0,
-        quantity: 1,
+        price: unit,
+        quantity: q,
+        lineTotal: unit * q,
         category: cat,
         isOverride: !!overrides[p.productId],
       };
     });
-    const total = items.reduce((s, it) => s + it.price, 0);
+    const total = items.reduce((s, it) => s + it.lineTotal, 0);
     // 영수증 거래일은 첫 Price.createdAt 사용 (영수증 거래일이 그곳에 저장됨)
     const date = r.prices[0]?.createdAt ?? r.createdAt;
     return {
@@ -372,6 +401,7 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
       yearDeltaPct,
       savedAmount,
       promoCount,
+      promoBase,
       totalPriceCount,
       storeCount,
     },
@@ -420,102 +450,118 @@ export default async function BudgetPage() {
     );
   }
 
-  const maxMonthly = Math.max(...data.monthly.map((m) => m.total), 1);
   const totalCategorySum = data.byCategory.reduce((s, c) => s + c.total, 0) || 1;
+  // "행사 활용률" — listPrice가 있는 행만 분모. totalPriceCount(전체) 분모는 의미가 흐릿했음.
   const promoRate =
-    data.kpi.totalPriceCount > 0
-      ? Math.round((data.kpi.promoCount / data.kpi.totalPriceCount) * 100)
+    data.kpi.promoBase > 0
+      ? Math.round((data.kpi.promoCount / data.kpi.promoBase) * 100)
       : 0;
   const insights = generateInsights(data);
+  const monthLabel = new Date().getMonth() + 1;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="text-2xl font-bold">📊 가계부</h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-ink-1 tracking-tight">
+            가계부
+          </h1>
+          <p className="text-sm text-ink-3 mt-0.5">
+            영수증으로 만든 내 소비 분석
+          </p>
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <a
             href="/api/budget/export"
             download
-            className="text-sm border border-line text-ink-2 hover:bg-surface-muted px-3 py-1.5 rounded-lg font-medium inline-flex items-center gap-1"
+            className="text-sm border border-line text-ink-2 hover:bg-surface-muted px-3 py-1.5 rounded-xl font-medium inline-flex items-center gap-1"
             title="가계부 데이터를 CSV로 다운로드"
           >
-            📥 내보내기
+            내보내기
           </a>
           <ManualEntryDialog />
           <Link
             href="/upload"
-            className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg font-medium"
+            className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl font-medium shadow-soft hover:shadow-raise transition"
           >
             + 영수증 추가
           </Link>
         </div>
       </div>
 
-      {/* 4-KPI 헤더 — 가계부의 핵심 지표를 한눈에 */}
-      <header className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* 1. 이번 달 지출 — primary */}
-        <div className="bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-xl p-4">
-          <div className="text-[11px] text-brand-700 font-medium">
-            이번 달 ({new Date().getMonth() + 1}월) 지출
+      {/* KPI 헤더 — 메인(이번 달) 1개 크게 + 보조 3개.
+          예전 4색 컨피티(brand/emerald/rose/sky)는 위계가 없어 시선이 분산됐음.
+          이제 메인만 강조하고 보조는 흰 카드 + 색 액센트 1줄. */}
+      <header className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* 1. 이번 달 지출 — primary, md에서 2칸 차지 */}
+        <div className="md:col-span-2 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl p-5 md:p-6 text-white shadow-raise">
+          <div className="text-xs md:text-sm text-white/80 font-medium">
+            이번 달 ({monthLabel}월) 지출
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-brand-700 mt-1 tabular-nums">
+          <div className="text-3xl md:text-4xl font-extrabold mt-1 tabular-nums tracking-tight">
             {formatWon(data.kpi.thisMonth)}
           </div>
-          {data.kpi.monthDeltaPct !== null && (
-            <div className="text-[11px] text-stone-600 mt-1">
-              지난달{" "}
-              <span
-                className={
-                  data.kpi.monthDeltaPct > 0
-                    ? "text-rose-600 font-medium"
-                    : data.kpi.monthDeltaPct < 0
-                    ? "text-emerald-600 font-medium"
-                    : "text-ink-3"
-                }
-              >
-                {data.kpi.monthDeltaPct > 0 ? "▲" : data.kpi.monthDeltaPct < 0 ? "▼" : "─"}
-                {Math.abs(data.kpi.monthDeltaPct)}%
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs md:text-sm text-white/90">
+            {data.kpi.monthDeltaPct !== null && (
+              <span>
+                지난달{" "}
+                <span className="font-semibold">
+                  {data.kpi.monthDeltaPct > 0 ? "▲" : data.kpi.monthDeltaPct < 0 ? "▼" : "─"}
+                  {Math.abs(data.kpi.monthDeltaPct)}%
+                </span>{" "}
+                <span className="text-white/70 tabular-nums">
+                  ({formatWon(data.kpi.lastMonth)})
+                </span>
               </span>
+            )}
+            {data.kpi.yearDeltaPct !== null && (
+              <span>
+                작년 {monthLabel}월{" "}
+                <span className="font-semibold">
+                  {data.kpi.yearDeltaPct > 0 ? "▲" : data.kpi.yearDeltaPct < 0 ? "▼" : "─"}
+                  {Math.abs(data.kpi.yearDeltaPct)}%
+                </span>{" "}
+                <span className="text-white/70 tabular-nums">
+                  ({formatWon(data.kpi.lastYearTotal)})
+                </span>
+              </span>
+            )}
+            {data.kpi.monthDeltaPct === null && data.kpi.yearDeltaPct === null && (
+              <span className="text-white/70">비교할 과거 데이터 누적 중</span>
+            )}
+          </div>
+        </div>
+
+        {/* 보조 KPI 3개 — 한 묶음으로 grid */}
+        <div className="grid grid-cols-3 md:grid-cols-1 gap-3">
+          <div className="kpi-card text-success-text">
+            <div className="text-[11px] font-medium text-ink-3">누적 절약</div>
+            <div className="text-lg md:text-xl font-extrabold mt-0.5 tabular-nums tracking-tight text-success-text">
+              {formatWon(data.kpi.savedAmount)}
             </div>
-          )}
-        </div>
-
-        {/* 2. 누적 절약 — 행사가 활용 보상 */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <div className="text-[11px] text-emerald-700 font-medium">
-            🎉 누적 절약
+            <div className="text-[11px] text-ink-3 mt-0.5">
+              행사가로 아낀 합계
+            </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-emerald-700 mt-1 tabular-nums">
-            {formatWon(data.kpi.savedAmount)}
+          <div className="kpi-card text-danger-text">
+            <div className="text-[11px] font-medium text-ink-3">행사 활용률</div>
+            <div className="text-lg md:text-xl font-extrabold mt-0.5 tabular-nums tracking-tight text-ink-1">
+              {promoRate}
+              <span className="text-sm text-ink-3 font-semibold">%</span>
+            </div>
+            <div className="text-[11px] text-ink-3 mt-0.5 tabular-nums">
+              {data.kpi.promoCount}/{data.kpi.promoBase}건
+            </div>
           </div>
-          <div className="text-[11px] text-stone-600 mt-1">행사가로 아낀 합</div>
-        </div>
-
-        {/* 3. 행사 활용 빈도 */}
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
-          <div className="text-[11px] text-rose-700 font-medium">
-            행사 활용
-          </div>
-          <div className="text-xl md:text-2xl font-extrabold text-rose-700 mt-1 tabular-nums">
-            {data.kpi.promoCount}
-            <span className="text-sm text-rose-600 font-medium">/{data.kpi.totalPriceCount}건</span>
-          </div>
-          <div className="text-[11px] text-stone-600 mt-1">
-            할인·번들·1+1 ({promoRate}%)
-          </div>
-        </div>
-
-        {/* 4. 매장 다양성 */}
-        <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
-          <div className="text-[11px] text-sky-700 font-medium">
-            🏪 다녀본 매장
-          </div>
-          <div className="text-xl md:text-2xl font-extrabold text-sky-700 mt-1 tabular-nums">
-            {data.kpi.storeCount}
-            <span className="text-sm text-sky-600 font-medium">곳</span>
-          </div>
-          <div className="text-[11px] text-stone-600 mt-1">
-            총 {data.totalCount}건 등록
+          <div className="kpi-card text-info-text">
+            <div className="text-[11px] font-medium text-ink-3">다녀본 매장</div>
+            <div className="text-lg md:text-xl font-extrabold mt-0.5 tabular-nums tracking-tight text-ink-1">
+              {data.kpi.storeCount}
+              <span className="text-sm text-ink-3 font-semibold">곳</span>
+            </div>
+            <div className="text-[11px] text-ink-3 mt-0.5 tabular-nums">
+              총 {data.totalCount}건
+            </div>
           </div>
         </div>
       </header>
@@ -525,11 +571,11 @@ export default async function BudgetPage() {
 
       {/* 자동 인사이트 — 룰 기반으로 데이터에서 발견한 멘트 */}
       {insights.length > 0 && (
-        <section className="bg-white border border-line rounded-xl p-5">
-          <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
-            💡 오늘의 발견
+        <section className="card p-5 md:p-6">
+          <h2 className="section-title mb-3 flex items-center gap-2">
+            <span aria-hidden>💡</span> 오늘의 발견
             <span className="text-xs text-ink-3 font-normal">
-              ({insights.length}건)
+              {insights.length}건
             </span>
           </h2>
           <div className="space-y-2">
@@ -578,45 +624,43 @@ export default async function BudgetPage() {
 
       {/* 자주 사는 상품 — 단골 + "곧 살 때" 알림 */}
       {data.frequentProducts.length > 0 && (
-        <section className="bg-white border border-line rounded-xl p-5">
-          <h2 className="font-bold text-ink-1 mb-3 flex items-center gap-2">
-            🔁 자주 사는 상품
+        <section className="card p-5 md:p-6">
+          <h2 className="section-title mb-3 flex items-center gap-2">
+            자주 사는 상품
             <span className="text-xs text-ink-3 font-normal">
-              ({data.frequentProducts.length}건)
+              {data.frequentProducts.length}건
             </span>
           </h2>
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {data.frequentProducts.map((fp) => (
               <li key={fp.productId}>
                 <Link
                   href={`/products/${fp.productId}`}
-                  className="block bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg p-3"
+                  className="group block bg-surface-muted/50 hover:bg-surface-muted border border-line/60 rounded-xl p-3 transition"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-ink-1 truncate">
+                        <span className="font-semibold text-ink-1 truncate">
                           {fp.productName}
                         </span>
                         {fp.isDue && (
-                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-medium shrink-0">
-                            🔔 곧 살 때
+                          <span className="badge-danger shrink-0">
+                            곧 살 때
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-ink-3 mt-1 flex items-center gap-2 flex-wrap">
+                      <div className="text-xs text-ink-3 mt-1 flex items-center gap-2 flex-wrap tabular-nums">
                         <span>
-                          {fp.count}회 구매 · 마지막{" "}
+                          {fp.count}회 · 마지막{" "}
                           <span className="font-medium text-ink-2">{fp.daysSinceLast}일 전</span>
                         </span>
                         {fp.avgInterval !== null && (
-                          <span>
-                            · 평균 {fp.avgInterval}일마다
-                          </span>
+                          <span>· 평균 {fp.avgInterval}일</span>
                         )}
                       </div>
                     </div>
-                    <span className="text-ink-3 shrink-0">›</span>
+                    <span className="text-ink-3 shrink-0 group-hover:text-brand-500 transition">›</span>
                   </div>
                 </Link>
               </li>
@@ -626,16 +670,16 @@ export default async function BudgetPage() {
       )}
 
       {/* 월별 추세 라인차트 — SVG (recharts 안 씀, 번들 보호) */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">📈 최근 6개월 소비 추이</h2>
+      <section className="card p-5 md:p-6">
+        <h2 className="section-title mb-3">최근 6개월 소비 추이</h2>
         <MonthlyTrendChart data={data.monthly} currentKey={monthKey(new Date())} />
       </section>
 
       {/* 카테고리별 — 메가 카테고리(신선식품/유제품/음료/...) 정상화 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">🥕 카테고리별 소비</h2>
+      <section className="card p-5 md:p-6">
+        <h2 className="section-title mb-3">카테고리별 소비</h2>
         {/* 가로 스택 바 */}
-        <div className="flex h-3 rounded-full overflow-hidden bg-stone-100 mb-4">
+        <div className="flex h-3 rounded-full overflow-hidden bg-surface-muted mb-4">
           {data.byCategory.map((c) => {
             const pct = (c.total / totalCategorySum) * 100;
             return (
@@ -660,11 +704,11 @@ export default async function BudgetPage() {
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: c.color }}
                   />
-                  <span className="truncate">{c.category}</span>
+                  <span className="truncate text-ink-2">{c.category}</span>
                 </span>
-                <span className="text-stone-600 shrink-0 ml-3">
+                <span className="text-ink-2 shrink-0 ml-3 tabular-nums">
                   {formatWon(c.total)}{" "}
-                  <span className="text-xs text-stone-400">({pct}%)</span>
+                  <span className="text-xs text-ink-3">({pct}%)</span>
                 </span>
               </li>
             );
@@ -673,14 +717,14 @@ export default async function BudgetPage() {
       </section>
 
       {/* 영수증별 거래 내역 — 언제·어디서·무엇 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">🧾 영수증별 거래 내역</h2>
+      <section className="card p-5 md:p-6">
+        <h2 className="section-title mb-3">영수증별 거래 내역</h2>
         {data.receipts.length === 0 ? (
-          <div className="text-sm text-stone-500">
+          <div className="text-sm text-ink-3">
             영수증 등록 내역이 없어요.
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {data.receipts.map((r) => {
               const dateStr = r.date.toLocaleDateString("ko-KR", {
                 year: "numeric",
@@ -691,17 +735,17 @@ export default async function BudgetPage() {
               return (
                 <li
                   key={r.id}
-                  className="border border-stone-200 rounded-lg overflow-hidden"
+                  className="border border-line/70 rounded-xl overflow-hidden bg-white"
                 >
                   <details className="group">
-                    <summary className="flex items-center justify-between gap-3 px-3 py-2.5 cursor-pointer hover:bg-stone-50 list-none">
+                    <summary className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-surface-muted/60 list-none transition">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs text-stone-500">{dateStr}</div>
+                        <div className="text-[11px] text-ink-3 tabular-nums">{dateStr}</div>
                         <div className="font-semibold text-ink-1 truncate">
                           {r.chainName ? `${r.chainName} · ` : ""}
                           {r.storeName}
                         </div>
-                        <div className="text-xs text-stone-500">
+                        <div className="text-xs text-ink-3 tabular-nums">
                           {r.items.length}개 품목
                         </div>
                       </div>
@@ -709,19 +753,19 @@ export default async function BudgetPage() {
                         <div className="font-bold tabular-nums text-ink-1">
                           {formatWon(r.total)}
                         </div>
-                        <div className="text-[10px] text-stone-400 group-open:hidden">
-                          ▼ 펼치기
+                        <div className="text-[10px] text-ink-3 group-open:hidden">
+                          펼치기 ▾
                         </div>
-                        <div className="text-[10px] text-stone-400 hidden group-open:block">
-                          ▲ 접기
+                        <div className="text-[10px] text-ink-3 hidden group-open:block">
+                          접기 ▴
                         </div>
                       </div>
                     </summary>
-                    <ul className="border-t border-stone-100 bg-stone-50/40">
+                    <ul className="border-t border-line/60 bg-surface-muted/30">
                       {r.items.map((it, i) => (
                         <li
                           key={`${r.id}-${i}`}
-                          className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm border-b border-stone-100 last:border-0"
+                          className="flex items-center justify-between gap-2 px-4 py-2 text-sm border-b border-line/40 last:border-0"
                         >
                           <Link
                             href={`/products/${it.productId}`}
@@ -734,8 +778,14 @@ export default async function BudgetPage() {
                             current={it.category}
                             isOverride={it.isOverride}
                           />
-                          <span className="font-medium tabular-nums text-ink-1 shrink-0">
-                            {formatWon(it.price)}
+                          {/* 수량 N>1 일 때만 단가 × 수량 표기 — 영수증 합계 검증 가능 */}
+                          {it.quantity > 1 ? (
+                            <span className="text-[11px] tabular-nums text-ink-3 shrink-0">
+                              {formatWon(it.price)} × {it.quantity}
+                            </span>
+                          ) : null}
+                          <span className="font-semibold tabular-nums text-ink-1 shrink-0 min-w-[5ch] text-right">
+                            {formatWon(it.lineTotal)}
                           </span>
                         </li>
                       ))}
@@ -749,44 +799,59 @@ export default async function BudgetPage() {
       </section>
 
       {/* 매장별 Top 5 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-3">매장별 소비 Top 5</h2>
+      <section className="card p-5 md:p-6">
+        <h2 className="section-title mb-3">매장별 소비 Top 5</h2>
         {data.byStore.length === 0 ? (
-          <div className="text-sm text-stone-500">매장 데이터 없음</div>
+          <div className="text-sm text-ink-3">매장 데이터 없음</div>
         ) : (
-          <ul className="space-y-2">
-            {data.byStore.map((s) => (
-              <li
-                key={s.storeId}
-                className="flex items-center justify-between text-sm border-b border-stone-100 last:border-0 pb-2 last:pb-0 gap-3"
-              >
-                <FavoriteToggle storeId={s.storeId} size="sm" />
-                <Link
-                  href={`/stores/${s.storeId}`}
-                  className="min-w-0 flex-1 hover:underline"
+          <ul className="space-y-1">
+            {data.byStore.map((s, idx) => {
+              const pct = Math.round((s.total / (data.byStore[0]?.total || 1)) * 100);
+              return (
+                <li
+                  key={s.storeId}
+                  className="flex items-center gap-3 py-2 border-b border-line/40 last:border-0"
                 >
-                  <div className="font-medium truncate">{s.chainName}</div>
-                  <div className="text-xs text-stone-500 truncate">
-                    {s.storeName}
+                  <span className="w-5 text-center text-xs font-bold text-ink-3 tabular-nums shrink-0">
+                    {idx + 1}
+                  </span>
+                  <FavoriteToggle storeId={s.storeId} size="sm" />
+                  <Link
+                    href={`/stores/${s.storeId}`}
+                    className="min-w-0 flex-1 group"
+                  >
+                    <div className="font-semibold text-ink-1 truncate group-hover:text-brand-600 transition">
+                      {s.chainName}
+                    </div>
+                    <div className="text-xs text-ink-3 truncate">
+                      {s.storeName}
+                    </div>
+                    {/* 1위 대비 막대 */}
+                    <div className="mt-1 h-1 bg-surface-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-brand-400/70 rounded-full"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </Link>
+                  <div className="font-bold text-ink-1 shrink-0 tabular-nums">
+                    {formatWon(s.total)}
                   </div>
-                </Link>
-                <div className="font-bold text-stone-700 shrink-0">
-                  {formatWon(s.total)}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
-      {/* 평균보다 비싸게 산 Top 5 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
-        <h2 className="font-bold mb-1">💸 더 싸게 살 수 있었던 상품 Top 5</h2>
-        <p className="text-xs text-stone-500 mb-3">
-          본인이 산 가격 vs 등록된 최저가
+      {/* 더 싸게 살 수 있었던 Top 5 — 본인 정가 vs 시장 정가 (행사가 비교 아님) */}
+      <section className="card p-5 md:p-6">
+        <h2 className="section-title mb-1">더 싸게 살 수 있었던 상품 Top 5</h2>
+        <p className="text-xs text-ink-3 mb-3">
+          본인이 산 정가 vs 등록된 최저 정가 (행사가는 비교에서 제외)
         </p>
         {data.overpaid.length === 0 ? (
-          <div className="text-sm text-stone-500">
+          <div className="text-sm text-ink-3">
             축하합니다 — 모두 최저가로 사셨네요!
           </div>
         ) : (
@@ -794,22 +859,18 @@ export default async function BudgetPage() {
             {data.overpaid.map((o) => {
               const pct = Math.round((o.diff / o.minPrice) * 100);
               return (
-                <li
-                  key={o.productId}
-                  className="border-b border-stone-100 last:border-0 pb-2 last:pb-0"
-                >
+                <li key={o.productId}>
                   <Link
                     href={`/products/${o.productId}`}
-                    className="block hover:bg-stone-50 -mx-1 px-1 py-1 rounded"
+                    className="block bg-surface-muted/40 hover:bg-surface-muted border border-line/50 rounded-xl p-3 transition"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-ink-1 truncate">
+                        <div className="text-sm font-semibold text-ink-1 truncate">
                           {o.productName}
                         </div>
                         {o.minChainName && (
-                          <div className="text-xs text-emerald-700 mt-0.5">
-                            💡{" "}
+                          <div className="text-xs text-success-text mt-0.5">
                             <span className="font-medium">{o.minChainName}</span>
                             {o.minStoreName && o.minStoreName !== o.minChainName ? ` ${o.minStoreName}` : ""}
                             에서 더 싸게 살 수 있어요
@@ -817,10 +878,10 @@ export default async function BudgetPage() {
                         )}
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-rose-600 font-bold text-sm">
+                        <div className="text-danger-text font-bold text-sm tabular-nums">
                           +{formatWon(o.diff)}
                         </div>
-                        <div className="text-xs text-stone-500 tabular-nums">
+                        <div className="text-xs text-ink-3 tabular-nums">
                           {formatWon(o.paid)} → {formatWon(o.minPrice)} (+{pct}%)
                         </div>
                       </div>

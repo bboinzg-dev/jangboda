@@ -67,6 +67,17 @@ const config: Config = {
           "sans-serif",
         ],
       },
+      // 카드 공중에 살짝 띄우는 톤 — 90년대 평면 표 느낌 탈피용.
+      // soft: 정적 카드, raise: hover 강조, ring: focus.
+      boxShadow: {
+        soft: "0 1px 2px rgba(27,24,21,0.04), 0 2px 8px rgba(27,24,21,0.04)",
+        raise: "0 4px 14px rgba(27,24,21,0.08), 0 1px 3px rgba(27,24,21,0.05)",
+        ring: "0 0 0 4px rgba(249,115,22,0.18)",
+      },
+      borderRadius: {
+        "2xl": "1rem", // 16px — 모던 카드 표준
+        "3xl": "1.25rem", // 20px — 큰 그룹
+      },
     },
   },
   plugins: [],
