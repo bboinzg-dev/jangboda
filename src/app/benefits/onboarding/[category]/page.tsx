@@ -29,7 +29,7 @@ export default async function CategoryOnboardingPage({ params }: Params) {
         >
           ← 카테고리 목록으로
         </Link>
-        <div className="bg-white border border-stone-200 rounded-xl p-8 text-center space-y-3">
+        <div className="card p-8 text-center space-y-3">
           <h1 className="text-xl font-bold">로그인이 필요합니다</h1>
           <p className="text-stone-600 text-sm">
             정부 혜택 매칭을 위해 입력하신 정보는 사용자 본인만 조회할 수

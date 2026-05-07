@@ -52,7 +52,7 @@ export default async function SavedBenefitsPage() {
       </header>
 
       {!user ? (
-        <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
+        <div className="card p-8 text-center">
           <div className="text-stone-700 mb-2">
             로그인하면 저장한 혜택을 볼 수 있어요.
           </div>

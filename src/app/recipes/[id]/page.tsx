@@ -98,7 +98,7 @@ export default async function RecipeDetailPage({
       </header>
 
       {/* 영양 정보 strip */}
-      <section className="grid grid-cols-5 gap-2 bg-white border border-stone-200 rounded-xl p-3 md:p-4">
+      <section className="grid grid-cols-5 gap-2 card p-3 md:p-4">
         <NutritionItem label="열량" value={recipe.caloriesKcal} unit="kcal" />
         <NutritionItem label="탄수" value={recipe.carbsG} unit="g" />
         <NutritionItem label="단백" value={recipe.proteinG} unit="g" />
@@ -108,7 +108,7 @@ export default async function RecipeDetailPage({
 
       {/* 재료 */}
       {recipe.ingredientsRaw && (
-        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+        <section className="card p-4 md:p-5">
           <h2 className="font-bold mb-2 flex items-center gap-2">
             🥘 재료
           </h2>
@@ -136,7 +136,7 @@ export default async function RecipeDetailPage({
 
       {/* 만드는 법 */}
       {steps.length > 0 && (
-        <section className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+        <section className="card p-4 md:p-5">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             📝 만드는 법
           </h2>

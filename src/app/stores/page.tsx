@@ -275,11 +275,13 @@ export default function StoresPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-ink-1">주변 마트</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-ink-1 tracking-tight">
+          주변 마트
+        </h1>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={handleSearchByLocation}
-            className="text-sm bg-brand-500 hover:bg-brand-600 text-white border border-brand-600 px-4 py-2 rounded-xl font-semibold inline-flex items-center gap-1.5"
+            className="text-sm bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white px-4 py-2 rounded-xl font-semibold inline-flex items-center gap-1.5 shadow-soft hover:shadow-raise transition"
           >
             <IconPin size={16} className="text-white" />
             내 위치 보기
@@ -307,10 +309,10 @@ export default function StoresPage() {
             <button
               key={c}
               onClick={() => setFilter(c)}
-              className={`text-xs px-3 py-1 rounded-full border ${
+              className={`text-xs px-3 py-1.5 rounded-full border transition ${
                 filter === c
-                  ? "bg-brand-600 text-white border-brand-700"
-                  : "bg-white text-ink-2 border-line-strong hover:bg-surface-muted"
+                  ? "bg-ink-1 text-white border-ink-1 shadow-soft"
+                  : "bg-white text-ink-2 border-line hover:border-line-strong hover:bg-surface-muted"
               }`}
             >
               {c === "all"
@@ -328,7 +330,7 @@ export default function StoresPage() {
       <StoresMap stores={filtered} myLocation={loc} height="380px" />
 
       {/* 지역 검색 — 평소엔 접혀있고, 필요한 사람만 펼침 */}
-      <details className="bg-white border border-line rounded-xl">
+      <details className="card">
         <summary className="cursor-pointer px-4 py-2.5 text-sm text-ink-2 hover:bg-surface-muted select-none">
           🔎 다른 지역 검색하기
         </summary>
@@ -448,7 +450,7 @@ export default function StoresPage() {
                   return (
                     <li
                       key={s.id}
-                      className="card-clickable relative bg-white border border-line rounded-xl p-4 pr-8 flex justify-between hover:border-line-strong"
+                      className="card-clickable relative card p-4 pr-8 flex justify-between"
                     >
                       <Link
                         href={`/stores/${s.id}`}

@@ -192,7 +192,7 @@ export default async function ParsaPage({
             🔍 &quot;{q}&quot; 검색 결과 (총 {searchTotal.toLocaleString()}건)
           </h2>
           {searchResults.length === 0 ? (
-            <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
+            <div className="card p-8 text-center">
               <div className="text-4xl mb-3">🔎</div>
               <h3 className="font-bold mb-1">검색 결과가 없어요</h3>
               <p className="text-sm text-stone-500">
@@ -214,7 +214,7 @@ export default async function ParsaPage({
                     <Link
                       key={p.goodId}
                       href={`/parsa/products/${encodeURIComponent(p.goodId)}`}
-                      className="card-clickable bg-white border border-stone-200 rounded-xl p-4 hover:border-brand-300 flex flex-col gap-1"
+                      className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
                     >
                       <div className="font-semibold text-stone-900 line-clamp-2">
                         {p.goodName}
@@ -250,7 +250,7 @@ export default async function ParsaPage({
               <Link
                 key={c.code}
                 href={`/parsa?q=${encodeURIComponent(c.name)}`}
-                className="card-clickable bg-white border border-stone-200 rounded-lg p-4 hover:border-brand-300 flex flex-col gap-1"
+                className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
               >
                 <div className="text-sm font-semibold text-stone-900">
                   {c.name}
@@ -267,7 +267,7 @@ export default async function ParsaPage({
       {/* 매장 통계 — 페이지네이션 없이 그대로 */}
       <section>
         <h2 className="font-bold mb-3">🏪 참여 매장 통계</h2>
-        <div className="bg-white border border-stone-200 rounded-xl p-4">
+        <div className="card p-4">
           <div className="text-sm text-stone-700 mb-3">
             전국{" "}
             <span className="font-bold text-brand-600">

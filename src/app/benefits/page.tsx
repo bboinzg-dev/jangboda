@@ -169,7 +169,7 @@ export default async function BenefitsHomePage() {
             {data.byCategory.map((c) => (
               <div
                 key={c.category}
-                className="bg-white border border-stone-200 rounded-lg p-4"
+                className="card p-4"
               >
                 <div className="text-xs text-stone-500">{c.category}</div>
                 <div className="text-2xl font-bold text-indigo-600">{c._count}</div>
@@ -193,7 +193,7 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-4">
+    <div className="card p-4">
       <div className="text-xs text-stone-500">{label}</div>
       <div
         className={`text-2xl font-bold ${accent ? "text-rose-600" : "text-stone-900"}`}

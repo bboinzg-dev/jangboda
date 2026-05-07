@@ -506,7 +506,7 @@ export default function CartPage() {
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* ── 왼쪽: 검색 + 결과 ── */}
-        <section className="bg-white border border-line rounded-xl p-4 md:p-5">
+        <section className="card p-4 md:p-5">
           <h2 className="font-bold text-ink-1 mb-3">상품 찾기</h2>
           <CartProductSearch
             products={products}
@@ -517,7 +517,7 @@ export default function CartPage() {
         </section>
 
         {/* ── 오른쪽: 누적 장바구니 ── */}
-        <section className="bg-white border border-line rounded-xl p-4 md:p-5">
+        <section className="card p-4 md:p-5">
           <div className="flex items-center justify-between mb-3 gap-2">
             <h2 className="font-bold text-ink-1">
               장바구니{" "}

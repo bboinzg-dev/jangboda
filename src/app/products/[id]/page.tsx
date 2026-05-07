@@ -348,7 +348,7 @@ export default async function ProductDetailPage({
         </Link>
       </div>
 
-      <header className="bg-white border border-line rounded-xl p-6">
+      <header className="card p-6">
         {/* 좌측 큰 썸네일 + 우측 메타 — 모바일은 세로 스택 */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <ProductImage
@@ -757,7 +757,7 @@ export default async function ProductDetailPage({
           농수산물 이력·쇠고기·수산물·건강기능식품은 일부 카테고리만 해당하고
           자체 미노출 처리되니 details에 묶어 헤더 노이즈 방지 */}
       <details className="group">
-        <summary className="cursor-pointer p-4 bg-white border border-line rounded-xl font-semibold text-ink-1 flex items-center justify-between hover:bg-surface-muted">
+        <summary className="cursor-pointer p-4 card font-semibold text-ink-1 flex items-center justify-between hover:bg-surface-muted">
           <span>📋 이력추적 · 인증 (농산물 · 쇠고기 · 수산물 · 건강기능식품)</span>
           <span className="text-ink-3 transition-transform group-open:rotate-180">
             ▼

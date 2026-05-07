@@ -132,7 +132,7 @@ export default async function ParsaProductDetailPage({
         </Link>
       </div>
 
-      <header className="bg-white border border-stone-200 rounded-xl p-5 space-y-2">
+      <header className="card p-5 space-y-2">
         <h1 className="text-xl font-bold text-stone-900">
           {product.goodName}
         </h1>
@@ -192,7 +192,7 @@ export default async function ParsaProductDetailPage({
           <CollapsibleList
             initialCount={5}
             as="ul"
-            innerClassName="bg-white border border-stone-200 rounded-xl overflow-hidden divide-y divide-stone-100"
+            innerClassName="card overflow-hidden divide-y divide-stone-100"
           >
             {prices.map((p, i) => {
               const store = storeMap.get(p.entpId);

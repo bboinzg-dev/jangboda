@@ -174,7 +174,7 @@ export default function PriceListClient({
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-line rounded-xl p-6 text-center text-ink-3 text-sm">
+      <div className="card p-6 text-center text-ink-3 text-sm">
         {emptyHint}
       </div>
     );
@@ -237,7 +237,7 @@ export default function PriceListClient({
       </div>
 
       {sorted.length === 0 ? (
-        <div className="bg-white border border-line rounded-xl p-4 text-center text-ink-3 text-sm">
+        <div className="card p-4 text-center text-ink-3 text-sm">
           즐겨찾기 매장에는 이 상품이 등록되지 않았습니다
         </div>
       ) : (
@@ -255,7 +255,7 @@ export default function PriceListClient({
             return (
               <li
                 key={p.storeId}
-                className={`bg-white border border-line rounded-xl p-4 flex items-center justify-between gap-3 ${
+                className={`card p-4 flex items-center justify-between gap-3 ${
                   isLowest
                     ? "border-l-4 border-l-brand-500 bg-brand-50/30"
                     : isFav

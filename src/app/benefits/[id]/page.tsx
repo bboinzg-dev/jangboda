@@ -224,7 +224,7 @@ export default async function BenefitDetailPage({
 
       {/* 매칭 카드가 없는 경우(비로그인 / 매칭 미실행)에도 액션 영역 노출 */}
       {!match && (
-        <section className="bg-white border border-stone-200 rounded-xl p-5">
+        <section className="card p-5">
           {authed ? (
             <>
               <div className="text-sm text-stone-700 mb-1">
@@ -244,7 +244,7 @@ export default async function BenefitDetailPage({
       )}
 
       {/* 신청 기간 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
+      <section className="card p-5">
         <h2 className="text-sm font-bold text-stone-900 mb-3">신청 기간</h2>
         <div
           className={`flex items-center gap-3 ${
@@ -277,7 +277,7 @@ export default async function BenefitDetailPage({
 
       {/* 자격 조건 / 안내문 */}
       {textBlocks.length > 0 && (
-        <section className="bg-white border border-stone-200 rounded-xl p-5">
+        <section className="card p-5">
           <h2 className="text-sm font-bold text-stone-900 mb-3">자격 조건 및 안내</h2>
           <dl className="space-y-4">
             {textBlocks.map((b) => (
@@ -295,7 +295,7 @@ export default async function BenefitDetailPage({
       )}
 
       {/* 대상 지역 */}
-      <section className="bg-white border border-stone-200 rounded-xl p-5">
+      <section className="card p-5">
         <h2 className="text-sm font-bold text-stone-900 mb-3">대상 지역</h2>
         <div className="text-sm text-stone-700">
           {regionCodesLabel(benefit.regionCodes)}

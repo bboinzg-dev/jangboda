@@ -127,7 +127,7 @@ export default async function RecallsPage({
       </div>
 
       {recalls.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-xl p-8 text-center">
+        <div className="card p-8 text-center">
           <div className="text-4xl mb-3">✅</div>
           <h2 className="font-bold mb-1">해당 기간에 회수 정보가 없습니다</h2>
           <p className="text-sm text-stone-500">
@@ -141,7 +141,7 @@ export default async function RecallsPage({
             return (
               <article
                 key={r.id}
-                className="bg-white border border-stone-200 rounded-xl p-4 flex gap-3"
+                className="card p-4 flex gap-3"
               >
                 {firstImg ? (
                   <div className="shrink-0 w-20 h-20 relative rounded-lg overflow-hidden bg-stone-100">

@@ -327,7 +327,7 @@ export default function UploadPage() {
 
       {/* OCR/등록 결과 메시지 — result 유무 무관하게 항상 표시 (실패 메시지가 보이게) */}
       {submitResult && submitResult.startsWith("❌") && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl px-4 py-3 text-sm whitespace-pre-line">
+        <div className="bg-danger-soft border border-danger/30 text-danger-text rounded-xl px-4 py-3 text-sm whitespace-pre-line shadow-soft">
           {submitResult}
         </div>
       )}
@@ -342,7 +342,7 @@ export default function UploadPage() {
 
       {/* 큰 카메라 CTA — 화면 중앙, 80% 너비 */}
       {!result && (
-        <section className="bg-white border border-line rounded-xl p-6 space-y-6">
+        <section className="card p-6 space-y-6">
           <div className="flex flex-col items-center">
             {imagePreview ? (
               // 사진 있으면 미리보기 + 회전 + 다시 찍기/갤러리
@@ -512,7 +512,7 @@ export default function UploadPage() {
           <button
             onClick={parse}
             disabled={parsing}
-            className="w-full bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-lg font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-br from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-5 py-3 rounded-xl font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-soft hover:shadow-raise transition"
           >
             {parsing && (
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -570,8 +570,8 @@ export default function UploadPage() {
       {result && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 왼쪽 — 이미지 미리보기 */}
-          <div className="bg-white border border-line rounded-xl p-4">
-            <h2 className="font-bold mb-3 text-sm text-ink-2">영수증 이미지</h2>
+          <div className="card p-4">
+            <h2 className="section-title mb-3 text-sm">영수증 이미지</h2>
             {imagePreview ? (
               // 단순 img 태그 — Next/Image 안 씀 (data URL이라 외부 도메인 설정 불필요)
               // eslint-disable-next-line @next/next/no-img-element
@@ -590,7 +590,7 @@ export default function UploadPage() {
           </div>
 
           {/* 오른쪽 — OCR 결과 */}
-          <div className="bg-white border border-line rounded-xl p-6 space-y-4">
+          <div className="card p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-ink-1">파싱 결과</h2>
               <span className={`text-xs px-2 py-0.5 rounded ${
@@ -775,7 +775,7 @@ export default function UploadPage() {
             <button
               onClick={submit}
               disabled={submitting || !storeId}
-              className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-br from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-soft hover:shadow-raise transition"
             >
               {submitting ? "등록 중..." : "✓ 가격 등록 (포인트 +2/건)"}
             </button>

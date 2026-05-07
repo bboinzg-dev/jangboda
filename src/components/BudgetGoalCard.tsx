@@ -51,14 +51,14 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white border border-stone-200 rounded-xl p-5 animate-pulse h-24" />
+      <div className="card p-5 animate-pulse h-24" />
     );
   }
 
   // 미설정 + 편집 모드 X
   if (monthlyAmount == null && !editing) {
     return (
-      <div className="bg-white border border-stone-200 rounded-xl p-5">
+      <div className="card p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="font-bold text-ink-1">🎯 월 예산</div>
@@ -80,7 +80,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
   // 편집 모드
   if (editing) {
     return (
-      <div className="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
+      <div className="card p-5 space-y-3">
         <div className="font-bold text-ink-1">🎯 월 예산 설정</div>
         <div className="flex gap-2">
           <input
@@ -121,7 +121,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
   const goal = monthlyAmount ?? 0;
   if (goal === 0) {
     return (
-      <div className="bg-white border border-stone-200 rounded-xl p-5">
+      <div className="card p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="font-bold text-ink-1">🎯 월 예산</div>
@@ -150,7 +150,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
   const textColor = isOver ? "text-rose-700" : pct <= 70 ? "text-emerald-700" : "text-amber-700";
 
   return (
-    <div className="bg-white border border-stone-200 rounded-xl p-5">
+    <div className="card p-5">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div>
           <div className="font-bold text-ink-1">🎯 월 예산</div>
