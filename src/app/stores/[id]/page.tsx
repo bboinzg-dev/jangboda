@@ -7,7 +7,11 @@ import SourceBadge from "@/components/SourceBadge";
 import DirectionsButton from "@/components/DirectionsButton";
 import ChainLogo from "@/components/ChainLogo";
 import ProductImage from "@/components/ProductImage";
-import { resolveStoreHours } from "@/lib/chainHours";
+import {
+  resolveStoreHours,
+  isClosedToday,
+  nextClosedDate,
+} from "@/lib/chainHours";
 import { evaluateOpenStatus } from "@/lib/storeHours";
 
 export const revalidate = 60;
@@ -91,6 +95,9 @@ export default async function StoreDetailPage({
   // 영업시간 — store.hours 우선, 없으면 체인 default (이마트 10:00~23:00 등)
   const resolvedHours = resolveStoreHours(store.hours, store.chain.name);
   const openStatus = evaluateOpenStatus(resolvedHours.hours);
+  // 대형마트 의무휴업 — 오늘 휴무인지 + 다음 휴무일
+  const closedToday = isClosedToday(resolvedHours.closedDays);
+  const nextClosed = nextClosedDate(resolvedHours.closedDays);
 
   return (
     <div className="space-y-6">
@@ -118,20 +125,43 @@ export default async function StoreDetailPage({
               {store.name}
             </h1>
             <div className="text-stone-600 text-sm mt-1 truncate">{store.address}</div>
-            {/* 영업시간 + "지금 영업 중?" 상태. chain default 사용 시 라벨 명시 */}
+            {/* 영업시간 + "지금 영업 중?" + 의무휴업 안내.
+                오늘 휴무면 영업 상태 위에 강조 표시 */}
             {resolvedHours.hours && (
               <div className="mt-1 space-y-0.5">
-                <div
-                  className={`text-xs font-medium ${
-                    openStatus.isOpen === true
-                      ? "text-emerald-700"
-                      : openStatus.isOpen === false
-                        ? "text-rose-600"
-                        : "text-stone-500"
-                  }`}
-                >
-                  {openStatus.label}
-                </div>
+                {closedToday ? (
+                  <div className="text-xs font-medium text-rose-700">
+                    🛑 오늘 정기 휴무 (대형마트 의무휴업)
+                  </div>
+                ) : (
+                  <div
+                    className={`text-xs font-medium ${
+                      openStatus.isOpen === true
+                        ? "text-emerald-700"
+                        : openStatus.isOpen === false
+                          ? "text-rose-600"
+                          : "text-stone-500"
+                    }`}
+                  >
+                    {openStatus.label}
+                  </div>
+                )}
+                {/* 다음 정기 휴무 안내 — 사용자가 미리 계획 가능 */}
+                {nextClosed && !closedToday && (
+                  <div className="text-[11px] text-amber-700">
+                    📅 다음 정기 휴무:{" "}
+                    {nextClosed.toLocaleDateString("ko-KR", {
+                      month: "numeric",
+                      day: "numeric",
+                      weekday: "short",
+                    })}
+                    {resolvedHours.closedNote && (
+                      <span className="text-stone-400 ml-1">
+                        · {resolvedHours.closedNote}
+                      </span>
+                    )}
+                  </div>
+                )}
                 {resolvedHours.source === "chain" && (
                   <div className="text-[10px] text-stone-400">
                     체인 평균 영업시간{resolvedHours.note ? ` · ${resolvedHours.note}` : ""}

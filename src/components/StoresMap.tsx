@@ -54,6 +54,8 @@ export type StoreMarker = {
   hours?: string | null;     // 영업시간 — DB store.hours 또는 체인 default
   hoursSource?: "store" | "chain" | "unknown"; // 출처 — "체인 평균" 라벨용
   hoursNote?: string;        // 추가 안내 (예: "일부 지점 영업시간 다름")
+  closedDays?: "2,4-sun" | "1,3-sun" | null; // 대형마트 의무휴업 패턴
+  closedNote?: string;
   distanceKm?: number | null;
   priceCount?: number;
   chainPriceCount?: number; // 같은 chain의 다른 매장까지 합한 가격 수

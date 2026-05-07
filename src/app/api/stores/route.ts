@@ -40,6 +40,7 @@ export async function GET() {
   const result = stores.map((s) => {
     // store.hours가 null이면 체인 default로 보강 (이마트 10:00~23:00 등)
     // hoursSource: "store"=DB raw, "chain"=체인 default, "unknown"=정보 없음
+    // closedDays: 대형마트 의무휴업 패턴 ("2,4-sun" 등) — 카드에서 "오늘 정기 휴무" 표시
     const resolved = resolveStoreHours(s.hours, s.chain.name);
     return {
       id: s.id,
@@ -52,8 +53,10 @@ export async function GET() {
       lat: s.lat,
       lng: s.lng,
       hours: resolved.hours,
-      hoursSource: resolved.source, // 카드에서 "체인 평균" 라벨 표시용
+      hoursSource: resolved.source,
       hoursNote: resolved.note,
+      closedDays: resolved.closedDays ?? null,
+      closedNote: resolved.closedNote,
       priceCount: storeUniqueProducts.get(s.id) ?? 0,
       chainPriceCount: chainTotals.get(s.chainId) ?? 0,
       // distanceKm은 클라이언트에서 계산 (lat/lng 받았으니 즉시)
