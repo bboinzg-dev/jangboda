@@ -6,6 +6,15 @@ import { formatWon } from "@/lib/format";
 import CameraCapture from "@/components/CameraCapture";
 import { IconCamera, IconCheck, IconReceipt } from "@/components/icons";
 
+type MatchConfidence = "high" | "medium" | "low";
+type MatchMethod =
+  | "barcode"
+  | "alias_exact"
+  | "normalize_exact"
+  | "partial"
+  | "alias_short"
+  | null;
+
 type ParsedItem = {
   rawName: string;
   listPrice: number;                   // 정가
@@ -14,6 +23,8 @@ type ParsedItem = {
   barcode: string | null;              // EAN-13 등
   quantity: number;
   productId: string | null;
+  confidence: MatchConfidence | null;  // 매칭 신뢰도 — high만 자동 확정
+  method: MatchMethod;                 // 매칭 방식 — UI 라벨용
 };
 
 type ParseResult = {
@@ -45,7 +56,19 @@ export default function UploadPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [items, setItems] = useState<ParsedItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<string | null>(null);
+  const [submitResult, setSubmitResult] = useState<
+    | null
+    | { kind: "error"; message: string }
+    | {
+        kind: "success";
+        count: number;
+        matched: number;
+        newProducts: number;
+        awarded: boolean;
+        awardedPoints: number;
+        totalPoints: number | null;
+      }
+  >(null);
 
   // 이미지 max 1920px + JPEG 0.85 + EXIF orientation 자동 적용 + 사용자 추가 회전
   // 한국어 OCR은 글씨가 똑바로 서야 인식률 80%↑.
@@ -207,7 +230,7 @@ export default function UploadPage() {
             ? "OCR 응답이 60초를 넘겼어요. 사진 크기를 줄여 다시 시도해 주세요."
             : e.message
           : String(e);
-      setSubmitResult(`❌ ${msg}`);
+      setSubmitResult({ kind: "error", message: msg });
     } finally {
       setParsing(false);
     }
@@ -277,19 +300,30 @@ export default function UploadPage() {
     const data = await res.json();
     setSubmitting(false);
     if (data.ok) {
-      const note = data.awarded
-        ? `${data.matched}건 매칭 + ${data.newProducts}건 신규 등록 (포인트 +${data.matched * 2 + data.newProducts * 5}점)`
-        : `${data.matched}건 매칭 + ${data.newProducts}건 신규 (로그인하면 포인트 적립)`;
-      setSubmitResult(`✅ 총 ${data.count}건 등록 완료! ${note}`);
+      setSubmitResult({
+        kind: "success",
+        count: data.count,
+        matched: data.matched,
+        newProducts: data.newProducts,
+        awarded: !!data.awarded,
+        awardedPoints: data.awardedPoints ?? 0,
+        totalPoints: data.totalPoints ?? null,
+      });
     } else {
-      setSubmitResult(`❌ 실패: ${data.error ?? "알 수 없는 오류"}`);
+      setSubmitResult({ kind: "error", message: data.error ?? "알 수 없는 오류" });
     }
   }
 
   const matchedCount = items.filter((i) => i.productId).length;
+  // 자동 확정 가능한 항목 — confidence "high"만. 사용자가 dropdown 손 안 대도 그대로 등록됨.
+  const autoConfirmedCount = items.filter(
+    (i) => i.productId && i.confidence === "high",
+  ).length;
+  // 사용자가 검수해야 하는 항목 — 미매칭 + medium/low confidence
+  const needsReviewCount = items.length - autoConfirmedCount;
 
   // 진행 단계 — 0: 사진 업로드, 1: OCR, 2: 매칭, 3: 등록 완료
-  const currentStep = submitResult?.startsWith("✅")
+  const currentStep = submitResult?.kind === "success"
     ? 3
     : result
       ? 2
@@ -326,9 +360,9 @@ export default function UploadPage() {
       <StepIndicator current={currentStep} />
 
       {/* OCR/등록 결과 메시지 — result 유무 무관하게 항상 표시 (실패 메시지가 보이게) */}
-      {submitResult && submitResult.startsWith("❌") && (
+      {submitResult?.kind === "error" && (
         <div className="bg-danger-soft border border-danger/30 text-danger-text rounded-xl px-4 py-3 text-sm whitespace-pre-line shadow-soft">
-          {submitResult}
+          ❌ {submitResult.message}
         </div>
       )}
 
@@ -639,44 +673,74 @@ export default function UploadPage() {
 
             <div>
               <label className="block text-sm font-medium mb-2 text-ink-1">
-                품목 처리 ({matchedCount}건 매칭 + {items.length - matchedCount}건 신규 등록)
+                품목 처리
               </label>
+              {/* 자동 확정 vs 검수 필요 한눈에 — 사용자 클릭 부담 시각화 */}
+              <div className="flex items-center gap-2 text-xs mb-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full px-2.5 py-1">
+                  ✓ 자동 매칭 <strong className="tabular-nums">{autoConfirmedCount}</strong>건
+                </span>
+                {needsReviewCount > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2.5 py-1">
+                    ✋ 확인 필요 <strong className="tabular-nums">{needsReviewCount}</strong>건
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-ink-3 mb-2">
-                매칭된 항목은 가격이 추가되고, 매칭 안 된 항목은 영수증 이름 그대로
-                새 상품으로 등록됩니다. dropdown에서 직접 매칭할 수도 있어요.
+                {autoConfirmedCount > 0 && needsReviewCount === 0
+                  ? "전부 자동 매칭됐어요. 그대로 \"가격 등록\" 누르면 끝!"
+                  : needsReviewCount > 0
+                    ? "노란색 항목만 한 번 확인해 주세요. 초록색은 그대로 등록됩니다."
+                    : "매칭 안 된 항목은 영수증 이름 그대로 새 상품으로 등록돼요."}
               </p>
               <div className="space-y-2">
                 {items.map((it, idx) => {
                   const ok = !!it.productId;
+                  // 자동 확정: high confidence 매칭 → 회색·연한 emerald 톤, dropdown 작게
+                  // 검수 필요: medium/low/null → 노란색 강조
+                  const isAutoConfirmed = ok && it.confidence === "high";
+                  const tone = isAutoConfirmed
+                    ? "bg-emerald-50/40 border-emerald-200"
+                    : ok && (it.confidence === "medium" || it.confidence === "low")
+                      ? "bg-amber-50 border-amber-300"
+                      : "bg-amber-50/40 border-amber-200";
+                  const methodLabel = methodToLabel(it.method, it.confidence);
                   return (
                     <div
                       key={idx}
-                      className={`rounded-md p-2 border text-sm ${
-                        ok
-                          ? "bg-emerald-50/40 border-emerald-200"
-                          : "bg-amber-50/40 border-amber-200"
-                      }`}
+                      className={`rounded-md p-2 border text-sm ${tone}`}
                     >
                       <div className="flex items-start gap-2">
                         <span
                           className="shrink-0 mt-0.5"
-                          aria-label={ok ? "기존 매칭" : "신규 등록"}
-                          title={ok ? "기존 카탈로그에 매칭됨" : "신규 상품으로 등록"}
+                          aria-label={isAutoConfirmed ? "자동 매칭" : ok ? "검수 필요" : "신규 등록"}
+                          title={methodLabel ?? ""}
                         >
-                          {ok ? (
+                          {isAutoConfirmed ? (
                             <span className="text-emerald-600">✓</span>
+                          ) : ok ? (
+                            <span className="text-amber-600">⚠️</span>
                           ) : (
                             <span className="text-amber-600">🆕</span>
                           )}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-ink-2 break-words text-xs mb-1">
+                          <div className="text-ink-2 break-words text-xs mb-1 flex items-center gap-1.5 flex-wrap">
                             <span className="text-ink-3">
                               {ok ? "원본: " : "신규 등록될 이름: "}
                             </span>
                             <span className={ok ? "" : "font-medium text-ink-1"}>
                               {it.rawName}
                             </span>
+                            {methodLabel && (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                isAutoConfirmed
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}>
+                                {methodLabel}
+                              </span>
+                            )}
                           </div>
                           <select
                             value={it.productId ?? ""}
@@ -685,21 +749,23 @@ export default function UploadPage() {
                               next[idx] = {
                                 ...it,
                                 productId: e.target.value || null,
+                                // 사용자가 직접 골랐으면 confidence를 high로 격상 (수동 확정)
+                                confidence: e.target.value ? "high" : null,
                               };
                               setItems(next);
                             }}
                             aria-label="상품 매칭"
-                            // 매칭 상태가 한눈에 보이도록 배경색까지 적용
                             className={`w-full px-2 py-1.5 border-2 rounded text-xs font-medium ${
-                              ok
+                              isAutoConfirmed
                                 ? "border-emerald-400 bg-emerald-50 text-emerald-900"
                                 : "border-amber-400 bg-amber-50 text-amber-900"
                             }`}
                           >
-                            {/* 매칭된 항목: 첫 옵션을 "그대로 등록"으로 명확히. 변경하고 싶을 때만 아래 옵션 선택 */}
                             {ok && it.productId && (
                               <option value={it.productId}>
-                                ✓ 자동 매칭된 상품 — 그대로 등록
+                                {isAutoConfirmed
+                                  ? "✓ 자동 매칭된 상품 — 그대로 등록"
+                                  : "⚠️ 일치 의심 — 확인 후 등록"}
                               </option>
                             )}
                             <option value="">
@@ -777,20 +843,19 @@ export default function UploadPage() {
               disabled={submitting || !storeId}
               className="w-full bg-gradient-to-br from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-soft hover:shadow-raise transition"
             >
-              {submitting ? "등록 중..." : "✓ 가격 등록 (포인트 +2/건)"}
+              {submitting
+                ? "등록 중..."
+                : needsReviewCount === 0 && autoConfirmedCount > 0
+                  ? `✓ 자동 매칭 ${autoConfirmedCount}건 그대로 등록`
+                  : `✓ ${items.length}건 등록 (자동 ${autoConfirmedCount} · 검수 ${needsReviewCount})`}
             </button>
 
-            {submitResult && (
-              <div className="text-center text-sm pt-2 text-ink-1">
-                {submitResult}
-                <div className="mt-2">
-                  <Link
-                    href="/search"
-                    className="text-brand-600 hover:underline"
-                  >
-                    다른 상품 가격 보러가기 →
-                  </Link>
-                </div>
+            {submitResult?.kind === "success" && (
+              <RewardPanel result={submitResult} />
+            )}
+            {submitResult?.kind === "error" && (
+              <div className="text-center text-sm pt-2 text-rose-600">
+                ❌ {submitResult.message}
               </div>
             )}
           </div>
@@ -855,6 +920,141 @@ function StepIndicator({ current }: { current: number }) {
       })}
     </ol>
   );
+}
+
+// 영수증 등록 직후 보상 패널 — 한국 4060의 즉각 보상 심리 자극용
+// 단순 텍스트보다 큰 +점수 + 누적 + 다음 마일스톤 진행바
+function RewardPanel({
+  result,
+}: {
+  result: {
+    count: number;
+    matched: number;
+    newProducts: number;
+    awarded: boolean;
+    awardedPoints: number;
+    totalPoints: number | null;
+  };
+}) {
+  // 마일스톤: 10(혜택 모듈 열림) → 50 → 100 → 500
+  const MILESTONES = [10, 50, 100, 500, 1000];
+  const total = result.totalPoints ?? 0;
+  const next = MILESTONES.find((m) => m > total) ?? null;
+  const prev = [...MILESTONES].reverse().find((m) => m <= total) ?? 0;
+  const progressPct = next
+    ? Math.round(((total - prev) / (next - prev)) * 100)
+    : 100;
+
+  if (!result.awarded) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+        <div className="text-2xl mb-1">✅</div>
+        <div className="font-bold text-ink-1 mb-1">
+          {result.count}건 등록 완료
+        </div>
+        <div className="text-xs text-ink-3 mb-3">
+          {result.matched}건 매칭 + {result.newProducts}건 신규 등록
+        </div>
+        <div className="text-sm text-amber-800 bg-white rounded-lg p-3 border border-amber-200">
+          로그인하면 영수증 1장당 <strong>2~10점</strong>이 적립돼요.
+          <br />
+          포인트 10점 모이면 <strong>정부 혜택 추천</strong>도 열립니다.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-brand-50 to-amber-50 border border-brand-200 rounded-xl p-5 space-y-4">
+      {/* 큰 +N점 — 보상 강조 */}
+      <div className="text-center">
+        <div className="text-xs font-medium text-brand-700 mb-1">
+          ✨ 등록 완료 · 포인트 적립
+        </div>
+        <div className="text-5xl font-extrabold text-brand-600 tabular-nums leading-none mb-1">
+          +{result.awardedPoints}
+        </div>
+        <div className="text-xs text-ink-3">
+          {result.matched}건 매칭(+{result.matched * 2}) ·{" "}
+          {result.newProducts}건 신규(+{result.newProducts * 5})
+        </div>
+      </div>
+
+      {/* 누적 + 다음 마일스톤 */}
+      <div className="bg-white rounded-lg p-4 border border-brand-100">
+        <div className="flex items-baseline justify-between mb-2">
+          <span className="text-sm text-ink-2">누적 포인트</span>
+          <span className="text-2xl font-bold text-ink-1 tabular-nums">
+            {total.toLocaleString("ko-KR")}점
+          </span>
+        </div>
+        {next ? (
+          <>
+            <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden mb-1.5">
+              <div
+                className="bg-gradient-to-r from-brand-400 to-brand-600 h-2 rounded-full transition-all"
+                style={{ width: `${Math.max(2, progressPct)}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-ink-3">
+              <span>다음 단계까지 {next - total}점</span>
+              <span className="font-medium tabular-nums">{next}점</span>
+            </div>
+            {next === 10 && (
+              <div className="text-[11px] text-brand-700 mt-2 font-medium">
+                💡 10점 달성 시 <Link href="/benefits" className="underline">정부 혜택 추천</Link>이 열려요
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-[11px] text-emerald-700 font-medium">
+            🏆 모든 마일스톤 달성! 데이터 기여 마스터예요.
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <Link
+          href="/upload"
+          onClick={() => {
+            // 동일 페이지 이동 — 새로 시작
+            window.location.reload();
+          }}
+          className="flex-1 text-center bg-white border border-brand-300 hover:border-brand-500 text-brand-700 py-2.5 rounded-lg text-sm font-semibold"
+        >
+          영수증 더 올리기
+        </Link>
+        <Link
+          href="/profile"
+          className="flex-1 text-center bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-lg text-sm font-semibold"
+        >
+          내 포인트 보기 →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// 매칭 방법을 사용자가 알아볼 수 있는 짧은 라벨로 변환
+function methodToLabel(method: MatchMethod, confidence: MatchConfidence | null): string | null {
+  if (!method) return null;
+  switch (method) {
+    case "barcode":
+      return "📦 바코드";
+    case "alias_exact":
+    case "alias_short":
+      return "별칭 일치";
+    case "normalize_exact":
+      return "이름 일치";
+    case "partial":
+      return confidence === "high"
+        ? "이름 95% 일치"
+        : confidence === "medium"
+          ? "이름 75% 일치 — 확인"
+          : "이름 65% 일치 — 의심";
+    default:
+      return null;
+  }
 }
 
 function SummaryCard({

@@ -29,28 +29,60 @@ function lengthRatioOk(a: string, b: string): boolean {
   return shorter / longer >= LEN_RATIO_MIN;
 }
 
-export async function matchProduct(
+export type MatchConfidence = "high" | "medium" | "low";
+export type MatchMethod =
+  | "barcode"
+  | "alias_exact"
+  | "normalize_exact"
+  | "partial"
+  | "alias_short"
+  | null;
+
+export type MatchResult = {
+  productId: string | null;
+  confidence: MatchConfidence | null;
+  method: MatchMethod;
+  /** 부분 매칭의 길이 일치 score (0~1). barcode/exact는 1.0. */
+  score: number;
+};
+
+// 신뢰도 계층:
+//   high   — 바코드 / alias 정확 / 정규화 정확 / partial score ≥ 0.85
+//   medium — partial score 0.70~0.85
+//   low    — partial score 0.60~0.70 (lengthRatioOk 통과 최소선)
+// 영수증 등록 UI는 high만 자동 확정, medium/low는 사용자 검수.
+const HIGH_PARTIAL_SCORE = 0.85;
+const MEDIUM_PARTIAL_SCORE = 0.7;
+
+export async function matchProductDetailed(
   rawName: string,
   barcode?: string
-): Promise<string | null> {
-  // 0. 바코드 정확 매칭 — 킴스클럽/이마트/롯데마트 등 EAN-13 출력 영수증에서 가장 신뢰
-  // Product.barcode가 @unique이므로 findUnique로 한 번에 확정
+): Promise<MatchResult> {
+  // 0. 바코드 정확 매칭 — 가장 신뢰
   if (barcode && /^\d{8,14}$/.test(barcode.trim())) {
     const byBarcode = await prisma.product.findUnique({
       where: { barcode: barcode.trim() },
       select: { id: true },
     });
-    if (byBarcode) return byBarcode.id;
+    if (byBarcode) {
+      return { productId: byBarcode.id, confidence: "high", method: "barcode", score: 1 };
+    }
   }
 
-  if (!rawName || !rawName.trim()) return null;
+  if (!rawName || !rawName.trim()) {
+    return { productId: null, confidence: null, method: null, score: 0 };
+  }
   const normalized = normalize(rawName);
   if (normalized.length < MIN_MATCH_LEN) {
-    // 너무 짧으면 정확 매칭만 허용 (예: "콜라" → 너무 모호)
+    // 너무 짧으면 정확 매칭만 허용
     const exactAlias = await prisma.productAlias.findFirst({
       where: { alias: rawName },
+      select: { productId: true },
     });
-    return exactAlias?.productId ?? null;
+    if (exactAlias) {
+      return { productId: exactAlias.productId, confidence: "high", method: "alias_short", score: 1 };
+    }
+    return { productId: null, confidence: null, method: null, score: 0 };
   }
 
   // 1. alias 정확 매칭
@@ -58,7 +90,9 @@ export async function matchProduct(
     where: { alias: rawName },
     select: { productId: true },
   });
-  if (exactAlias) return exactAlias.productId;
+  if (exactAlias) {
+    return { productId: exactAlias.productId, confidence: "high", method: "alias_exact", score: 1 };
+  }
 
   // 2~4. 정규화된 비교
   const allAliases = await prisma.productAlias.findMany({
@@ -70,13 +104,17 @@ export async function matchProduct(
 
   // 2. 정규화 후 정확 일치
   for (const a of allAliases) {
-    if (normalize(a.alias) === normalized) return a.productId;
+    if (normalize(a.alias) === normalized) {
+      return { productId: a.productId, confidence: "high", method: "normalize_exact", score: 1 };
+    }
   }
   for (const p of allProducts) {
-    if (normalize(p.name) === normalized) return p.id;
+    if (normalize(p.name) === normalized) {
+      return { productId: p.id, confidence: "high", method: "normalize_exact", score: 1 };
+    }
   }
 
-  // 3. 부분 포함 (길이 비율 확인 — "참치"가 "참치김밥" 매칭 방지)
+  // 3. 부분 포함 — score 계산해서 best 1개만
   let bestMatch: { id: string; score: number } | null = null;
   for (const a of allAliases) {
     const an = normalize(a.alias);
@@ -84,9 +122,7 @@ export async function matchProduct(
     if (!lengthRatioOk(normalized, an)) continue;
     if (normalized.includes(an) || an.includes(normalized)) {
       const score = Math.min(normalized.length, an.length) / Math.max(normalized.length, an.length);
-      if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { id: a.productId, score };
-      }
+      if (!bestMatch || score > bestMatch.score) bestMatch = { id: a.productId, score };
     }
   }
   for (const p of allProducts) {
@@ -95,13 +131,30 @@ export async function matchProduct(
     if (!lengthRatioOk(normalized, pn)) continue;
     if (normalized.includes(pn) || pn.includes(normalized)) {
       const score = Math.min(normalized.length, pn.length) / Math.max(normalized.length, pn.length);
-      if (!bestMatch || score > bestMatch.score) {
-        bestMatch = { id: p.id, score };
-      }
+      if (!bestMatch || score > bestMatch.score) bestMatch = { id: p.id, score };
     }
   }
 
-  return bestMatch?.id ?? null;
+  if (!bestMatch) {
+    return { productId: null, confidence: null, method: null, score: 0 };
+  }
+
+  const confidence: MatchConfidence =
+    bestMatch.score >= HIGH_PARTIAL_SCORE
+      ? "high"
+      : bestMatch.score >= MEDIUM_PARTIAL_SCORE
+        ? "medium"
+        : "low";
+
+  return { productId: bestMatch.id, confidence, method: "partial", score: bestMatch.score };
+}
+
+// 기존 시그니처 유지 — sync/csv, sync/stats 등 다른 호출처는 productId만 필요
+export async function matchProduct(
+  rawName: string,
+  barcode?: string
+): Promise<string | null> {
+  return (await matchProductDetailed(rawName, barcode)).productId;
 }
 
 // 분점 번호 제거 — "천호2점" → "천호점", "잠실1호점" → "잠실점"

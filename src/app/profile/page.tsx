@@ -190,12 +190,7 @@ export default async function ProfilePage() {
 
         {/* 4 통계 — 포인트·순위·등록·도움 한 줄 */}
         <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
-            <div className="text-xs text-ink-3">포인트</div>
-            <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
-              {points.toLocaleString()}
-            </div>
-          </div>
+          <PointsCard points={points} />
           <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
             <div className="text-xs text-ink-3">순위</div>
             <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">
@@ -645,6 +640,43 @@ export default async function ProfilePage() {
           </Link>
         </div>
       </section>
+    </div>
+  );
+}
+
+// 포인트 카드 — 다음 마일스톤(10/50/100/500/1000)까지의 진행바 표시
+// 한국 4060의 즉각 보상 심리 자극 + 다음 행동 유도
+function PointsCard({ points }: { points: number }) {
+  const MILESTONES = [10, 50, 100, 500, 1000];
+  const next = MILESTONES.find((m) => m > points) ?? null;
+  const prev = [...MILESTONES].reverse().find((m) => m <= points) ?? 0;
+  const progressPct = next
+    ? Math.max(2, Math.round(((points - prev) / (next - prev)) * 100))
+    : 100;
+
+  return (
+    <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
+      <div className="text-xs text-ink-3">포인트</div>
+      <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
+        {points.toLocaleString()}
+      </div>
+      {next ? (
+        <>
+          <div className="mt-1.5 w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-brand-400 to-brand-600 h-1.5 rounded-full transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <div className="text-[10px] text-ink-3 mt-1 tabular-nums">
+            다음 {next}점까지 {next - points}점
+          </div>
+        </>
+      ) : (
+        <div className="text-[10px] text-emerald-700 font-medium mt-1.5">
+          🏆 마스터 등급
+        </div>
+      )}
     </div>
   );
 }

@@ -389,7 +389,7 @@ export default function SearchPage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
+                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 ← 이전
               </button>
@@ -402,7 +402,7 @@ export default function SearchPage() {
                   setPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
+                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 다음 →
               </button>

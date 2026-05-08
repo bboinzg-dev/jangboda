@@ -26,7 +26,6 @@ function countFilled(section: unknown): number {
 }
 
 export default async function BenefitsOnboardingPage() {
-  // TODO(포인트 게이팅): 활성화 시 canAccessBenefits() 호출
   const user = await getCurrentUser();
   const profile = user
     ? await prisma.benefitProfile.findUnique({

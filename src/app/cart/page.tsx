@@ -445,6 +445,35 @@ export default function CartPage() {
         </p>
       </div>
 
+      {/* 비교 진행 중 — skeleton 으로 흰 화면 회피 */}
+      {loading && !results && cart.length > 0 && (
+        <>
+          <section className="bg-white border border-line rounded-2xl p-5" aria-busy="true">
+            <div className="h-3 w-20 bg-stone-100 animate-pulse rounded mb-3" />
+            <div className="h-8 w-40 bg-stone-100 animate-pulse rounded mb-2" />
+            <div className="h-3 w-28 bg-stone-100 animate-pulse rounded" />
+          </section>
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <div className="h-4 w-24 bg-stone-100 animate-pulse rounded" />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 w-[220px] bg-white border border-line rounded-xl p-4 space-y-2"
+                >
+                  <div className="h-4 w-24 bg-stone-100 animate-pulse rounded" />
+                  <div className="h-3 w-32 bg-stone-100 animate-pulse rounded" />
+                  <div className="h-7 w-28 bg-stone-100 animate-pulse rounded" />
+                  <div className="h-3 w-20 bg-stone-100 animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
       {/* Cart hero — 합계 + 절약 강조 (results 있을 때만 노출) */}
       {heroData && (
         <section className="bg-white border border-line rounded-2xl p-5">

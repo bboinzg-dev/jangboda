@@ -58,7 +58,7 @@ async function getTopMatches(userId: string) {
 }
 
 export default async function BenefitsHomePage() {
-  // TODO(포인트 게이팅): 활성화 시 src/lib/benefits/access.ts의 canAccessBenefits() 호출
+  // 게이팅은 src/app/benefits/layout.tsx에서 일괄 처리됨
   const data = await getBenefitsHomeData();
   const user = await getCurrentUser();
   const matchInfo = user ? await getTopMatches(user.id) : null;

@@ -11,6 +11,7 @@ import CategorySelect from "@/components/CategorySelect";
 import ManualEntryDialog from "@/components/ManualEntryDialog";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
+import { unitPriceValue, unitBasisLabel } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,13 @@ type BudgetData = {
     storeCount: number;            // 다녀본 매장 수
   };
   monthly: { key: string; total: number }[];
-  byCategory: { category: BudgetCategory; total: number; color: string }[];
+  byCategory: {
+    category: BudgetCategory;
+    total: number;
+    color: string;
+    /** 카테고리 안에서 가장 흔한 baseUnit으로 계산한 평균 단가 (예: "100g당 1,234원") */
+    unitAvgLabel: string | null;
+  }[];
   byStore: { storeId: string; storeName: string; chainName: string; total: number }[];
   overpaid: {
     productId: string;
@@ -105,7 +112,7 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
       ],
     },
     include: {
-      product: { select: { id: true, name: true, category: true } },
+      product: { select: { id: true, name: true, category: true, unit: true } },
       store: { include: { chain: true } },
       receipt: { select: { storeId: true, uploaderId: true } },
     },
@@ -200,17 +207,50 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
     if (ov) return ov as BudgetCategory;
     return budgetCategoryOf(name, productCat);
   };
-  const catMap = new Map<BudgetCategory, number>();
+  // 카테고리별 총액 + baseUnit 별 단가 샘플 수집
+  // 이유: 한 카테고리 안에 g/ml/count 가 섞여 있어서, 가장 흔한 baseUnit으로만 평균을 내야 의미가 있음
+  type CatBucket = {
+    total: number;
+    unitSamples: Map<string, number[]>; // basisLabel → [unit prices...]
+  };
+  const catMap = new Map<BudgetCategory, CatBucket>();
   for (const p of valid) {
     const cat = resolveCategory(p.productId, p.product?.name ?? "", p.product?.category);
-    catMap.set(cat, (catMap.get(cat) ?? 0) + paidOf(p));
+    const bucket = catMap.get(cat) ?? { total: 0, unitSamples: new Map() };
+    bucket.total += paidOf(p);
+    const unitText = p.product?.unit;
+    const basis = unitText ? unitBasisLabel(unitText) : null;
+    const unitPrice = unitText ? unitPriceValue(p.paidPrice ?? p.listPrice ?? 0, unitText) : null;
+    if (basis && unitPrice !== null && unitPrice > 0) {
+      const arr = bucket.unitSamples.get(basis) ?? [];
+      arr.push(unitPrice);
+      bucket.unitSamples.set(basis, arr);
+    }
+    catMap.set(cat, bucket);
   }
   const byCategory = Array.from(catMap.entries())
-    .map(([category, total]) => ({
-      category,
-      total,
-      color: CATEGORY_COLORS[category],
-    }))
+    .map(([category, bucket]) => {
+      // 가장 샘플 많은 basisLabel 1개만 사용 — 표본 3건 미만은 표시 안 함 (오차 큼)
+      let bestBasis: string | null = null;
+      let bestSamples: number[] = [];
+      for (const [basis, samples] of bucket.unitSamples) {
+        if (samples.length > bestSamples.length) {
+          bestBasis = basis;
+          bestSamples = samples;
+        }
+      }
+      let unitAvgLabel: string | null = null;
+      if (bestBasis && bestSamples.length >= 3) {
+        const avg = bestSamples.reduce((s, x) => s + x, 0) / bestSamples.length;
+        unitAvgLabel = `${bestBasis} ${Math.round(avg).toLocaleString("ko-KR")}원`;
+      }
+      return {
+        category,
+        total: bucket.total,
+        color: CATEGORY_COLORS[category],
+        unitAvgLabel,
+      };
+    })
     .sort((a, b) => b.total - a.total);
 
   // 매장별 상위 5
@@ -697,16 +737,23 @@ export default async function BudgetPage() {
             return (
               <li
                 key={c.category}
-                className="flex items-center justify-between"
+                className="flex items-center justify-between gap-3"
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: c.color }}
                   />
-                  <span className="truncate text-ink-2">{c.category}</span>
+                  <span className="min-w-0">
+                    <span className="truncate text-ink-2 block">{c.category}</span>
+                    {c.unitAvgLabel && (
+                      <span className="text-[11px] text-ink-3 tabular-nums">
+                        평균 {c.unitAvgLabel}
+                      </span>
+                    )}
+                  </span>
                 </span>
-                <span className="text-ink-2 shrink-0 ml-3 tabular-nums">
+                <span className="text-ink-2 shrink-0 ml-3 tabular-nums text-right">
                   {formatWon(c.total)}{" "}
                   <span className="text-xs text-ink-3">({pct}%)</span>
                 </span>

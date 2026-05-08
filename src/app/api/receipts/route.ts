@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { parseReceipt, mergeReceipts, type OcrSource } from "@/lib/ocr";
-import { matchProduct, matchStore } from "@/lib/matcher";
+import { matchProduct, matchProductDetailed, matchStore } from "@/lib/matcher";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { uploadReceiptImage } from "@/lib/storage";
 import { lookupByBarcode, type FoodSafetyItem } from "@/lib/foodsafety";
@@ -104,16 +104,22 @@ export async function POST(req: NextRequest) {
   });
 
   // 각 품목을 카탈로그에 매칭 — 바코드 있으면 1순위 정확 매칭
+  // confidence/method 도 함께 반환해서 클라이언트가 자동 확정 vs 사용자 검수 분기 가능
   const matches = await Promise.all(
-    receipt.items.map(async (it) => ({
-      rawName: it.rawName,
-      listPrice: it.listPrice,
-      paidPrice: it.paidPrice ?? null,
-      promotionType: it.promotionType ?? null,
-      barcode: it.barcode ?? null,
-      quantity: it.quantity,
-      productId: await matchProduct(it.rawName, it.barcode),
-    }))
+    receipt.items.map(async (it) => {
+      const m = await matchProductDetailed(it.rawName, it.barcode);
+      return {
+        rawName: it.rawName,
+        listPrice: it.listPrice,
+        paidPrice: it.paidPrice ?? null,
+        promotionType: it.promotionType ?? null,
+        barcode: it.barcode ?? null,
+        quantity: it.quantity,
+        productId: m.productId,
+        confidence: m.confidence,
+        method: m.method,
+      };
+    })
   );
 
   return NextResponse.json({
@@ -250,6 +256,8 @@ export async function PATCH(req: NextRequest) {
 
   let newProductsCreated = 0;
   let pricesCreated = 0;
+  let awardedPoints = 0;
+  let totalPoints: number | null = null;
   // 영향받은 productId 모음 — 트랜잭션 후 캐시 무효화에 사용
   const affectedProductIds = new Set<string>();
 
@@ -432,10 +440,13 @@ export async function PATCH(req: NextRequest) {
     if (uploaderId) {
       // 신규 product 등록은 가산점 (매칭보다 더 가치 있음)
       const points = validMatched.length * 2 + newProductsCreated * 5;
-      await tx.user.update({
+      const updated = await tx.user.update({
         where: { id: uploaderId },
         data: { points: { increment: points } },
+        select: { points: true },
       });
+      awardedPoints = points;
+      totalPoints = updated.points;
     }
   });
 
@@ -459,5 +470,7 @@ export async function PATCH(req: NextRequest) {
     matched: validMatched.length,
     newProducts: newProductsCreated,
     awarded: !!uploaderId,
+    awardedPoints,
+    totalPoints,
   });
 }

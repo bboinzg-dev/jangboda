@@ -9,7 +9,8 @@ export const viewport: Viewport = {
   themeColor: "#f97316",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  // 60대 사용자가 글씨 확대해서 볼 수 있도록 pinch zoom 제한 해제
+  userScalable: true,
 };
 
 export const metadata: Metadata = {
