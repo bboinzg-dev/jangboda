@@ -321,9 +321,16 @@ export async function PATCH(req: NextRequest) {
       if (!productId) {
         // enrich 결과 통합 — 식약처 우선 → 네이버 쇼핑 폴백 → brand 사전 매칭
         const enriched = enrichmentMap.get(it) ?? null;
-        const naver = naverEnrichMap.get(it) ?? null;
+        const naverRaw = naverEnrichMap.get(it) ?? null;
 
-        // 이름 우선순위: 식약처 정확명 → 네이버 매칭 title → 영수증 OCR 그대로
+        // 네이버 매칭 신뢰도 가드 — matchScore가 낮으면 네이버 결과 전부 무시.
+        // (이전 사고: "프리미엄 명란 기획" 등록 시 score 0.67로 통과해 "쫄병스낵 명란맛"으로 잘못 매칭)
+        // 0.85 이상일 때만 title/brand/image/category 사용.
+        const NAVER_TRUST_THRESHOLD = 0.85;
+        const naver =
+          naverRaw && naverRaw.matchScore >= NAVER_TRUST_THRESHOLD ? naverRaw : null;
+
+        // 이름 우선순위: 식약처 정확명 → 신뢰 가능한 네이버 매칭 title → 영수증 OCR 그대로
         const finalName =
           enriched?.productName?.trim() ||
           naver?.title?.trim() ||
@@ -349,7 +356,7 @@ export async function PATCH(req: NextRequest) {
             brandMatch?.category ||
             "사용자 등록",
           barcode: cleanBarcode,
-          // 이미지: 네이버 enrich에서만 옴 — 식약처는 이미지 안 줌
+          // 이미지: 신뢰 가능한 네이버 enrich에서만 — 낮은 score면 null
           imageUrl: naver?.imageUrl ?? null,
           // metadata에 enrich 출처별 원본 보존 (디버깅/재매칭용)
           metadata: (enriched || naver)

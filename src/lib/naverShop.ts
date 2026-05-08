@@ -160,10 +160,19 @@ export type NaverEnrichResult = {
   matchScore: number;         // 0~1 — 결과 신뢰도
 };
 
+// 마케팅·옵션 단어 — 검색어/매칭에 의미 없으나 노이즈 유발
+// "프리미엄 명란 기획" → core는 "명란", 나머지는 stop word
+const STOP_WORDS = new Set([
+  "프리미엄", "기획", "일반", "특가", "행사", "할인", "무료배송", "증정",
+  "신선", "한정", "이벤트", "세트", "패키지", "묶음",
+  "set", "new", "best",
+]);
+
 // OCR 잡음 정리 — 영수증 자동 등록 시 발생하는 패턴들
 //   "C_ 자연애찬_일반" → "자연애찬"
 //   "닥터유 에너지바(40g)" → "닥터유 에너지바"
 //   "스팸 클래식 200G x 2" → "스팸 클래식"
+//   "프리미엄 명란 기획" → "명란" (마케팅 단어 제거)
 //
 // 주의: 괄호 안이 단위/포장 표기일 때만 제거.
 //   "돼지고기(삼겹살)" 처럼 부위/속성이면 보존 (정보 손실 방지)
@@ -171,7 +180,7 @@ function cleanOcrName(rawName: string): string {
   let s = rawName.trim();
   // 앞뒤의 단일 알파벳 + 언더스코어 제거 ("C_ 자연애찬" → "자연애찬")
   s = s.replace(/^[A-Za-z]{1,2}_+\s*/, "");
-  // "_일반" / "_기획" / "_특가" 같은 옵션 표식 제거
+  // "_일반" / "_기획" / "_특가" 같은 옵션 표식 제거 (언더스코어 prefix)
   s = s.replace(/_(?:일반|기획|특가|행사|할인|무료배송|증정|set|set\d+)$/gi, "");
   // 괄호 안이 단위·포장 표기일 때만 제거 (숫자 + 단위, 또는 "n개입" 같은 것)
   // "(40g)", "(3개입)", "(4개)", "(250ml)" → 제거
@@ -188,6 +197,9 @@ function cleanOcrName(rawName: string): string {
   s = s.replace(/_+/g, " ");
   // 다중 공백 정리
   s = s.replace(/\s+/g, " ").trim();
+  // stop word 제거 — 이 단계에서만 (cleanedName 자체는 사용자에게 안 노출되므로 검색어로만 사용)
+  const tokens = s.split(/\s+/).filter((t) => t && !STOP_WORDS.has(t.toLowerCase()));
+  s = tokens.join(" ").trim();
   return s || rawName.trim();
 }
 
@@ -197,11 +209,12 @@ function normalizeForMatch(s: string): string {
 }
 
 // 토큰 overlap (정규화 후) — 검색어 토큰이 candidate에 얼마나 들어있나
+// stop word는 가중치에서 제외 (예: "프리미엄"이 candidate에 있어도 매칭점수 안 올라감)
 function tokenOverlapRatio(query: string, candidate: string): number {
   const qTokens = query
     .toLowerCase()
     .split(/\s+/)
-    .filter((t) => t.length >= 2);
+    .filter((t) => t.length >= 2 && !STOP_WORDS.has(t));
   if (qTokens.length === 0) return 0;
   const cNorm = normalizeForMatch(candidate);
   let hit = 0;
@@ -213,8 +226,11 @@ function tokenOverlapRatio(query: string, candidate: string): number {
 
 // 네이버 쇼핑 결과에서 best item 선정
 // - multi-pack 제외 (가격이 N배라 매칭 부정확)
-// - title이 검색어와 토큰 겹침 ≥ 60% 인 것 우선
+// - title이 검색어 토큰의 65% 이상 매칭해야 통과 (stop word는 제외 후 계산)
 // - 동점이면 lprice 낮은 (인기·정상가 상품일 가능성)
+//
+// 임계값 0.4 → 0.65 상향: "프리미엄 명란 기획" 같은 케이스에서 stop word 제거 후
+// 핵심 토큰("명란") 1/1=100%인 무관 상품들이 통과되는 거 방지.
 function pickBestEnrichItem(
   items: NaverShopItem[],
   cleanedQuery: string,
@@ -224,7 +240,7 @@ function pickBestEnrichItem(
   for (const it of items) {
     if (isMultiPack(it.title)) continue;
     const score = tokenOverlapRatio(cleanedQuery, it.title);
-    if (score < 0.4) continue; // 너무 낮으면 skip — 엉뚱한 매칭 방지
+    if (score < 0.65) continue; // 너무 낮으면 skip — 엉뚱한 매칭 방지
     if (!best || score > best.score || (score === best.score && it.lprice > 0 && it.lprice < best.item.lprice)) {
       best = { item: it, score };
     }
@@ -254,7 +270,17 @@ export async function enrichByName(
   if (options?.barcode && /^\d{8,14}$/.test(options.barcode)) {
     queries.push(options.barcode);
   }
-  queries.push(cleaned);
+
+  // 이름 검색은 의미 있는 토큰(stop word 제외) 2개 이상일 때만 시도.
+  // "프리미엄 명란 기획" → cleaned "명란" 1토큰 → 단어 1개 검색은 동음이의 위험 (예: "쫄병스낵 명란맛"이 통과)
+  // 1토큰 이하면 enrich 스킵 — 사용자 raw OCR 이름이 그대로 Product.name으로 보존됨.
+  const meaningfulTokens = cleaned
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !STOP_WORDS.has(t.toLowerCase()));
+  if (meaningfulTokens.length >= 2) {
+    queries.push(cleaned);
+  }
+  if (queries.length === 0) return null;
 
   for (const q of queries) {
     try {
