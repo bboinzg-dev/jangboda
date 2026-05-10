@@ -10,10 +10,15 @@ import {
   computeCompleteness,
   type CategoryKey,
 } from "@/lib/benefits/types";
+import { kstCurrentYear } from "@/lib/kst";
 
 // 카테고리 키 → 해당 sub-schema 매핑 (BenefitProfileSchema의 shape 활용)
 const CATEGORY_KEYS = new Set<string>(CATEGORIES.map((c) => c.key));
 const SHAPE = BenefitProfileSchema.shape;
+
+// 만 14세 미만 차단 — 개인정보보호법 §22의2 (법정대리인 동의 부재 시 가입 거부)
+// birthYear만 있는 단순 계산이라 한국식 만 나이 정확도는 약하지만 보수적(올해-출생연도)으로 충분.
+const MIN_AGE = 14;
 
 // GET /api/benefits/profile — 현재 사용자 프로필 (없으면 빈 객체)
 export async function GET() {
@@ -61,6 +66,20 @@ export async function POST(req: NextRequest) {
   }
   if (!values || typeof values !== "object") {
     return NextResponse.json({ error: "values 필요" }, { status: 400 });
+  }
+
+  // 만 14세 미만 차단 — 출생연도 입력 시 즉시 거부 (PIPA §22의2)
+  if (category === "demographics" && typeof values.birthYear === "number") {
+    const age = kstCurrentYear() - values.birthYear;
+    if (age < MIN_AGE) {
+      return NextResponse.json(
+        {
+          error: "만 14세 미만은 가입할 수 없어요",
+          hint: "법정대리인(부모님 등) 동의 절차가 마련되기 전까지 14세 미만 사용자의 개인정보를 받지 않습니다.",
+        },
+        { status: 403 },
+      );
+    }
   }
 
   // 해당 카테고리의 sub-schema로 검증

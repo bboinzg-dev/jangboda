@@ -605,6 +605,27 @@ export default async function ProfilePage() {
         </div>
       </section>
 
+      {/* 계정 관리 — 회원 탈퇴 (PIPA §39의6 의무) */}
+      <section>
+        <h2 className="section-title mb-3">계정</h2>
+        <div className="grid grid-cols-1 gap-2">
+          <Link
+            href="/legal/privacy"
+            className="card-clickable card p-4 flex items-center justify-between text-sm"
+          >
+            <span className="text-ink-2">개인정보 처리방침</span>
+            <IconArrowRight size={14} className="text-ink-3" />
+          </Link>
+          <Link
+            href="/profile/delete"
+            className="card-clickable card p-4 flex items-center justify-between text-sm border-danger/20 hover:border-danger/40"
+          >
+            <span className="text-danger-text">회원 탈퇴</span>
+            <IconArrowRight size={14} className="text-danger-text" />
+          </Link>
+        </div>
+      </section>
+
       {/* 부가 정보 */}
       <section>
         <h2 className="section-title mb-3">부가 정보</h2>

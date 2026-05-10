@@ -107,7 +107,8 @@ model Price {
   source        String   // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv" | "parsa" | "stats_official"
   productUrl    String?  // 온라인 가격일 때 외부 구매 링크 (네이버 쇼핑 link 등)
   contributorId String?
-  contributor   User?    @relation(fields: [contributorId], references: [id])
+  // 사용자 탈퇴 시 contributorId만 NULL로 — 가격 데이터는 다른 사용자 비교용으로 익명 보존
+  contributor   User?    @relation(fields: [contributorId], references: [id], onDelete: SetNull)
   receiptId     String?
   receipt       Receipt? @relation(fields: [receiptId], references: [id])
   reports       PriceReport[]
@@ -130,7 +131,8 @@ model Receipt {
   storeId      String?
   store        Store?   @relation(fields: [storeId], references: [id])
   uploaderId   String?
-  uploader     User?    @relation(fields: [uploaderId], references: [id])
+  // 사용자 탈퇴 시 uploaderId만 NULL로 — 영수증 본문(이미지·OCR)은 별도로 즉시 파기
+  uploader     User?    @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
   rawOcrText   String?
   parsedJson   String?  // 파싱된 품목 리스트 JSON
   status       String   @default("pending") // pending|parsed|verified
