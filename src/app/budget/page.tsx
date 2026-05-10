@@ -10,6 +10,7 @@ import FavoriteToggle from "@/components/FavoriteToggle";
 import CategorySelect from "@/components/CategorySelect";
 import ManualEntryDialog from "@/components/ManualEntryDialog";
 import ShareSavingsButton from "@/components/ShareSavingsButton";
+import RemovePriceButton from "@/components/budget/RemovePriceButton";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 import { unitPriceValue, unitBasisLabel } from "@/lib/units";
@@ -85,6 +86,7 @@ type BudgetData = {
     date: Date;
     total: number;
     items: {
+      priceId: string;     // Price.id — 잘못 등록된 행 삭제용
       productId: string;
       name: string;
       price: number;       // 단가 (정가 또는 행사가)
@@ -414,6 +416,7 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
       const unit = p.paidPrice ?? p.listPrice ?? 0;
       const q = quantityOf(p);
       return {
+        priceId: p.id,
         productId: p.productId,
         name: p.product?.name ?? "(이름 없음)",
         price: unit,
@@ -844,6 +847,11 @@ export default async function BudgetPage() {
                           <span className="font-semibold tabular-nums text-ink-1 shrink-0 min-w-[5ch] text-right">
                             {formatWon(it.lineTotal)}
                           </span>
+                          {/* OCR 오인식 정정 — 잘못된 행을 즉시 삭제 */}
+                          <RemovePriceButton
+                            priceId={it.priceId}
+                            productName={it.name}
+                          />
                         </li>
                       ))}
                     </ul>

@@ -676,8 +676,15 @@ function PointsCard({ points }: { points: number }) {
     : 100;
 
   return (
-    <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
-      <div className="text-xs text-ink-3">포인트</div>
+    <Link
+      href="/rewards"
+      className="block rounded-2xl border border-line/60 bg-surface-muted/40 p-3 hover:border-brand-300 hover:bg-brand-50/30 transition"
+      aria-label="포인트 혜택 정책 보기"
+    >
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-ink-3">포인트</div>
+        <div className="text-[10px] text-brand-600 font-medium">혜택 보기 →</div>
+      </div>
       <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
         {points.toLocaleString()}
       </div>
@@ -698,6 +705,6 @@ function PointsCard({ points }: { points: number }) {
           🏆 마스터 등급
         </div>
       )}
-    </div>
+    </Link>
   );
 }

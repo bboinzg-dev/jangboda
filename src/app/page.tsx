@@ -8,6 +8,8 @@ import PrefetchCommonAPIs from "@/components/PrefetchCommonAPIs";
 import RecallTicker from "@/components/RecallTicker";
 import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
+import WeeklyDealsWidget from "@/components/home/WeeklyDealsWidget";
+import HomeColdStart from "@/components/home/HomeColdStart";
 import {
   IconCart,
   IconCamera,
@@ -256,6 +258,9 @@ export default async function HomePage() {
       {/* 사이트 진입 시 백그라운드 prefetch — /cart, /stores, /search 가면 캐시 적중 */}
       <PrefetchCommonAPIs />
 
+      {/* 이번 주 특가 — 반복 방문 후크 (행사가 데이터 없으면 자동 숨김) */}
+      <WeeklyDealsWidget />
+
       {/* 시세 + 회수 — 좌우 2칼럼 (모바일은 세로 스택) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {tickerData.length > 0 && (
@@ -410,24 +415,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 가치 0건 안내 — 시드만 있을 때 */}
+      {/* 가치 0건 콜드스타트 — 데이터가 없을 때도 즉시 가치/CTA 보이게 */}
       {priceCards.length === 0 && tickerData.length === 0 && (
-        <section className="card p-8 text-center">
-          <div className="flex justify-center mb-3 text-ink-2">
-            <IconCart size={40} />
-          </div>
-          <h2 className="font-bold mb-1 text-ink-1">아직 가격 데이터가 부족해요</h2>
-          <p className="text-sm text-ink-3 mb-4">
-            첫 영수증을 올리면 비교가 시작됩니다.
-          </p>
-          <Link
-            href="/upload"
-            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-medium text-sm shadow-soft hover:shadow-raise transition"
-          >
-            <IconCamera size={16} />
-            영수증 올리기
-          </Link>
-        </section>
+        <HomeColdStart stats={stats} />
       )}
 
       {/* 부가 서비스 — 장보기 외 함께 사용할 수 있는 서비스 */}
