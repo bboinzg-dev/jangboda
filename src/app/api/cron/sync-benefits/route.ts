@@ -11,17 +11,12 @@ import { fetchMssBiz } from "@/lib/benefits/sources/mssBiz";
 import { fetchMssSupport } from "@/lib/benefits/sources/mssSupport";
 import { fetchBizinfo } from "@/lib/benefits/sources/bizinfo";
 import type { BenefitRaw } from "@/lib/benefits/types";
+import { isCronAuthorized } from "@/lib/cronAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const prisma = new PrismaClient();
-
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // 개발/로컬 모드
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 async function upsertMany(items: BenefitRaw[]) {
   let created = 0;
@@ -95,7 +90,7 @@ async function runOne(
 }
 
 async function handler(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

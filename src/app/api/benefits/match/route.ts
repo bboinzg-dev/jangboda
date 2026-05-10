@@ -27,8 +27,9 @@ export async function POST() {
     // Json 필드 검증/파싱 — 없는 필드는 기본값 채움
     const parsed = BenefitProfileSchema.safeParse(profileRow.data ?? {});
     if (!parsed.success) {
+      console.error("[benefits/match] 프로필 스키마 오류", parsed.error.issues);
       return NextResponse.json(
-        { error: "프로필 데이터 형식 오류", detail: parsed.error.issues },
+        { error: "프로필 데이터 형식 오류 — 다시 입력해주세요" },
         { status: 400 },
       );
     }
@@ -124,13 +125,10 @@ export async function POST() {
       errors,
     });
   } catch (e) {
-    // 에러 메시지를 응답에 포함 — Vercel 로그 안 봐도 원인 추적 가능
+    // 응답에는 제네릭 메시지만 — 내부 에러는 로그로
     console.error("[benefits/match] fatal", e);
     return NextResponse.json(
-      {
-        error: "매칭 처리 중 오류",
-        detail: e instanceof Error ? e.message : String(e),
-      },
+      { error: "매칭 처리 중 오류가 발생했어요. 잠시 후 다시 시도해주세요." },
       { status: 500 },
     );
   }

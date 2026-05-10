@@ -7,7 +7,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function checkSyncAuth(req: NextRequest): NextResponse | null {
   const expected = process.env.SYNC_TOKEN;
-  if (!expected) return null; // 미설정 시 통과 (개발 모드)
+  if (!expected) {
+    // 프로덕션에서 토큰 미설정은 설정 누락 — 누구나 sync 호출 가능하면 위험
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "서버 설정 오류 — SYNC_TOKEN 미설정" },
+        { status: 503 }
+      );
+    }
+    return null; // 개발/테스트 환경만 통과
+  }
 
   // 1. Vercel Cron 인증 (Authorization: Bearer ${CRON_SECRET})
   const cronAuth = req.headers.get("authorization");

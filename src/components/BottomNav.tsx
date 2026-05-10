@@ -46,7 +46,7 @@ export default function BottomNav() {
             <li key={t.href}>
               <Link
                 href={t.href}
-                className={`flex flex-col items-center justify-center py-2 text-[11px] transition ${
+                className={`flex flex-col items-center justify-center py-2.5 min-h-[52px] text-xs transition ${
                   active
                     ? "text-brand-600 font-semibold"
                     : "text-ink-3 hover:text-ink-2"

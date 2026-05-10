@@ -70,7 +70,7 @@ export default function RootLayout({
           <BottomNav />
           <InstallPrompt />
         </FavoritesProvider>
-        <footer className="border-t border-line mt-12 py-6 text-center text-xs text-ink-3 px-4">
+        <footer className="border-t border-line mt-12 py-6 text-center text-sm text-ink-3 px-4">
           장보다 — 사용자 기여로 만들어지는 마트 가격 비교 플랫폼
           <br />
           데이터 출처: KAMIS 공공API · 네이버 쇼핑 · 사용자 영수증

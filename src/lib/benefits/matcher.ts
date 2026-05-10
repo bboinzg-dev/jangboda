@@ -4,6 +4,7 @@
 // 2순위: 키워드 룰 fallback — normalizedRules 없거나 confidence=low일 때
 import type { BenefitProfile } from "./types";
 import { NormalizedRuleSchema, type NormalizedRule } from "./ruleSchema";
+import { kstCurrentYear } from "@/lib/kst";
 
 // ───────────────────────────────────────────────────
 // 키워드 룰 정의
@@ -30,7 +31,7 @@ type Rule = {
 // 현재 연도 기준 만 나이 계산 (한국식 만 나이는 생일 미반영 단순 계산)
 function ageFromBirthYear(birthYear?: number): number | null {
   if (!birthYear) return null;
-  return new Date().getFullYear() - birthYear;
+  return kstCurrentYear() - birthYear;
 }
 
 // 텍스트에 키워드가 하나라도 포함되는지 확인
@@ -429,7 +430,7 @@ const RULES: Rule[] = [
     weight: 12,
     evaluate: (p) => {
       const year = p.business.openYear;
-      if (year && year >= new Date().getFullYear() - 7)
+      if (year && year >= kstCurrentYear() - 7)
         return { kind: "match", score: 12, reason: "창업기업(7년 이내) 자격 충족" };
       if (p.business.hasBusiness === true)
         return { kind: "match", score: 4, reason: "기존 사업자(창업 자격은 별도 검토)" };
@@ -839,7 +840,7 @@ function evaluateNormalized(
     if (!by) {
       missingFields.push("demographics.birthYear");
     } else {
-      const age = new Date().getFullYear() - by;
+      const age = kstCurrentYear() - by;
       const min = rule.ageRange.min ?? 0;
       const max = rule.ageRange.max ?? 200;
       if (age >= min && age <= max) {

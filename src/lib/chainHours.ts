@@ -188,14 +188,20 @@ export function resolveStoreHours(
 // "2,4-sun" — 매달 둘째·넷째 일요일
 // "1,3-sun" — 매달 첫째·셋째 일요일
 // 한국 기준 — 사용자 timezone이 한국이라 가정. 글로벌 사용자 케이스는 향후 보강.
+// KST 고정 — 서버(UTC)에서 호출되어도 한국 날짜·요일로 판정
+function toKst(d: Date): Date {
+  return new Date(d.getTime() + 9 * 60 * 60 * 1000);
+}
+
 export function isClosedToday(
   closedDays: ChainHoursDefault["closedDays"] | undefined,
   now = new Date(),
 ): boolean {
   if (!closedDays) return false;
-  if (now.getDay() !== 0) return false; // 일요일 아니면 false
+  const kst = toKst(now);
+  if (kst.getUTCDay() !== 0) return false; // 일요일 아니면 false
   // 그 달의 몇 번째 일요일인지 계산
-  const date = now.getDate();
+  const date = kst.getUTCDate();
   const ordinal = Math.floor((date - 1) / 7) + 1; // 1=첫째, 2=둘째, ...
   if (closedDays === "2,4-sun") return ordinal === 2 || ordinal === 4;
   if (closedDays === "1,3-sun") return ordinal === 1 || ordinal === 3;
@@ -208,16 +214,18 @@ export function nextClosedDate(
   from = new Date(),
 ): Date | null {
   if (!closedDays) return null;
-  // 다음 60일 안에서 첫 일치 일요일 찾기
+  // 다음 60일 안에서 첫 일치 일요일 찾기 — KST 기준
+  const baseKst = toKst(from);
   for (let i = 1; i <= 60; i++) {
-    const d = new Date(from);
-    d.setDate(d.getDate() + i);
-    if (d.getDay() !== 0) continue;
-    const ordinal = Math.floor((d.getDate() - 1) / 7) + 1;
+    const d = new Date(baseKst);
+    d.setUTCDate(d.getUTCDate() + i);
+    if (d.getUTCDay() !== 0) continue;
+    const ordinal = Math.floor((d.getUTCDate() - 1) / 7) + 1;
     if (
       (closedDays === "2,4-sun" && (ordinal === 2 || ordinal === 4)) ||
       (closedDays === "1,3-sun" && (ordinal === 1 || ordinal === 3))
     ) {
+      // 호출자가 toLocaleDateString 등으로 표시하기 때문에 KST 날짜를 가진 Date 반환
       return d;
     }
   }

@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/db";
 import { sendPushNotification } from "@/lib/push";
+import { kstStartOfDay } from "@/lib/kst";
 
 export interface NotifyDeadlineResult {
   scanned: number;
@@ -45,20 +46,11 @@ interface MatchRow {
 
 export async function notifyUpcomingDeadlines(): Promise<NotifyDeadlineResult> {
   const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-  const d7End = new Date(startOfToday);
-  d7End.setDate(d7End.getDate() + 7);
-  d7End.setHours(23, 59, 59, 999);
-
-  const d30Start = new Date(startOfToday);
-  d30Start.setDate(d30Start.getDate() + 8);
-  const d30End = new Date(startOfToday);
-  d30End.setDate(d30End.getDate() + 30);
-  d30End.setHours(23, 59, 59, 999);
+  // KST 기준 오늘 00:00 (서버 UTC에서 호출돼도 한국 날짜로 D-N 산정)
+  const startOfToday = kstStartOfDay(now);
+  const d7End = new Date(startOfToday.getTime() + 8 * 24 * 60 * 60 * 1000 - 1); // +7일의 23:59:59.999
+  const d30Start = new Date(startOfToday.getTime() + 8 * 24 * 60 * 60 * 1000);
+  const d30End = new Date(startOfToday.getTime() + 31 * 24 * 60 * 60 * 1000 - 1);
 
   const renotifyCutoff = new Date(
     now.getTime() - RENOTIFY_AFTER_DAYS * 24 * 60 * 60 * 1000

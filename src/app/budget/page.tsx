@@ -12,21 +12,23 @@ import ManualEntryDialog from "@/components/ManualEntryDialog";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 import { unitPriceValue, unitBasisLabel } from "@/lib/units";
+import { kstMonthKey, kstNow } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
-// 월 키 (YYYY-MM) 생성
-function monthKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+// 월 키 (YYYY-MM) 생성 — KST 기준
+const monthKey = kstMonthKey;
 
-// 최근 N개월의 월 키 배열 (오래된 → 최신)
+// 최근 N개월의 월 키 배열 (오래된 → 최신) — KST 기준
 function recentMonthKeys(n: number): string[] {
-  const now = new Date();
+  const now = kstNow();
   const keys: string[] = [];
   for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    keys.push(monthKey(d));
+    // UTC 메서드 사용 (kstNow의 timestamp는 +9h 보정돼 있어 UTC 메서드가 KST 값)
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth() - i;
+    const d = new Date(Date.UTC(y, m, 1));
+    keys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
   }
   return keys;
 }
@@ -144,10 +146,12 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
   const listPaidOf = (p: { listPrice: number | null; metadata: unknown }) =>
     (p.listPrice ?? 0) * quantityOf(p);
 
-  // 이번 달 / 지난 달 합계 — KPI 비교용
-  const now = new Date();
-  const curKey = monthKey(now);
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // 이번 달 / 지난 달 합계 — KPI 비교용 (KST 기준)
+  const now = kstNow();
+  const curKey = monthKey(new Date()); // monthKey 자체가 KST 보정
+  const lastMonthDate = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)
+  );
   const lastKey = monthKey(lastMonthDate);
   const thisMonthTotal = valid
     .filter((p) => monthKey(p.createdAt) === curKey)
@@ -190,8 +194,8 @@ async function getBudget(userId: string): Promise<BudgetData & { overrides: Reco
   }
   const monthly = keys.map((k) => ({ key: k, total: monthlyMap.get(k) ?? 0 }));
 
-  // 작년 동월 비교 — 13개월 데이터까지 검사 (이번 달과 같은 월의 작년 데이터)
-  const lastYearKey = `${now.getFullYear() - 1}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // 작년 동월 비교 — 13개월 데이터까지 검사 (이번 달과 같은 월의 작년 데이터, KST 기준)
+  const lastYearKey = `${now.getUTCFullYear() - 1}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const lastYearTotal = valid
     .filter((p) => monthKey(p.createdAt) === lastYearKey)
     .reduce((s, p) => s + paidOf(p), 0);
@@ -497,7 +501,7 @@ export default async function BudgetPage() {
       ? Math.round((data.kpi.promoCount / data.kpi.promoBase) * 100)
       : 0;
   const insights = generateInsights(data);
-  const monthLabel = new Date().getMonth() + 1;
+  const monthLabel = kstNow().getUTCMonth() + 1;
 
   return (
     <div className="space-y-6">

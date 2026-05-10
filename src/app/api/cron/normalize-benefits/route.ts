@@ -9,17 +9,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { normalizeEligibility } from "@/lib/benefits/llm";
+import { isCronAuthorized } from "@/lib/cronAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const prisma = new PrismaClient();
-
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 function parseIsoDate(s: string | undefined): Date | null {
   if (!s) return null;
@@ -53,7 +48,7 @@ function extractFreeText(rules: unknown): {
 }
 
 async function handler(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!process.env.GEMINI_API_KEY) {

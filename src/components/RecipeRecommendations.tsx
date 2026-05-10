@@ -46,15 +46,25 @@ export default function RecipeRecommendations({ productNames }: Props) {
       ingredients.join(",")
     )}&limit=5`;
 
+    // 장바구니가 빠르게 변할 때 이전 fetch 결과가 늦게 도착해 덮어쓰지 않도록 cancel 가드
+    let cancelled = false;
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
+        if (cancelled) return;
         setRecipes((data.recipes ?? []) as RecommendedRecipe[]);
       })
       .catch(() => {
+        if (cancelled) return;
         setRecipes([]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [productNames]);
 
   if (productNames.length === 0) return null;

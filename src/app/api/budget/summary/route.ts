@@ -5,12 +5,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { budgetCategoryOf } from "@/lib/budgetCategory";
+import { kstMonthKey } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
-function monthKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+const monthKey = kstMonthKey;
 
 export async function GET() {
   const user = await getCurrentUser();

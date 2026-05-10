@@ -29,8 +29,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       setReady(true);
       return;
     }
+    let cancelled = false;
     const sb = createClient();
     sb.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
       if (!data.user) {
         setReady(true);
         return;
@@ -39,14 +41,21 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       fetch("/api/favorites")
         .then((r) => r.json())
         .then((d) => {
+          if (cancelled) return;
           const next = new Set<string>(
             (d.favorites ?? []).map((f: { storeId: string }) => f.storeId)
           );
           setIds(next);
         })
         .catch(() => {})
-        .finally(() => setReady(true));
+        .finally(() => {
+          if (cancelled) return;
+          setReady(true);
+        });
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const toggle = useCallback(async (storeId: string) => {

@@ -41,7 +41,10 @@ export function evaluateOpenStatus(hours: string | null | undefined, now = new D
     return { label: raw, isOpen: null, rawHours: raw };
   }
   const [startMin, endMin] = range;
-  const cur = now.getHours() * 60 + now.getMinutes();
+  // KST(Asia/Seoul) 고정 — 서버 컴포넌트에서 호출되면 호스트 타임존(보통 UTC) 기준이 되어
+  // 한국 시각과 9시간 어긋난다. 한국 사용자 전용 서비스이므로 항상 KST 기준으로 판정한다.
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const cur = kst.getUTCHours() * 60 + kst.getUTCMinutes();
   let isOpen: boolean;
   if (endMin > startMin) {
     // 일반 케이스: 09:00~22:00

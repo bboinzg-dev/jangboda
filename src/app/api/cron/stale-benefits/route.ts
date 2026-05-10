@@ -14,17 +14,13 @@
 // 멱등 — 이미 active=false인 항목은 건드리지 않음.
 import { NextResponse, type NextRequest } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { isCronAuthorized } from "@/lib/cronAuth";
+import { kstNow } from "@/lib/kst";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const prisma = new PrismaClient();
-
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // 개발/로컬 모드
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 // 마감/종료를 의미하는 한국어 키워드 (공백 정규화 후 contains 검사)
 const TERMINATION_KEYWORDS = [
@@ -66,12 +62,13 @@ function hasTerminationKeyword(rules: unknown): boolean {
 }
 
 async function handler(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const start = Date.now();
-  const now = new Date();
+  // KST 기준 — applyEndAt이 한국 날짜로 저장돼 있어 한국 시각의 "지금"으로 비교해야 한다
+  const now = kstNow();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
