@@ -9,6 +9,7 @@ import BudgetGoalCard from "@/components/BudgetGoalCard";
 import FavoriteToggle from "@/components/FavoriteToggle";
 import CategorySelect from "@/components/CategorySelect";
 import ManualEntryDialog from "@/components/ManualEntryDialog";
+import ShareSavingsButton from "@/components/ShareSavingsButton";
 import { budgetCategoryOf, CATEGORY_COLORS, type BudgetCategory } from "@/lib/budgetCategory";
 import { generateInsights } from "@/lib/budgetInsights";
 import { unitPriceValue, unitBasisLabel } from "@/lib/units";
@@ -524,6 +525,11 @@ export default async function BudgetPage() {
             내보내기
           </a>
           <ManualEntryDialog />
+          <ShareSavingsButton
+            savedAmount={data.kpi.savedAmount}
+            thisMonth={data.kpi.thisMonth}
+            monthLabel={monthLabel}
+          />
           <Link
             href="/upload"
             className="text-sm bg-brand-500 hover:bg-brand-600 text-white px-3 py-1.5 rounded-xl font-medium shadow-soft hover:shadow-raise transition"

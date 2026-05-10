@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { parseReceipt, mergeReceipts, type OcrSource } from "@/lib/ocr";
 import { matchProduct, matchProductDetailed, matchStore } from "@/lib/matcher";
@@ -11,6 +12,16 @@ import { matchBrand, generateAliasCandidates } from "@/lib/brandRules";
 
 // Vercel 함수 timeout — OCR(CLOVA/Vision) + storage 업로드 + 매칭까지 60초 허용
 export const maxDuration = 60;
+
+// 어뷰징 방어 임계값 — 정상 사용자는 절대 넘지 않는 수준
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1시간
+const RATE_LIMIT_MAX = 30; // 같은 uploader가 1시간에 30건 초과 업로드 차단
+const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
+const HASH_PREFIX_LEN = 64; // SHA-256 hex
+
+function sha256Hex(s: string): string {
+  return createHash("sha256").update(s).digest("hex").slice(0, HASH_PREFIX_LEN);
+}
 
 // POST /api/receipts — 영수증 이미지 업로드 + OCR 파싱 + 자동 매칭 시도
 // body: { imageBase64?: string }
@@ -36,6 +47,45 @@ export async function POST(req: NextRequest) {
 
   const user = await getCurrentUser();
   const uploaderId = user?.id;
+
+  // 어뷰징 방어 — 로그인 사용자에 한해 (비로그인은 mock/demo flow만 가능하므로 부담 작음)
+  const primaryHash = imagesBase64[0] ? sha256Hex(imagesBase64[0]) : null;
+  if (uploaderId && primaryHash) {
+    const sinceWindow = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+    const dupe = await prisma.receipt.findFirst({
+      where: {
+        uploaderId,
+        imageHash: primaryHash,
+        createdAt: { gte: sinceWindow },
+      },
+      select: { id: true },
+    });
+    if (dupe) {
+      return NextResponse.json(
+        {
+          error: "같은 영수증이 이미 등록돼 있어요",
+          hint: "최근 24시간 내 같은 사진을 올린 기록이 있어요. 영수증 목록에서 확인해주세요.",
+          duplicateReceiptId: dupe.id,
+        },
+        { status: 409 },
+      );
+    }
+  }
+  if (uploaderId) {
+    const rateSince = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+    const recent = await prisma.receipt.count({
+      where: { uploaderId, createdAt: { gte: rateSince } },
+    });
+    if (recent >= RATE_LIMIT_MAX) {
+      return NextResponse.json(
+        {
+          error: "잠시 후 다시 시도해주세요",
+          hint: `최근 1시간에 ${RATE_LIMIT_MAX}건 이상 업로드해서 잠시 차단했어요. 한 시간 후 다시 시도해주세요.`,
+        },
+        { status: 429 },
+      );
+    }
+  }
 
   let receipt;
   let usedMock = false;
@@ -95,6 +145,7 @@ export async function POST(req: NextRequest) {
     data: {
       imageUrl,
       storagePath,
+      imageHash: primaryHash,
       storeId: storeId ?? undefined,
       uploaderId: uploaderId ?? undefined,
       rawOcrText: receipt.rawText,

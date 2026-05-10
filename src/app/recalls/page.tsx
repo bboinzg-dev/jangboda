@@ -100,6 +100,11 @@ export default async function RecallsPage({
           식약처가 회수·판매중지 처분한 식품 목록입니다. 같은 제품을
           가지고 계시면 즉시 사용을 중지하세요.
         </p>
+        <p className="text-[11px] text-stone-500 leading-relaxed">
+          본 정보는 식품의약품안전처 공공데이터에서 자동 수집한 참고 자료이며,
+          최신·정확한 회수 처분 내용은 식약처 공식 공고를 확인하세요.
+          제품 매칭은 바코드·제조사·제품명 기반 자동 추정이며 동명의 다른 제품일 수 있습니다.
+        </p>
       </header>
 
       {/* 기간 필터 탭 — 변경 시 page=1로 reset */}

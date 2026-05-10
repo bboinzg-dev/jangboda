@@ -519,6 +519,27 @@ export default async function ProfilePage() {
         </ul>
       </section>
 
+      {/* 관리자 진입 — role=admin인 사용자에게만 노출 */}
+      {user?.role === "admin" && (
+        <section>
+          <Link
+            href="/admin"
+            className="card-clickable card p-4 flex items-center gap-3 border-stone-900/20"
+          >
+            <div className="w-10 h-10 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0">
+              🛠️
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-ink-1">관리자 페이지</div>
+              <div className="text-xs text-ink-3">
+                대시보드 · 사용자 · 영수증 · 데이터 동기화
+              </div>
+            </div>
+            <IconArrowRight size={14} className="text-ink-3 shrink-0" />
+          </Link>
+        </section>
+      )}
+
       {/* 도구 섹션 — 모바일 사용자 접근성 */}
       <section>
         <h2 className="section-title mb-3">도구</h2>

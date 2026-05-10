@@ -70,10 +70,16 @@ export default function RootLayout({
           <BottomNav />
           <InstallPrompt />
         </FavoritesProvider>
-        <footer className="border-t border-line mt-12 py-6 text-center text-sm text-ink-3 px-4">
-          장보다 — 사용자 기여로 만들어지는 마트 가격 비교 플랫폼
-          <br />
-          데이터 출처: KAMIS 공공API · 네이버 쇼핑 · 사용자 영수증
+        <footer className="border-t border-line mt-12 py-6 text-center text-sm text-ink-3 px-4 space-y-2">
+          <div>장보다 — 사용자 기여로 만들어지는 마트 가격 비교 플랫폼</div>
+          <div className="text-xs">
+            데이터 출처: KAMIS · 네이버 쇼핑 · 한국소비자원 · 식약처 · GOV24 · 사용자 영수증
+          </div>
+          <div className="text-xs">
+            <a href="/legal/privacy" className="hover:underline">개인정보처리방침</a>
+            <span className="mx-2">·</span>
+            <span>외부 데이터는 참고용이며 정확한 정보는 해당 기관에서 확인하세요</span>
+          </div>
         </footer>
       </body>
     </html>
