@@ -10,6 +10,7 @@ import FavoriteToggle from "@/components/FavoriteToggle";
 import { useFavorites } from "@/components/FavoritesProvider";
 import CollapsibleList from "@/components/CollapsibleList";
 import ChainLogo from "@/components/ChainLogo";
+import TrackedLink from "@/components/TrackedLink";
 import { isOnlineOnlyChain } from "@/lib/onlineMalls";
 
 type TrustInfo = {
@@ -296,16 +297,16 @@ export default function PriceListClient({
                     {p.online && (
                       <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                         {p.productUrl && (
-                          <a
+                          <TrackedLink
                             href={p.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            kind="product_buy"
+                            id={p.priceId}
                             className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
                           >
                             <span aria-hidden>🛒</span>
                             <span>구매하러 가기</span>
                             <span aria-hidden>↗</span>
-                          </a>
+                          </TrackedLink>
                         )}
                         <span
                           className="text-[10px] text-ink-3"

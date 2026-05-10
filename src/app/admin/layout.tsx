@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/receipts", label: "영수증", icon: "📸" },
   { href: "/admin/products", label: "상품", icon: "📦" },
   { href: "/admin/benefits", label: "정부혜택", icon: "🏛️" },
+  { href: "/admin/sponsors", label: "협찬", icon: "💰" },
   { href: "/admin/sync", label: "동기화", icon: "🔄" },
 ];
 

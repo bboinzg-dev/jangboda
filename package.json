@@ -20,11 +20,13 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@sentry/nextjs": "^10.52.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
     "@types/leaflet": "^1.9.12",
     "leaflet": "^1.9.4",
     "next": "14.2.18",
+    "posthog-js": "^1.372.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",

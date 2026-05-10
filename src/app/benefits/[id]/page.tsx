@@ -8,6 +8,7 @@ import { categoryGroup } from "@/lib/benefits/categories";
 import { stripHtml } from "@/lib/benefits/sanitize";
 import MatchActions from "@/components/benefits/MatchActions";
 import BackButton from "@/components/benefits/BackButton";
+import TrackedLink from "@/components/TrackedLink";
 
 export const dynamic = "force-dynamic";
 
@@ -131,28 +132,28 @@ export default async function BenefitDetailPage({
           </div>
         )}
 
-        {/* 외부 링크 */}
+        {/* 외부 링크 — 클릭 추적해서 어떤 출처의 혜택이 가장 잘 신청되는지 측정 */}
         {(benefit.applyUrl || benefit.detailUrl) && (
           <div className="flex flex-wrap gap-2 mt-5">
             {benefit.applyUrl && (
-              <a
+              <TrackedLink
                 href={benefit.applyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                kind="benefit_apply"
+                id={benefit.id}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
               >
                 신청하러 가기 ↗
-              </a>
+              </TrackedLink>
             )}
             {benefit.detailUrl && (
-              <a
+              <TrackedLink
                 href={benefit.detailUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                kind="benefit_detail"
+                id={benefit.id}
                 className="bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm font-medium"
               >
                 상세 페이지 ↗
-              </a>
+              </TrackedLink>
             )}
           </div>
         )}

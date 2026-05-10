@@ -173,6 +173,33 @@ model BudgetGoal {
   updatedAt     DateTime @updatedAt
 }
 
+// 후원/협찬 슬롯 — 운영자가 직접 등록하는 광고 자리 (Google AdSense 도입 전 단계)
+// 자체 광고 SDK 없이 단순 카드 1~2개를 홈/특정 페이지에 노출.
+// 어떤 슬롯이 잘 클릭되는지 TrackedLink가 측정해서 광고 단가 협상에 활용.
+model SponsorSlot {
+  id          String   @id @default(cuid())
+  // 노출 위치 — "home_below_hero", "benefits_top" 등 코드에서 약속한 키
+  placement   String
+  title       String   // 카드 제목 (예: "전국 PC방 멤버십 30% 할인")
+  body        String?  // 부가 설명 1~2줄
+  imageUrl    String?  // 카드 좌측 이미지 (옵션)
+  ctaLabel    String   @default("자세히 보기")
+  href        String   // 외부 출구 (TrackedLink 추적됨)
+  // 운영
+  active      Boolean  @default(true)
+  // 노출 기간 — null이면 무기한
+  startsAt    DateTime?
+  endsAt      DateTime?
+  // 우선순위 — 같은 placement 내 정렬
+  weight      Int      @default(0)
+  // 운영 메타 (광고주명, 단가 등 — 사용자에 노출 안 됨)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([placement, active])
+}
+
 // 즐겨찾기 매장 — 사용자가 자주 가는 매장 표시
 model FavoriteStore {
   id        String   @id @default(cuid())

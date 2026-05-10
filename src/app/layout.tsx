@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Suspense } from "react";
 import Nav from "@/components/Nav";
 import BottomNav from "@/components/BottomNav";
 import InstallPrompt from "@/components/InstallPrompt";
 import { FavoritesProvider } from "@/components/FavoritesProvider";
+import Analytics from "@/components/Analytics";
 
 export const viewport: Viewport = {
   themeColor: "#f97316",
@@ -64,6 +66,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen font-pretendard">
+        {/* useSearchParams는 Suspense boundary 필요 (Next 14 권장) */}
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
         <FavoritesProvider>
           <Nav />
           <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>

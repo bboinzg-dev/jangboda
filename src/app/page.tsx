@@ -10,6 +10,7 @@ import KamisTicker from "@/components/KamisTicker";
 import ProductImage from "@/components/ProductImage";
 import WeeklyDealsWidget from "@/components/home/WeeklyDealsWidget";
 import HomeColdStart from "@/components/home/HomeColdStart";
+import AdSlot from "@/components/AdSlot";
 import {
   IconCart,
   IconCamera,
@@ -254,6 +255,9 @@ export default async function HomePage() {
 
       {/* 온보딩 가이드 — 첫 사용자에게 다음 액션 제시 */}
       <OnboardingCard />
+
+      {/* 협찬 슬롯 — 등록된 후원이 없으면 아무것도 안 보임 */}
+      <AdSlot placement="home_below_hero" />
 
       {/* 사이트 진입 시 백그라운드 prefetch — /cart, /stores, /search 가면 캐시 적중 */}
       <PrefetchCommonAPIs />
