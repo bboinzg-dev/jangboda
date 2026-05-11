@@ -45,12 +45,13 @@ export default function KamisTicker({ items }: Props) {
 
   return (
     <div
-      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-border bg-surface"
+      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-surface via-surface to-surface-sunken shadow-soft"
       style={{ ["--ticker-duration" as string]: duration }}
     >
-      {/* 위/아래 페이드 그라데이션 — 흐름의 시작/끝을 부드럽게 */}
-      <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10" />
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10" />
+      {/* 위/아래 페이드 그라데이션 — 흐름의 시작/끝을 부드럽게.
+          surface 변수 기반이라 라이트/다크 자동 매칭. */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-surface to-transparent z-10" />
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-surface-sunken to-transparent z-10" />
 
       {/* ticker track — 콘텐츠 두 번 복제로 끊김 없는 무한 loop */}
       <div className="ticker-track flex flex-col gap-2 p-2">

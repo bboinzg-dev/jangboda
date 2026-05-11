@@ -546,7 +546,7 @@ export default async function ProfilePage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Link
             href="/benefits"
-            className="card-clickable bg-gradient-to-br from-info-soft to-white border border-info/20 rounded-2xl p-4 flex flex-col gap-1 shadow-soft hover:shadow-raise hover:border-info/40 transition"
+            className="card-clickable bg-gradient-to-br from-info-soft to-surface border border-info/20 rounded-2xl p-4 flex flex-col gap-1 shadow-soft hover:shadow-raise hover:border-info/40 transition"
           >
             <div className="text-sm font-bold text-info-text flex items-center justify-between gap-2">
               <span>🎁 정부 혜택</span>
