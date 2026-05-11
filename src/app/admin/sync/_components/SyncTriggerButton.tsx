@@ -66,7 +66,7 @@ export default function SyncTriggerButton({
           >
             {result.ok ? `✓ 성공 (${result.ms}ms)` : "✗ 실패"}
           </summary>
-          <pre className="mt-1 bg-stone-100 p-2 rounded overflow-auto max-h-40 text-[10px] leading-relaxed">
+          <pre className="mt-1 bg-surface-muted p-2 rounded overflow-auto max-h-40 text-[10px] leading-relaxed">
             {result.ok
               ? JSON.stringify(result.data, null, 2)
               : result.error}

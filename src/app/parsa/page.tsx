@@ -138,10 +138,10 @@ export default async function ParsaPage({
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-ink-1 flex items-center gap-2">
           📊 공공 가격 정보
         </h1>
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-ink-3">
           한국소비자원이 매주 조사하는 {totalStores.toLocaleString()}개 매장의
           생필품 가격
         </p>
@@ -154,7 +154,7 @@ export default async function ParsaPage({
           name="q"
           defaultValue={q}
           placeholder="상품명 검색 (예: 계란, 우유, 라면)"
-          className="flex-1 px-4 py-2.5 rounded-lg border border-stone-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="flex-1 px-4 py-2.5 rounded-lg border border-line-strong bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         {type !== "ALL" && <input type="hidden" name="type" value={type} />}
         <button
@@ -176,7 +176,7 @@ export default async function ParsaPage({
               className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                 active
                   ? "bg-brand-500 text-white border-brand-500"
-                  : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
+                  : "bg-surface text-ink-2 border-line hover:bg-surface-muted"
               }`}
             >
               {TYPE_LABEL[k]}
@@ -195,7 +195,7 @@ export default async function ParsaPage({
             <div className="card p-8 text-center">
               <div className="text-4xl mb-3">🔎</div>
               <h3 className="font-bold mb-1">검색 결과가 없어요</h3>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-ink-4">
                 다른 키워드로 검색해보거나, 아래 인기 카테고리를 둘러보세요.
               </p>
             </div>
@@ -216,12 +216,12 @@ export default async function ParsaPage({
                       href={`/parsa/products/${encodeURIComponent(p.goodId)}`}
                       className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
                     >
-                      <div className="font-semibold text-stone-900 line-clamp-2">
+                      <div className="font-semibold text-ink-1 line-clamp-2">
                         {p.goodName}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-stone-500">
+                      <div className="flex items-center gap-2 text-xs text-ink-4">
                         {catName && (
-                          <span className="px-2 py-0.5 rounded bg-stone-100">
+                          <span className="px-2 py-0.5 rounded bg-surface-muted">
                             {catName}
                           </span>
                         )}
@@ -252,10 +252,10 @@ export default async function ParsaPage({
                 href={`/parsa?q=${encodeURIComponent(c.name)}`}
                 className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
               >
-                <div className="text-sm font-semibold text-stone-900">
+                <div className="text-sm font-semibold text-ink-1">
                   {c.name}
                 </div>
-                <small className="text-xs text-stone-500">
+                <small className="text-xs text-ink-4">
                   상품 {c.count.toLocaleString()}개
                 </small>
               </Link>
@@ -268,7 +268,7 @@ export default async function ParsaPage({
       <section>
         <h2 className="font-bold mb-3">🏪 참여 매장 통계</h2>
         <div className="card p-4">
-          <div className="text-sm text-stone-700 mb-3">
+          <div className="text-sm text-ink-2 mb-3">
             전국{" "}
             <span className="font-bold text-brand-600">
               {totalStores.toLocaleString()}개
@@ -286,10 +286,10 @@ export default async function ParsaPage({
                 return (
                   <div
                     key={code}
-                    className="bg-stone-50 rounded-lg p-3 text-center"
+                    className="bg-surface-muted rounded-lg p-3 text-center"
                   >
-                    <div className="text-xs text-stone-500">{name}</div>
-                    <div className="text-lg font-bold text-stone-800">
+                    <div className="text-xs text-ink-4">{name}</div>
+                    <div className="text-lg font-bold text-ink-1">
                       {s._count._all.toLocaleString()}
                     </div>
                   </div>
@@ -299,7 +299,7 @@ export default async function ParsaPage({
         </div>
       </section>
 
-      <footer className="text-[11px] text-stone-400 pt-2">
+      <footer className="text-[11px] text-ink-4 pt-2">
         출처: 한국소비자원 참가격(price.go.kr). 매주 금요일 갱신.
       </footer>
     </div>

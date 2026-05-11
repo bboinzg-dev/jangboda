@@ -87,7 +87,7 @@ export default function MatchActions({ benefitId, initialAction }: Props) {
           className={`text-sm px-3 py-1.5 rounded-md border transition disabled:opacity-60 disabled:cursor-not-allowed ${
             savedActive
               ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
-              : "bg-white border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+              : "bg-surface border-indigo-300 text-indigo-700 hover:bg-indigo-50"
           }`}
         >
           {savedActive ? "★ 저장됨" : "☆ 이 혜택 저장하기"}
@@ -98,15 +98,15 @@ export default function MatchActions({ benefitId, initialAction }: Props) {
           disabled={pending}
           className={`text-sm px-3 py-1.5 rounded-md border transition disabled:opacity-60 disabled:cursor-not-allowed ${
             dismissedActive
-              ? "bg-stone-200 border-stone-300 text-stone-700 hover:bg-stone-300"
-              : "bg-white border-stone-300 text-stone-600 hover:bg-stone-50"
+              ? "bg-surface-sunken border-line-strong text-ink-2 hover:bg-line-strong"
+              : "bg-surface border-line-strong text-ink-3 hover:bg-surface-muted"
           }`}
         >
           {dismissedActive ? "관심 없음 해제" : "관심 없음"}
         </button>
       </div>
       {error && (
-        <div className="mt-2 text-xs text-rose-600">{error}</div>
+        <div className="mt-2 text-xs text-danger">{error}</div>
       )}
     </div>
   );

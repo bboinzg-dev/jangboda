@@ -63,7 +63,7 @@ export default async function AdminReceiptsPage({
               className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
                 active
                   ? "bg-stone-900 text-white border-stone-900"
-                  : "bg-white border-line text-ink-2 hover:bg-stone-50"
+                  : "bg-surface border-line text-ink-2 hover:bg-surface-muted"
               }`}
             >
               {o.label}
@@ -76,9 +76,9 @@ export default async function AdminReceiptsPage({
         {items.map((r) => (
           <div
             key={r.id}
-            className="bg-white border border-line rounded-xl overflow-hidden flex flex-col"
+            className="bg-surface border border-line rounded-xl overflow-hidden flex flex-col"
           >
-            <div className="aspect-square bg-stone-100 relative overflow-hidden">
+            <div className="aspect-square bg-surface-muted relative overflow-hidden">
               {r.imageUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -97,8 +97,8 @@ export default async function AdminReceiptsPage({
                   r.status === "verified"
                     ? "bg-success-soft text-success-text"
                     : r.status === "parsed"
-                    ? "bg-brand-50 text-brand-700"
-                    : "bg-stone-200 text-stone-700"
+                    ? "bg-brand-soft text-brand-700"
+                    : "bg-surface-sunken text-ink-2"
                 }`}
               >
                 {r.status}
@@ -130,7 +130,7 @@ export default async function AdminReceiptsPage({
           {page > 1 && (
             <Link
               href={`/admin/receipts?status=${status}&page=${page - 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               이전
             </Link>
@@ -141,7 +141,7 @@ export default async function AdminReceiptsPage({
           {page < lastPage && (
             <Link
               href={`/admin/receipts?status=${status}&page=${page + 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               다음
             </Link>

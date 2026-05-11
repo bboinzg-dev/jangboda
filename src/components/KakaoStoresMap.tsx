@@ -145,7 +145,7 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
     return (
       <div
         style={{ height }}
-        className="bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm"
+        className="bg-surface-muted rounded-lg flex items-center justify-center text-ink-4 text-sm"
       >
         {fatalError === "KAKAO 키 미설정"
           ? "카카오맵 키 미설정 (OpenStreetMap 사용 중)"
@@ -161,7 +161,7 @@ export default function KakaoStoresMap({ stores, myLocation, height = "400px" }:
         className="rounded-lg overflow-hidden border border-border h-full w-full"
       />
       {overlayMessage && (
-        <div className="absolute inset-0 bg-stone-100/90 rounded-lg flex items-center justify-center text-stone-500 text-sm pointer-events-none">
+        <div className="absolute inset-0 bg-surface-muted/90 rounded-lg flex items-center justify-center text-ink-4 text-sm pointer-events-none">
           {overlayMessage}
         </div>
       )}

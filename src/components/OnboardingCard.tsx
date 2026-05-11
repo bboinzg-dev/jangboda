@@ -68,18 +68,18 @@ export default function OnboardingCard({
   // 비로그인 상태 — 가벼운 안내 카드
   if (!authed) {
     return (
-      <section className="bg-white border border-border rounded-xl p-5">
+      <section className="bg-surface border border-border rounded-xl p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-bold text-base mb-1">🛒 장보다 시작하기</h2>
-            <p className="text-sm text-stone-600 leading-relaxed">
+            <p className="text-sm text-ink-3 leading-relaxed">
               로그인하면 자주 가는 마트, 영수증, 가격 알림이 모두 저장됩니다.
             </p>
           </div>
           <button
             onClick={dismiss}
             aria-label="온보딩 닫기"
-            className="text-stone-400 hover:text-stone-700 text-lg leading-none px-1"
+            className="text-ink-4 hover:text-ink-2 text-lg leading-none px-1"
           >
             ×
           </button>
@@ -115,18 +115,18 @@ export default function OnboardingCard({
   }
 
   return (
-    <section className="bg-white border border-border rounded-xl p-5">
+    <section className="bg-surface border border-border rounded-xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
           <h2 className="font-bold text-base">🛒 장보다 시작하기</h2>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-xs text-ink-4 mt-0.5">
             3단계만 완료하면 절약이 시작됩니다
           </p>
         </div>
         <button
           onClick={dismiss}
           aria-label="온보딩 닫기"
-          className="text-stone-400 hover:text-stone-700 text-lg leading-none px-1 shrink-0"
+          className="text-ink-4 hover:text-ink-2 text-lg leading-none px-1 shrink-0"
           title="닫기"
         >
           ×
@@ -185,7 +185,7 @@ function Step({
         className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
           done
             ? "bg-success-soft border-success-soft hover:opacity-90"
-            : "bg-stone-50 border-border hover:bg-stone-100"
+            : "bg-surface-muted border-border hover:bg-surface-muted"
         }`}
       >
         {/* 단계 표시 — 완료/미완료 */}
@@ -193,7 +193,7 @@ function Step({
           className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
             done
               ? "bg-success text-white"
-              : "bg-stone-200 text-stone-600"
+              : "bg-surface-sunken text-ink-3"
           }`}
           aria-label={done ? "완료" : `단계 ${n}`}
         >
@@ -205,14 +205,14 @@ function Step({
         <div className="min-w-0 flex-1">
           <div
             className={`font-medium text-sm ${
-              done ? "text-success-text" : "text-stone-900"
+              done ? "text-success-text" : "text-ink-1"
             }`}
           >
             {title}
           </div>
           <div
             className={`text-xs truncate ${
-              done ? "text-success-text" : "text-stone-500"
+              done ? "text-success-text" : "text-ink-4"
             }`}
           >
             {desc}
@@ -220,7 +220,7 @@ function Step({
         </div>
         <div
           className={`text-xs shrink-0 ${
-            done ? "text-success-text" : "text-stone-400"
+            done ? "text-success-text" : "text-ink-4"
           }`}
         >
           {done ? "완료" : "→"}

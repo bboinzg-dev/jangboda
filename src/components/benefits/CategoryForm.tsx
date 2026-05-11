@@ -100,13 +100,13 @@ export default function CategoryForm({ category, initialValues }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 진행률 바 */}
       <div>
-        <div className="flex justify-between text-xs text-stone-500 mb-1">
+        <div className="flex justify-between text-xs text-ink-4 mb-1">
           <span>
             {stepNum} / {total} 단계
           </span>
           <span>{progressPct}%</span>
         </div>
-        <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-indigo-500 transition-all"
             style={{ width: `${progressPct}%` }}
@@ -114,8 +114,8 @@ export default function CategoryForm({ category, initialValues }: Props) {
         </div>
       </div>
 
-      <div className="bg-white border border-border rounded-xl p-6 space-y-5">
-        <p className="text-xs text-stone-500">
+      <div className="bg-surface border border-border rounded-xl p-6 space-y-5">
+        <p className="text-xs text-ink-4">
           모든 항목은 선택입니다. 아는 만큼만 입력해도 됩니다.
         </p>
 
@@ -175,7 +175,7 @@ export default function CategoryForm({ category, initialValues }: Props) {
           type="button"
           onClick={handleSkip}
           disabled={submitting}
-          className="flex-1 bg-white hover:bg-stone-50 border border-border text-stone-700 py-2.5 rounded-lg font-medium disabled:opacity-50"
+          className="flex-1 bg-surface hover:bg-surface-muted border border-border text-ink-2 py-2.5 rounded-lg font-medium disabled:opacity-50"
         >
           건너뛰기
         </button>
@@ -195,7 +195,7 @@ export default function CategoryForm({ category, initialValues }: Props) {
       <div className="text-center">
         <Link
           href="/benefits/onboarding"
-          className="text-sm text-stone-500 hover:text-stone-700"
+          className="text-sm text-ink-4 hover:text-ink-2"
         >
           ← 카테고리 목록으로
         </Link>
@@ -238,11 +238,11 @@ function FieldLabel({
 }) {
   return (
     <div className="flex items-baseline justify-between mb-1">
-      <label className="block text-sm font-medium text-stone-800">
+      <label className="block text-sm font-medium text-ink-1">
         {children}
-        <span className="ml-1 text-xs font-normal text-stone-400">(선택)</span>
+        <span className="ml-1 text-xs font-normal text-ink-4">(선택)</span>
       </label>
-      {hint && <span className="text-xs text-stone-400">{hint}</span>}
+      {hint && <span className="text-xs text-ink-4">{hint}</span>}
     </div>
   );
 }
@@ -265,7 +265,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-3 py-2 border border-stone-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+      className="w-full px-3 py-2 border border-line-strong rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
       {...rest}
     />
   );
@@ -284,7 +284,7 @@ function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border border-stone-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+      className="w-full px-3 py-2 border border-line-strong rounded bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
     >
       <option value="">선택 안 함</option>
       {options.map((o) => (
@@ -317,7 +317,7 @@ function RadioGroup({
             className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer transition ${
               active
                 ? "bg-indigo-50 border-indigo-400 text-indigo-700 font-medium"
-                : "bg-white border-border text-stone-600 hover:border-stone-300"
+                : "bg-surface border-border text-ink-3 hover:border-line-strong"
             }`}
           >
             <input
@@ -336,7 +336,7 @@ function RadioGroup({
         <button
           type="button"
           onClick={() => onChange("")}
-          className="px-2 py-1.5 text-xs text-stone-400 hover:text-stone-600"
+          className="px-2 py-1.5 text-xs text-ink-4 hover:text-ink-3"
         >
           해제
         </button>
@@ -356,18 +356,18 @@ function Toggle({
 }) {
   return (
     <label className="flex items-center justify-between gap-3 py-2 cursor-pointer">
-      <span className="text-sm text-stone-800">{label}</span>
+      <span className="text-sm text-ink-1">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={value}
         onClick={() => onChange(!value)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-          value ? "bg-indigo-600" : "bg-stone-300"
+          value ? "bg-indigo-600" : "bg-line-strong"
         }`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+          className={`inline-block h-4 w-4 transform rounded-full bg-surface transition ${
             value ? "translate-x-6" : "translate-x-1"
           }`}
         />
@@ -509,7 +509,7 @@ function ResidenceFields({ values, setField }: FieldProps) {
         <select
           value={sido2}
           onChange={(e) => handleSidoChange(e.target.value)}
-          className="w-full px-3 py-2 border border-stone-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+          className="w-full px-3 py-2 border border-line-strong rounded bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
         >
           <option value="">선택 안 함</option>
           {SIDO_OPTIONS.map((o) => (
@@ -528,7 +528,7 @@ function ResidenceFields({ values, setField }: FieldProps) {
           value={sigungu}
           onChange={(e) => handleSigunguChange(e.target.value)}
           disabled={!sido2}
-          className="w-full px-3 py-2 border border-stone-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 disabled:bg-stone-50 disabled:text-stone-400"
+          className="w-full px-3 py-2 border border-line-strong rounded bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 disabled:bg-surface-muted disabled:text-ink-4"
         >
           <option value="">선택 안 함 (시/도 단위로만 매칭)</option>
           {sigunguList.map((sg) => (
@@ -537,7 +537,7 @@ function ResidenceFields({ values, setField }: FieldProps) {
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-stone-400">
+        <p className="mt-1 text-xs text-ink-4">
           시/군/구를 미선택하면 시/도 단위로만 매칭됩니다.
         </p>
       </div>
@@ -766,7 +766,7 @@ function IncomeAssetsFields({ values, setField }: FieldProps) {
           min={0}
           max={500}
         />
-        <p className="mt-1 text-xs text-stone-400">
+        <p className="mt-1 text-xs text-ink-4">
           모르면 비워두세요. 연소득과 가구원 수로 추정 가능합니다.
         </p>
       </div>
@@ -992,7 +992,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
   return (
     <div className="space-y-4">
       {list.length === 0 && (
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-ink-4">
           자녀가 없거나 입력하지 않으려면 그대로 두세요.
         </p>
       )}
@@ -1003,7 +1003,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
           className="border border-border rounded-lg p-4 space-y-3"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-sm font-medium text-ink-2">
               자녀 {idx + 1}
             </span>
             <button
@@ -1043,7 +1043,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
       <button
         type="button"
         onClick={add}
-        className="w-full bg-white hover:bg-indigo-50 border border-dashed border-indigo-300 text-indigo-600 py-2.5 rounded-lg font-medium text-sm"
+        className="w-full bg-surface hover:bg-indigo-50 border border-dashed border-indigo-300 text-indigo-600 py-2.5 rounded-lg font-medium text-sm"
       >
         + 자녀 추가
       </button>
@@ -1182,7 +1182,7 @@ function SpecialFields({ values, setField }: FieldProps) {
         />
       </div>
 
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-ink-4">
         청년 지원 사업 대부분이 만 19~39세를 기준으로 합니다. (사업별 상이)
       </p>
     </>

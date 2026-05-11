@@ -94,20 +94,20 @@ export default function ManualEntryDialog() {
           onClick={close}
         >
           <div
-            className="bg-white rounded-xl p-5 w-full max-w-md max-h-[90vh] overflow-auto"
+            className="bg-surface rounded-xl p-5 w-full max-w-md max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">✍️ 거래 직접 입력</h2>
               <button
                 onClick={close}
-                className="text-stone-500 hover:text-stone-800 text-xl leading-none"
+                className="text-ink-4 hover:text-ink-1 text-xl leading-none"
                 aria-label="닫기"
               >
                 ×
               </button>
             </div>
-            <p className="text-xs text-stone-500 mb-4">
+            <p className="text-xs text-ink-4 mb-4">
               영수증 없는 거래(현금·외식·시장 등)를 가계부에 추가합니다.
             </p>
 
@@ -121,7 +121,7 @@ export default function ManualEntryDialog() {
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   placeholder="예: 동네 김치찌개집, 시장, 편의점"
-                  className="w-full px-3 py-2 border border-stone-300 rounded"
+                  className="w-full px-3 py-2 border border-line-strong rounded"
                   required
                   maxLength={100}
                 />
@@ -134,7 +134,7 @@ export default function ManualEntryDialog() {
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="예: 김치찌개 점심, 양배추 1통, 음료"
-                  className="w-full px-3 py-2 border border-stone-300 rounded"
+                  className="w-full px-3 py-2 border border-line-strong rounded"
                   required
                   maxLength={200}
                 />
@@ -146,7 +146,7 @@ export default function ManualEntryDialog() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded"
+                    className="w-full px-3 py-2 border border-line-strong rounded"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -161,7 +161,7 @@ export default function ManualEntryDialog() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-300 rounded"
+                    className="w-full px-3 py-2 border border-line-strong rounded"
                   />
                 </div>
               </div>
@@ -176,13 +176,13 @@ export default function ManualEntryDialog() {
                     setAmount(e.target.value.replace(/[^\d,]/g, ""))
                   }
                   placeholder="예: 8000"
-                  className="w-full px-3 py-2 border border-stone-300 rounded tabular-nums"
+                  className="w-full px-3 py-2 border border-line-strong rounded tabular-nums"
                   required
                 />
               </div>
 
               {error && (
-                <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded p-2">
+                <div className="text-sm text-danger bg-danger-soft border border-danger/30 rounded p-2">
                   {error}
                 </div>
               )}
@@ -191,7 +191,7 @@ export default function ManualEntryDialog() {
                 <button
                   type="button"
                   onClick={close}
-                  className="flex-1 border border-stone-300 text-stone-600 py-2 rounded-md text-sm"
+                  className="flex-1 border border-line-strong text-ink-3 py-2 rounded-md text-sm"
                 >
                   취소
                 </button>

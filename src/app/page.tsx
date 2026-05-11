@@ -219,21 +219,21 @@ export default async function HomePage() {
             <div className="grid grid-cols-3 gap-2 mt-3">
               <Link
                 href="/upload"
-                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconCamera size={16} />
                 영수증
               </Link>
               <Link
                 href="/scan"
-                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconBarcode size={16} />
                 바코드
               </Link>
               <Link
                 href="/stores"
-                className="flex items-center justify-center gap-1.5 bg-white hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconPin size={16} />
                 주변매장
@@ -351,25 +351,25 @@ export default async function HomePage() {
                       c.hasHaccp) && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {c.origin && (
-                          <span className="inline-flex items-center text-[10px] bg-amber-50 text-amber-800 rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             🌾 {c.origin}
                           </span>
                         )}
                         {c.grade && (
-                          <span className="inline-flex items-center text-[10px] bg-amber-100 text-amber-900 rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             {c.grade}
                           </span>
                         )}
                         {c.certifications?.slice(0, 2).map((cert) => (
                           <span
                             key={cert}
-                            className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium"
+                            className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                           >
                             {cert}
                           </span>
                         ))}
                         {c.hasHaccp && (
-                          <span className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                             🏅 HACCP
                           </span>
                         )}

@@ -266,16 +266,16 @@ export default function IdPhotoStudio({
 
   return (
     <div className="space-y-6">
-      <section className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
-        <div className="font-semibold text-sm text-rose-900 mb-2">
+      <section className="bg-danger-soft border border-danger/30 rounded-2xl p-4">
+        <div className="font-semibold text-sm text-danger mb-2">
           🎯 본인답게 나오는 비결 — 거리·렌즈·각도가 가장 중요해요
         </div>
-        <p className="text-[11px] text-rose-900/80 mb-2 leading-relaxed">
+        <p className="text-[11px] text-danger/80 mb-2 leading-relaxed">
           AI는 입력 사진의 얼굴 비례를 그대로 본인의 실제 얼굴로 보고 작업합니다.
           가까이서 찍은 셀카는 광각 왜곡으로 코·이마가 커지고 귀·턱이 작아지므로,
           결과물도 그대로 왜곡돼요.
         </p>
-        <ul className="text-xs text-rose-900/80 leading-relaxed space-y-1 list-disc pl-5">
+        <ul className="text-xs text-danger/80 leading-relaxed space-y-1 list-disc pl-5">
           <li>
             <b>📏 거리 1.5~2m</b> — 누군가에게 부탁하거나 삼각대+셀프타이머. 팔 뻗은
             셀카는 비례가 왜곡되니 비추천
@@ -294,11 +294,11 @@ export default function IdPhotoStudio({
         </ul>
       </section>
 
-      <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-        <div className="font-semibold text-sm text-amber-900 mb-2">
+      <section className="bg-warning-soft border border-warning/30 rounded-2xl p-4">
+        <div className="font-semibold text-sm text-warning-text mb-2">
           💡 그 외 기본 가이드
         </div>
-        <ul className="text-xs text-amber-900/80 leading-relaxed space-y-1 list-disc pl-5">
+        <ul className="text-xs text-warning-text/80 leading-relaxed space-y-1 list-disc pl-5">
           <li>
             <b>정면 응시</b> · 고개·턱을 똑바로, 눈은 카메라 렌즈 정면을 바라보기
           </li>
@@ -326,20 +326,20 @@ export default function IdPhotoStudio({
         </ul>
       </section>
 
-      <section className="bg-white border border-stone-200 rounded-2xl p-5">
+      <section className="bg-surface border border-line rounded-2xl p-5">
         <h2 className="font-semibold mb-3">1. 사진 선택</h2>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-stone-100 hover:bg-stone-200 rounded-lg text-sm font-semibold text-stone-700"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-muted hover:bg-surface-sunken rounded-lg text-sm font-semibold text-ink-2"
           >
             📂 갤러리에서 선택
           </button>
           <button
             type="button"
             onClick={() => setCameraOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-50 hover:bg-brand-100 rounded-lg text-sm font-semibold text-brand-700"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-soft hover:bg-brand-soft rounded-lg text-sm font-semibold text-brand-700"
           >
             📸 카메라로 찍기
           </button>
@@ -351,7 +351,7 @@ export default function IdPhotoStudio({
           onChange={handleFileChange}
           className="hidden"
         />
-        <p className="text-[11px] text-stone-400 mt-2">
+        <p className="text-[11px] text-ink-4 mt-2">
           JPEG / PNG / WEBP · 정면 얼굴이 선명한 사진이 좋아요.
         </p>
       </section>
@@ -366,12 +366,12 @@ export default function IdPhotoStudio({
         />
       )}
 
-      <section className="bg-white border border-stone-200 rounded-2xl p-5">
+      <section className="bg-surface border border-line rounded-2xl p-5">
         <h2 className="font-semibold mb-3">2. 증명사진 종류</h2>
         <select
           value={typeIdx}
           onChange={(e) => setTypeIdx(Number(e.target.value))}
-          className="w-full px-3 py-2.5 border border-stone-300 rounded-lg text-sm bg-white"
+          className="w-full px-3 py-2.5 border border-line-strong rounded-lg text-sm bg-surface"
         >
           {specs.map((s) => (
             <option key={s.idx} value={s.idx}>
@@ -379,15 +379,15 @@ export default function IdPhotoStudio({
             </option>
           ))}
         </select>
-        <p className="text-xs text-stone-500 mt-2">{spec.desc}</p>
-        <div className="mt-3 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+        <p className="text-xs text-ink-4 mt-2">{spec.desc}</p>
+        <div className="mt-3 text-[11px] text-warning-text bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 leading-relaxed">
           📜 <b>배경 규정:</b> {spec.regulationNote}
         </div>
       </section>
 
-      <section className="bg-white border border-stone-200 rounded-2xl p-5">
+      <section className="bg-surface border border-line rounded-2xl p-5">
         <h2 className="font-semibold mb-1">3. 배경색</h2>
-        <p className="text-xs text-stone-500 mb-3">
+        <p className="text-xs text-ink-4 mb-3">
           {spec.backgroundPolicy.kind === "strict_white"
             ? "이 종류는 공식 규정상 흰색 단색만 사용 가능합니다."
             : spec.backgroundPolicy.kind === "white_preferred"
@@ -413,15 +413,15 @@ export default function IdPhotoStudio({
                   selected
                     ? "border-brand-500 ring-2 ring-brand-200"
                     : allowed
-                      ? "border-stone-200 hover:border-stone-400"
-                      : "border-stone-100 opacity-40 cursor-not-allowed"
+                      ? "border-line hover:border-line-strong"
+                      : "border-line opacity-40 cursor-not-allowed"
                 }`}
               >
                 <div
-                  className="aspect-square rounded w-full border border-stone-200"
+                  className="aspect-square rounded w-full border border-line"
                   style={{ background: opt.swatch }}
                 />
-                <div className="text-[10px] mt-1 text-stone-700 truncate">
+                <div className="text-[10px] mt-1 text-ink-2 truncate">
                   {opt.label}
                 </div>
                 {opt.style === "gradient" && (
@@ -433,7 +433,7 @@ export default function IdPhotoStudio({
             );
           })}
         </div>
-        <p className="text-[11px] text-stone-500 mt-3 leading-relaxed">
+        <p className="text-[11px] text-ink-4 mt-3 leading-relaxed">
           <b>현재 선택:</b>{" "}
           {backgroundOptions.find((o) => o.key === bgKey)?.label} —{" "}
           {backgroundOptions.find((o) => o.key === bgKey)?.blurb}
@@ -441,9 +441,9 @@ export default function IdPhotoStudio({
       </section>
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="bg-white border border-stone-200 rounded-2xl p-4">
-          <div className="text-xs font-medium text-stone-500 mb-2">원본</div>
-          <div className="aspect-[3.5/4.5] bg-stone-50 rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="bg-surface border border-line rounded-2xl p-4">
+          <div className="text-xs font-medium text-ink-4 mb-2">원본</div>
+          <div className="aspect-[3.5/4.5] bg-surface-muted rounded-lg flex items-center justify-center overflow-hidden">
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -452,15 +452,15 @@ export default function IdPhotoStudio({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-xs text-stone-400">사진을 선택해주세요</span>
+              <span className="text-xs text-ink-4">사진을 선택해주세요</span>
             )}
           </div>
         </div>
-        <div className="bg-white border border-stone-200 rounded-2xl p-4">
-          <div className="text-xs font-medium text-stone-500 mb-2">결과</div>
-          <div className="aspect-[3.5/4.5] bg-stone-50 rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="bg-surface border border-line rounded-2xl p-4">
+          <div className="text-xs font-medium text-ink-4 mb-2">결과</div>
+          <div className="aspect-[3.5/4.5] bg-surface-muted rounded-lg flex items-center justify-center overflow-hidden">
             {busy ? (
-              <span className="text-xs text-stone-500 animate-pulse">
+              <span className="text-xs text-ink-4 animate-pulse">
                 AI가 만드는 중...
               </span>
             ) : resultDataUrl ? (
@@ -471,14 +471,14 @@ export default function IdPhotoStudio({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-xs text-stone-400">변환 결과 표시</span>
+              <span className="text-xs text-ink-4">변환 결과 표시</span>
             )}
           </div>
         </div>
       </section>
 
       {error && (
-        <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+        <div className="text-sm text-danger-text bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -488,7 +488,7 @@ export default function IdPhotoStudio({
           type="button"
           onClick={handleProcess}
           disabled={busy || !imageBase64}
-          className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl"
+          className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:bg-line-strong disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl"
         >
           {busy ? "변환 중... (최대 1~2분)" : "🪄 변환하기"}
         </button>
@@ -496,13 +496,13 @@ export default function IdPhotoStudio({
           type="button"
           onClick={handleDownload}
           disabled={!resultDataUrl}
-          className="px-5 py-3 bg-white border border-stone-300 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-medium"
+          className="px-5 py-3 bg-surface border border-line-strong hover:bg-surface-muted disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-medium"
         >
           저장
         </button>
       </div>
 
-      <p className="text-[11px] text-stone-400 text-center leading-relaxed">
+      <p className="text-[11px] text-ink-4 text-center leading-relaxed">
         ⚠️ 변환 시 외부 AI API가 호출되며 비용이 발생합니다.
         <br />
         한 번에 한 장씩, 사진을 신중히 선택해 주세요.

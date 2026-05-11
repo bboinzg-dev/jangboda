@@ -65,7 +65,7 @@ export default function EmptyState({
               className={
                 a.primary
                   ? "inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white px-6 py-3 rounded-xl font-semibold text-[15px] shadow-soft hover:shadow-raise min-h-[44px] transition"
-                  : "inline-flex items-center justify-center bg-white hover:bg-surface-muted text-ink-2 border border-line px-6 py-3 rounded-xl font-medium text-[15px] min-h-[44px] transition"
+                  : "inline-flex items-center justify-center bg-surface hover:bg-surface-muted text-ink-2 border border-line px-6 py-3 rounded-xl font-medium text-[15px] min-h-[44px] transition"
               }
             >
               {a.label}

@@ -149,11 +149,11 @@ export default function SeafoodTracePanel({
   };
 
   return (
-    <section className="bg-white border border-border rounded-xl p-4">
+    <section className="bg-surface border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🐟 수산물 이력추적 조회
       </h2>
-      <div className="text-xs text-stone-500 mb-3">
+      <div className="text-xs text-ink-4 mb-3">
         포장 라벨의 이력추적등록번호를 입력하세요
       </div>
 
@@ -166,14 +166,14 @@ export default function SeafoodTracePanel({
             if (e.key === "Enter") handleLookup();
           }}
           placeholder="예: 0123456789AB"
-          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+          className="flex-1 border border-line-strong rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
           disabled={loading}
         />
         <button
           type="button"
           onClick={handleLookup}
           disabled={loading || !regNo.trim()}
-          className="px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:bg-line-strong disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
         >
           {loading ? "조회중..." : "조회"}
         </button>
@@ -182,15 +182,15 @@ export default function SeafoodTracePanel({
       {/* Loading skeleton */}
       {loading && (
         <div className="space-y-2">
-          <div className="h-4 w-1/3 bg-stone-100 rounded animate-pulse" />
-          <div className="h-4 w-2/3 bg-stone-100 rounded animate-pulse" />
-          <div className="h-4 w-1/2 bg-stone-100 rounded animate-pulse" />
+          <div className="h-4 w-1/3 bg-surface-muted rounded animate-pulse" />
+          <div className="h-4 w-2/3 bg-surface-muted rounded animate-pulse" />
+          <div className="h-4 w-1/2 bg-surface-muted rounded animate-pulse" />
         </div>
       )}
 
       {/* Error */}
       {!loading && error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <div className="text-sm text-red-600 bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -201,28 +201,28 @@ export default function SeafoodTracePanel({
           {/* 기본정보 */}
           {result.basic && (
             <div className="border border-border rounded-lg p-3">
-              <div className="text-xs font-semibold text-stone-700 mb-2">
+              <div className="text-xs font-semibold text-ink-2 mb-2">
                 기본정보
               </div>
               <dl className="grid grid-cols-3 gap-y-1.5 text-sm">
-                <dt className="text-stone-500 col-span-1">상품명</dt>
-                <dd className="col-span-2 font-medium text-stone-800">
+                <dt className="text-ink-4 col-span-1">상품명</dt>
+                <dd className="col-span-2 font-medium text-ink-1">
                   {result.basic.goodsName || "-"}
                 </dd>
-                <dt className="text-stone-500 col-span-1">품목</dt>
-                <dd className="col-span-2 text-stone-700">
+                <dt className="text-ink-4 col-span-1">품목</dt>
+                <dd className="col-span-2 text-ink-2">
                   {result.basic.prdlstGroupName || "-"}
                 </dd>
-                <dt className="text-stone-500 col-span-1">업소명</dt>
-                <dd className="col-span-2 text-stone-700">
+                <dt className="text-ink-4 col-span-1">업소명</dt>
+                <dd className="col-span-2 text-ink-2">
                   {result.basic.enterpriseName || "-"}
                 </dd>
-                <dt className="text-stone-500 col-span-1">전화</dt>
-                <dd className="col-span-2 text-stone-700">
+                <dt className="text-ink-4 col-span-1">전화</dt>
+                <dd className="col-span-2 text-ink-2">
                   {result.basic.telNo || "-"}
                 </dd>
-                <dt className="text-stone-500 col-span-1">주소</dt>
-                <dd className="col-span-2 text-stone-700">
+                <dt className="text-ink-4 col-span-1">주소</dt>
+                <dd className="col-span-2 text-ink-2">
                   {result.basic.address || "-"}
                 </dd>
               </dl>
@@ -232,9 +232,9 @@ export default function SeafoodTracePanel({
           {/* 생산이력 */}
           {result.productions.length > 0 && (
             <div className="border border-border rounded-lg p-3">
-              <div className="text-xs font-semibold text-stone-700 mb-2 flex items-center gap-2">
+              <div className="text-xs font-semibold text-ink-2 mb-2 flex items-center gap-2">
                 생산이력
-                <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
+                <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
                   {result.productions.length}건
                 </span>
               </div>
@@ -242,20 +242,20 @@ export default function SeafoodTracePanel({
                 {result.productions.map((p, idx) => (
                   <li
                     key={`${p.lotNoWarehousing}-${idx}`}
-                    className="text-sm bg-stone-50 rounded px-2.5 py-2"
+                    className="text-sm bg-surface-muted rounded px-2.5 py-2"
                   >
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div>
-                        <span className="text-stone-500 text-xs">입고일자</span>{" "}
-                        <span className="font-medium text-stone-800">
+                        <span className="text-ink-4 text-xs">입고일자</span>{" "}
+                        <span className="font-medium text-ink-1">
                           {fmtDate(p.warehousingDate)}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-stone-500">
+                      <div className="text-xs font-mono text-ink-4">
                         로트 {p.lotNoWarehousing || "-"}
                       </div>
                     </div>
-                    <div className="text-xs text-stone-600 mt-1">
+                    <div className="text-xs text-ink-3 mt-1">
                       입고수량 {p.warehousingQty || "-"} {p.warehousingUnit}
                       {p.settQty && ` · 입식수량 ${p.settQty}`}
                     </div>
@@ -268,9 +268,9 @@ export default function SeafoodTracePanel({
           {/* 출하이력 */}
           {result.releases.length > 0 && (
             <div className="border border-border rounded-lg p-3">
-              <div className="text-xs font-semibold text-stone-700 mb-2 flex items-center gap-2">
+              <div className="text-xs font-semibold text-ink-2 mb-2 flex items-center gap-2">
                 출하이력
-                <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
+                <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
                   {result.releases.length}건
                 </span>
               </div>
@@ -278,25 +278,25 @@ export default function SeafoodTracePanel({
                 {result.releases.map((r, idx) => (
                   <li
                     key={`${r.lotNoRelease}-${idx}`}
-                    className="text-sm bg-stone-50 rounded px-2.5 py-2"
+                    className="text-sm bg-surface-muted rounded px-2.5 py-2"
                   >
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div>
-                        <span className="text-stone-500 text-xs">출고일자</span>{" "}
-                        <span className="font-medium text-stone-800">
+                        <span className="text-ink-4 text-xs">출고일자</span>{" "}
+                        <span className="font-medium text-ink-1">
                           {fmtDate(r.releaseDate)}
                         </span>
                         {r.releaseDvsName && (
-                          <span className="ml-2 text-[11px] bg-brand-50 text-brand-700 rounded px-1.5 py-0.5">
+                          <span className="ml-2 text-[11px] bg-brand-soft text-brand-700 rounded px-1.5 py-0.5">
                             {r.releaseDvsName}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs font-mono text-stone-500">
+                      <div className="text-xs font-mono text-ink-4">
                         로트 {r.lotNoRelease || "-"}
                       </div>
                     </div>
-                    <div className="text-xs text-stone-600 mt-1">
+                    <div className="text-xs text-ink-3 mt-1">
                       생산일자 {fmtDate(r.productionDate)} · 출고수량{" "}
                       {r.releaseQty || "-"} {r.releaseUnit}
                     </div>
@@ -314,7 +314,7 @@ export default function SeafoodTracePanel({
         </div>
       )}
 
-      <div className="text-[11px] text-stone-400 mt-3">
+      <div className="text-[11px] text-ink-4 mt-3">
         출처: 식품의약품안전처 수산물이력 API
       </div>
     </section>

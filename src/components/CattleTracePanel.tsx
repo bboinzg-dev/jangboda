@@ -116,12 +116,12 @@ export default function CattleTracePanel({
   }
 
   return (
-    <section className="bg-white border border-border rounded-xl p-5 space-y-4">
+    <section className="bg-surface border border-border rounded-xl p-5 space-y-4">
       <header className="space-y-1">
-        <h2 className="font-bold text-stone-900 flex items-center gap-2">
+        <h2 className="font-bold text-ink-1 flex items-center gap-2">
           🐄 이력추적 조회
         </h2>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-ink-4">
           포장 라벨의 12자리 개체식별번호를 입력하세요
         </p>
       </header>
@@ -135,12 +135,12 @@ export default function CattleTracePanel({
           value={input}
           onChange={(e) => setInput(e.target.value.replace(/\D/g, ""))}
           placeholder="예: 002123456789"
-          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="flex-1 border border-line-strong rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
         />
         <button
           type="submit"
           disabled={loading || input.length !== 12}
-          className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:bg-stone-300 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-lg bg-warning text-white text-sm font-medium hover:bg-warning disabled:bg-line-strong disabled:cursor-not-allowed"
         >
           {loading ? "조회 중..." : "조회"}
         </button>
@@ -148,14 +148,14 @@ export default function CattleTracePanel({
 
       {loading && (
         <div className="space-y-2">
-          <div className="h-16 bg-stone-100 rounded-lg animate-pulse" />
-          <div className="h-16 bg-stone-100 rounded-lg animate-pulse" />
-          <div className="h-16 bg-stone-100 rounded-lg animate-pulse" />
+          <div className="h-16 bg-surface-muted rounded-lg animate-pulse" />
+          <div className="h-16 bg-surface-muted rounded-lg animate-pulse" />
+          <div className="h-16 bg-surface-muted rounded-lg animate-pulse" />
         </div>
       )}
 
       {!loading && error && (
-        <div className="border border-red-200 bg-red-50 rounded-lg p-3 text-sm text-red-700">
+        <div className="border border-danger/30 bg-danger-soft rounded-lg p-3 text-sm text-danger-text">
           {error}
         </div>
       )}
@@ -164,8 +164,8 @@ export default function CattleTracePanel({
         <div className="space-y-3">
           {/* 통합 정보 */}
           {data.integrated && (
-            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
-              <h3 className="text-sm font-semibold text-stone-700 mb-2">
+            <div className="border border-border rounded-lg p-3 bg-surface-muted/50">
+              <h3 className="text-sm font-semibold text-ink-2 mb-2">
                 통합 이력
               </h3>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
@@ -191,8 +191,8 @@ export default function CattleTracePanel({
 
           {/* 생산 정보 */}
           {data.production && (
-            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
-              <h3 className="text-sm font-semibold text-stone-700 mb-2">
+            <div className="border border-border rounded-lg p-3 bg-surface-muted/50">
+              <h3 className="text-sm font-semibold text-ink-2 mb-2">
                 생산 정보
               </h3>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
@@ -214,8 +214,8 @@ export default function CattleTracePanel({
 
           {/* 가공 이력 */}
           {data.processes.length > 0 && (
-            <div className="border border-border rounded-lg p-3 bg-stone-50/50">
-              <h3 className="text-sm font-semibold text-stone-700 mb-2">
+            <div className="border border-border rounded-lg p-3 bg-surface-muted/50">
+              <h3 className="text-sm font-semibold text-ink-2 mb-2">
                 가공 이력 ({data.processes.length}건)
               </h3>
               <ul className="space-y-1.5">
@@ -224,10 +224,10 @@ export default function CattleTracePanel({
                     key={`${p.processDate ?? ""}-${i}`}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="text-stone-500 font-mono">
+                    <span className="text-ink-4 font-mono">
                       {formatDate(p.processDate)}
                     </span>
-                    <span className="text-stone-800 font-medium">
+                    <span className="text-ink-1 font-medium">
                       {p.processPlaceName ?? "-"}
                     </span>
                   </li>
@@ -244,7 +244,7 @@ export default function CattleTracePanel({
         </div>
       )}
 
-      <p className="text-[11px] text-stone-400">
+      <p className="text-[11px] text-ink-4">
         출처: 식품의약품안전처 쇠고기이력추적 API
       </p>
     </section>
@@ -262,8 +262,8 @@ function Field({
 }) {
   return (
     <div className={full ? "col-span-2" : ""}>
-      <dt className="text-[10px] text-stone-500">{label}</dt>
-      <dd className="text-stone-800 font-medium truncate">{value}</dd>
+      <dt className="text-[10px] text-ink-4">{label}</dt>
+      <dd className="text-ink-1 font-medium truncate">{value}</dd>
     </div>
   );
 }

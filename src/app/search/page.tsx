@@ -136,7 +136,7 @@ export default function SearchPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="예: 신라면, 우유, 햇반"
-              className="w-full pl-10 pr-4 py-2.5 border border-line rounded-xl bg-white shadow-soft focus:outline-none focus:border-brand-400 focus:shadow-ring transition"
+              className="w-full pl-10 pr-4 py-2.5 border border-line rounded-xl bg-surface shadow-soft focus:outline-none focus:border-brand-400 focus:shadow-ring transition"
             />
           </div>
           <button
@@ -175,14 +175,14 @@ export default function SearchPage() {
         <span className="text-ink-3">정렬:</span>
         <button
           onClick={() => setSortBy("min")}
-          className={`px-2 py-1 rounded ${sortBy === "min" ? "bg-brand-100 text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
+          className={`px-2 py-1 rounded ${sortBy === "min" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
           최저가
         </button>
         <button
           onClick={() => setSortBy("unit")}
           title="같은 용량으로 환산했을 때 더 싼 상품이 위로 (예: 100g당 가격, 1L당 가격)"
-          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-100 text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
+          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
           단가순
           <span
@@ -308,25 +308,25 @@ export default function SearchPage() {
                       {(p.origin || p.grade || (p.certifications && p.certifications.length > 0) || p.hasHaccp) && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {p.origin && (
-                            <span className="inline-flex items-center text-[10px] bg-amber-50 text-amber-800 rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               🌾 {p.origin}
                             </span>
                           )}
                           {p.grade && (
-                            <span className="inline-flex items-center text-[10px] bg-amber-100 text-amber-900 rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               {p.grade}
                             </span>
                           )}
                           {p.certifications?.slice(0, 2).map((c) => (
                             <span
                               key={c}
-                              className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium"
+                              className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                             >
                               {c}
                             </span>
                           ))}
                           {p.hasHaccp && (
-                            <span className="inline-flex items-center text-[10px] bg-emerald-50 text-emerald-700 rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                               🏅 HACCP
                             </span>
                           )}
@@ -389,7 +389,7 @@ export default function SearchPage() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
+                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-surface text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 ← 이전
               </button>
@@ -402,7 +402,7 @@ export default function SearchPage() {
                   setPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-white text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
+                className="min-h-11 px-5 py-2.5 rounded-xl border border-line bg-surface text-sm text-ink-2 hover:bg-surface-muted shadow-soft disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition"
               >
                 다음 →
               </button>
@@ -429,7 +429,7 @@ function CategoryChip({
       className={`shrink-0 whitespace-nowrap text-[11px] md:text-xs px-3 py-1.5 rounded-full border transition-colors ${
         active
           ? "bg-ink-1 text-white border-ink-1"
-          : "bg-white text-ink-2 border-line hover:border-line-strong"
+          : "bg-surface text-ink-2 border-line hover:border-line-strong"
       }`}
     >
       {label}

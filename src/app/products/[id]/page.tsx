@@ -365,7 +365,7 @@ export default async function ProductDetailPage({
                 <span>{product.name}</span>
                 {product.hasHaccp && (
                   <span
-                    className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-xs font-medium"
+                    className="inline-flex items-center rounded bg-success-soft text-success-text px-1.5 py-0.5 text-xs font-medium"
                     title="HACCP 적용업소 — 식약처 안전관리인증 받은 제조사"
                   >
                     🏅 HACCP
@@ -385,9 +385,9 @@ export default async function ProductDetailPage({
           const isFuzzy = top.matchType === "fuzzy";
           // fuzzy는 "추정"으로 약하게, exact는 "확정" 강하게
           const tone = isFuzzy
-            ? "border-amber-300 bg-amber-50 text-amber-900"
-            : "border-rose-300 bg-rose-50 text-rose-900";
-          const subTone = isFuzzy ? "text-amber-700" : "text-rose-700";
+            ? "border-warning/30 bg-warning-soft text-warning-text"
+            : "border-danger/30 bg-danger-soft text-danger";
+          const subTone = isFuzzy ? "text-warning-text" : "text-danger-text";
           return (
             <div className={`mt-4 rounded-xl border-2 p-4 ${tone}`}>
               <div className="flex items-start gap-2">
@@ -400,7 +400,7 @@ export default async function ProductDetailPage({
                     {top.grade && (
                       <span
                         className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${
-                          isFuzzy ? "bg-amber-700" : "bg-rose-700"
+                          isFuzzy ? "bg-warning" : "bg-danger"
                         }`}
                       >
                         {top.grade}
@@ -442,8 +442,8 @@ export default async function ProductDetailPage({
                             key={r.id}
                             className={`border-l-2 pl-2 ${
                               r.matchType === "fuzzy"
-                                ? "border-amber-300"
-                                : "border-rose-300"
+                                ? "border-warning/30"
+                                : "border-danger/30"
                             }`}
                           >
                             <div className={subTone}>
@@ -493,17 +493,17 @@ export default async function ProductDetailPage({
               </div>
             )}
             {product.grade && (
-              <div className="bg-amber-50 rounded px-2 py-1.5">
-                <div className="text-[10px] text-amber-700">등급</div>
-                <div className="font-medium text-amber-800 truncate">
+              <div className="bg-warning-soft rounded px-2 py-1.5">
+                <div className="text-[10px] text-warning-text">등급</div>
+                <div className="font-medium text-warning-text truncate">
                   {product.grade}
                 </div>
               </div>
             )}
             {product.certifications && product.certifications.length > 0 && (
-              <div className="bg-emerald-50 rounded px-2 py-1.5">
-                <div className="text-[10px] text-emerald-700">인증</div>
-                <div className="font-medium text-emerald-800 truncate">
+              <div className="bg-success-soft rounded px-2 py-1.5">
+                <div className="text-[10px] text-success-text">인증</div>
+                <div className="font-medium text-success-text truncate">
                   {product.certifications.join(", ")}
                 </div>
               </div>
@@ -543,13 +543,13 @@ export default async function ProductDetailPage({
           </>
         ) : prices.length > 0 ? (
           // 가격은 있는데 모두 시세/호가성/기타 온라인몰 — 비교용 데이터 부족
-          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-900">
+          <div className="mt-4 bg-warning-soft border border-warning/30 rounded-xl p-3 text-sm text-warning-text">
             아직 비교 가능한 매장 가격이 없어요. 영수증을 올리면 첫 가격으로 등록됩니다.
           </div>
         ) : null}
 
         {winnerSection && (
-          <div className="mt-4 text-sm bg-brand-50 border border-brand-200 rounded-xl p-3">
+          <div className="mt-4 text-sm bg-brand-soft border border-brand-200 rounded-xl p-3">
             💡{" "}
             {winnerSection === "offline"
               ? "오프라인 매장이 더 쌉니다 — 가까우면 직접 사러 가는 게 이득"
@@ -580,10 +580,10 @@ export default async function ProductDetailPage({
           매장 가격과 같은 칸에 두면 "어느 매장 가격이지?" 오해 발생.
           metadata에 changePct/previousPrice/weeklyAverage 있으면 변동 정보도 노출. */}
       {marketRateRows.length > 0 && (
-        <section className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <h2 className="font-bold text-emerald-900 mb-1 flex items-center gap-2 text-sm">
+        <section className="bg-success-soft border border-success/30 rounded-xl p-4">
+          <h2 className="font-bold text-success mb-1 flex items-center gap-2 text-sm">
             📊 공공 시세 (참고)
-            <span className="text-[11px] text-emerald-700 font-normal">
+            <span className="text-[11px] text-success-text font-normal">
               KAMIS 전국 평균 — 매장 가격 아님
             </span>
           </h2>
@@ -606,24 +606,24 @@ export default async function ProductDetailPage({
               return (
                 <div key={r.priceId} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-900">{r.chainName}</span>
-                    <span className="font-bold tabular-nums text-emerald-900">
+                    <span className="text-success">{r.chainName}</span>
+                    <span className="font-bold tabular-nums text-success">
                       {formatWon(r.price)}
-                      <span className="text-[11px] text-emerald-700 font-normal ml-1">
+                      <span className="text-[11px] text-success-text font-normal ml-1">
                         {unitPriceLabel(r.price, product.unit)}
                       </span>
                     </span>
                   </div>
                   {/* 전일대비 변동·주간평균·조사일 — metadata 있으면 노출 */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-emerald-800">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-success-text">
                     {changePct != null && (
                       <span
                         className={`tabular-nums font-medium ${
                           isUp
-                            ? "text-rose-700"
+                            ? "text-danger-text"
                             : isDown
-                              ? "text-blue-700"
-                              : "text-emerald-700"
+                              ? "text-info-text"
+                              : "text-success-text"
                         }`}
                       >
                         {isUp ? "▲" : isDown ? "▼" : "—"}
@@ -807,7 +807,7 @@ function PriceStat({
   return (
     <div
       className={`rounded-xl p-3 ${
-        highlight ? "bg-brand-50 border border-brand-200" : "bg-surface-muted"
+        highlight ? "bg-brand-soft border border-brand-200" : "bg-surface-muted"
       }`}
     >
       <div className="text-xs text-ink-3">{label}</div>

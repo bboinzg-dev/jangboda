@@ -28,7 +28,7 @@ export default function BackButton({
     <a
       href={fallbackHref}
       onClick={handleClick}
-      className="text-sm text-stone-500 hover:text-stone-700"
+      className="text-sm text-ink-4 hover:text-ink-2"
     >
       ← 이전 페이지로
       <span className="sr-only"> ({fallbackLabel})</span>

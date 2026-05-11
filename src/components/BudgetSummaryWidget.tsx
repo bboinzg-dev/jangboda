@@ -47,21 +47,21 @@ export default function BudgetSummaryWidget() {
     return (
       <Link
         href="/upload"
-        className="block bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-5 hover:shadow-sm transition-shadow"
+        className="block bg-gradient-to-br from-emerald-50 to-emerald-100 border border-success/30 rounded-xl p-5 hover:shadow-sm transition-shadow"
       >
         <div className="flex items-center gap-3">
           <span className="text-3xl" aria-hidden>
             📊
           </span>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-emerald-900">
+            <div className="text-sm font-bold text-success">
               가계부 시작하기
             </div>
-            <div className="text-xs text-emerald-700 mt-0.5">
+            <div className="text-xs text-success-text mt-0.5">
               영수증 1장이면 자동으로 분석해 드려요
             </div>
           </div>
-          <span className="text-emerald-600">→</span>
+          <span className="text-success">→</span>
         </div>
       </Link>
     );
@@ -95,10 +95,10 @@ export default function BudgetSummaryWidget() {
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-emerald-700 font-medium">
+          <div className="text-[10px] text-success-text font-medium">
             🎉 누적 절약
           </div>
-          <div className="text-lg font-extrabold text-emerald-700 tabular-nums">
+          <div className="text-lg font-extrabold text-success-text tabular-nums">
             {formatWon(summary.savedAmount ?? 0)}
           </div>
         </div>

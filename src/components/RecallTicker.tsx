@@ -36,7 +36,7 @@ export default function RecallTicker({ items }: Props) {
 
   return (
     <div
-      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-danger-soft bg-white"
+      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-danger-soft bg-surface"
       style={{ ["--ticker-duration" as string]: duration }}
     >
       <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10" />
@@ -56,13 +56,13 @@ function ItemCard({ item }: { item: RecallItem }) {
     if (g.includes("1")) return "bg-danger-soft text-danger-text";
     if (g.includes("2")) return "bg-orange-100 text-orange-700";
     if (g.includes("3")) return "bg-warning-soft text-warning-text";
-    return "bg-stone-100 text-stone-600";
+    return "bg-surface-muted text-ink-3";
   })();
 
   return (
     <Link
       href="/recalls"
-      className="flex items-center gap-2 px-3 py-2 bg-white border border-danger-soft rounded-md hover:bg-rose-50 transition"
+      className="flex items-center gap-2 px-3 py-2 bg-surface border border-danger-soft rounded-md hover:bg-danger-soft transition"
     >
       <ProductImage
         src={item.productImageUrl}

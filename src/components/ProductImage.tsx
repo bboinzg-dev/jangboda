@@ -15,7 +15,7 @@ export default function ProductImage({ src, alt, size = 64, className }: Props) 
   if (!src) {
     return (
       <div
-        className={`shrink-0 rounded-md bg-stone-100 flex items-center justify-center text-stone-300 ${className ?? ""}`}
+        className={`shrink-0 rounded-md bg-surface-muted flex items-center justify-center text-stone-300 ${className ?? ""}`}
         style={{ width: size, height: size }}
         aria-hidden
       >
@@ -25,7 +25,7 @@ export default function ProductImage({ src, alt, size = 64, className }: Props) 
   }
   return (
     <div
-      className={`shrink-0 rounded-md overflow-hidden bg-stone-50 ${className ?? ""}`}
+      className={`shrink-0 rounded-md overflow-hidden bg-surface-muted ${className ?? ""}`}
       style={{ width: size, height: size }}
     >
       <Image

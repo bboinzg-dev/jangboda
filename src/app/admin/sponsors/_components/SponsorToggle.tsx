@@ -49,7 +49,7 @@ export default function SponsorToggle({
         className={`text-[11px] px-2 py-1 rounded font-bold ${
           active
             ? "bg-success-soft text-success-text"
-            : "bg-stone-200 text-stone-600"
+            : "bg-surface-sunken text-ink-3"
         } disabled:opacity-50`}
       >
         {active ? "활성" : "비활성"}

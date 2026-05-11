@@ -21,8 +21,8 @@ export default function HomeColdStart({ stats }: Props) {
       </div>
 
       <ul className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-        <li className="bg-white rounded-xl p-3 flex items-start gap-2.5">
-          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+        <li className="bg-surface rounded-xl p-3 flex items-start gap-2.5">
+          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand-600">
             <IconCamera size={18} />
           </span>
           <div className="min-w-0">
@@ -32,8 +32,8 @@ export default function HomeColdStart({ stats }: Props) {
             </p>
           </div>
         </li>
-        <li className="bg-white rounded-xl p-3 flex items-start gap-2.5">
-          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+        <li className="bg-surface rounded-xl p-3 flex items-start gap-2.5">
+          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand-600">
             <IconBarcode size={18} />
           </span>
           <div className="min-w-0">
@@ -43,8 +43,8 @@ export default function HomeColdStart({ stats }: Props) {
             </p>
           </div>
         </li>
-        <li className="bg-white rounded-xl p-3 flex items-start gap-2.5">
-          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+        <li className="bg-surface rounded-xl p-3 flex items-start gap-2.5">
+          <span className="shrink-0 w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-brand-600">
             <IconPin size={18} />
           </span>
           <div className="min-w-0">
@@ -66,7 +66,7 @@ export default function HomeColdStart({ stats }: Props) {
         </Link>
         <Link
           href="/stores"
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-stone-50 border border-line text-ink-1 px-5 py-2.5 rounded-xl font-semibold text-sm transition"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-surface hover:bg-surface-muted border border-line text-ink-1 px-5 py-2.5 rounded-xl font-semibold text-sm transition"
         >
           <IconPin size={16} />
           주변 마트 둘러보기

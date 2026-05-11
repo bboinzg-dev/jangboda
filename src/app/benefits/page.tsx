@@ -67,10 +67,10 @@ export default async function BenefitsHomePage() {
     <div className="space-y-8">
       <section className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-8 border border-indigo-100">
         <div className="text-xs font-medium text-indigo-700 mb-2">정부 혜택 추천</div>
-        <h1 className="text-3xl font-bold text-stone-900 mb-2">
+        <h1 className="text-3xl font-bold text-ink-1 mb-2">
           내가 받을 수 있는 혜택, 한 번에 찾기
         </h1>
-        <p className="text-stone-600 mb-6 leading-relaxed">
+        <p className="text-ink-3 mb-6 leading-relaxed">
           중앙정부·구청·시청에서 받을 수 있는 지원금과 복지를 통합 매칭합니다.
           <br />
           소상공인 지원, 청년·신혼·출산 혜택, 건강·교육 등 받을 수 있는 모든 것을.
@@ -80,7 +80,7 @@ export default async function BenefitsHomePage() {
             <>
               <Link
                 href="/benefits/onboarding"
-                className="bg-white hover:bg-stone-50 border border-stone-200 px-5 py-2.5 rounded-lg font-medium"
+                className="bg-surface hover:bg-surface-muted border border-line px-5 py-2.5 rounded-lg font-medium"
               >
                 정보 보강하기 ({matchInfo.profile.completeness}% 입력)
               </Link>
@@ -96,7 +96,7 @@ export default async function BenefitsHomePage() {
           )}
           <Link
             href="/benefits/catalog"
-            className="bg-white hover:bg-stone-50 border border-stone-200 px-5 py-2.5 rounded-lg font-medium"
+            className="bg-surface hover:bg-surface-muted border border-line px-5 py-2.5 rounded-lg font-medium"
           >
             전체 혜택 둘러보기
           </Link>
@@ -122,12 +122,12 @@ export default async function BenefitsHomePage() {
                 저장한 혜택 →
               </Link>
             </div>
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-ink-4">
               상위 {matchInfo.matches.length}건 / 점수 높은 순
             </span>
           </div>
           {matchInfo.matches.length === 0 ? (
-            <div className="text-stone-500 text-sm bg-stone-50 border border-stone-200 rounded-lg p-6 text-center">
+            <div className="text-ink-4 text-sm bg-surface-muted border border-line rounded-lg p-6 text-center">
               아직 매칭된 혜택이 없습니다. 위의 &ldquo;다시 매칭하기&rdquo; 버튼을 눌러
               평가를 실행해보세요.
             </div>
@@ -161,7 +161,7 @@ export default async function BenefitsHomePage() {
       <section>
         <h2 className="text-xl font-bold mb-4">카테고리별 혜택</h2>
         {data.byCategory.length === 0 ? (
-          <div className="text-stone-500 text-sm bg-stone-50 border border-stone-200 rounded-lg p-6 text-center">
+          <div className="text-ink-4 text-sm bg-surface-muted border border-line rounded-lg p-6 text-center">
             아직 데이터가 없습니다. 시드 스크립트로 혜택을 가져오세요.
           </div>
         ) : (
@@ -171,9 +171,9 @@ export default async function BenefitsHomePage() {
                 key={c.category}
                 className="card p-4"
               >
-                <div className="text-xs text-stone-500">{c.category}</div>
+                <div className="text-xs text-ink-4">{c.category}</div>
                 <div className="text-2xl font-bold text-indigo-600">{c._count}</div>
-                <div className="text-xs text-stone-400">개 혜택</div>
+                <div className="text-xs text-ink-4">개 혜택</div>
               </div>
             ))}
           </div>
@@ -194,9 +194,9 @@ function StatCard({
 }) {
   return (
     <div className="card p-4">
-      <div className="text-xs text-stone-500">{label}</div>
+      <div className="text-xs text-ink-4">{label}</div>
       <div
-        className={`text-2xl font-bold ${accent ? "text-rose-600" : "text-stone-900"}`}
+        className={`text-2xl font-bold ${accent ? "text-danger" : "text-ink-1"}`}
       >
         {value}
       </div>

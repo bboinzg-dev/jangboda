@@ -70,22 +70,22 @@ export default function RecipeRecommendations({ productNames }: Props) {
   if (productNames.length === 0) return null;
 
   return (
-    <section className="bg-white border border-border rounded-xl p-4 md:p-5">
+    <section className="bg-surface border border-border rounded-xl p-4 md:p-5">
       <h2 className="font-bold mb-1 flex items-center gap-2">
         🍳 이 재료로 만들 수 있는 요리
       </h2>
-      <p className="text-xs text-stone-500 mb-3">
+      <p className="text-xs text-ink-4 mb-3">
         장바구니 재료를 활용한 추천 레시피 (식약처 조리식품 레시피 DB)
       </p>
 
       {loading && (
-        <div className="text-sm text-stone-500 text-center py-6">
+        <div className="text-sm text-ink-4 text-center py-6">
           레시피 찾는 중...
         </div>
       )}
 
       {!loading && recipes !== null && recipes.length === 0 && (
-        <div className="text-sm text-stone-500 text-center py-6 border border-dashed border-border rounded-lg">
+        <div className="text-sm text-ink-4 text-center py-6 border border-dashed border-border rounded-lg">
           장바구니 재료로 만들 수 있는 등록 레시피가 없습니다.
           <br />
           <Link
@@ -103,9 +103,9 @@ export default function RecipeRecommendations({ productNames }: Props) {
             <li key={r.id}>
               <Link
                 href={`/recipes/${r.id}`}
-                className="card-clickable flex gap-3 p-2 border border-border rounded-lg hover:border-brand-300 hover:bg-brand-50/30 transition"
+                className="card-clickable flex gap-3 p-2 border border-border rounded-lg hover:border-brand-300 hover:bg-brand-soft/30 transition"
               >
-                <div className="shrink-0 w-16 h-16 rounded-lg bg-stone-100 overflow-hidden flex items-center justify-center text-stone-300 text-2xl">
+                <div className="shrink-0 w-16 h-16 rounded-lg bg-surface-muted overflow-hidden flex items-center justify-center text-stone-300 text-2xl">
                   {r.imageMain ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -121,7 +121,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 flex-wrap">
                     {r.category && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-50 text-brand-700">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
                         {r.category}
                       </span>
                     )}
@@ -129,16 +129,16 @@ export default function RecipeRecommendations({ productNames }: Props) {
                       주재료 {r.totalIngredients}종 중 {r.matchCount}종 보유
                     </span>
                   </div>
-                  <div className="font-semibold text-sm text-stone-900 truncate mt-0.5">
+                  <div className="font-semibold text-sm text-ink-1 truncate mt-0.5">
                     {r.name}
                   </div>
                   {r.matchedIngredients.length > 0 && (
-                    <div className="text-[11px] text-stone-500 truncate mt-0.5">
+                    <div className="text-[11px] text-ink-4 truncate mt-0.5">
                       ✓ {r.matchedIngredients.slice(0, 5).join(", ")}
                     </div>
                   )}
                   {r.caloriesKcal !== null && (
-                    <div className="text-[11px] text-stone-400 mt-0.5">
+                    <div className="text-[11px] text-ink-4 mt-0.5">
                       🔥 {Math.round(r.caloriesKcal)}kcal
                     </div>
                   )}

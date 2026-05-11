@@ -23,14 +23,14 @@ export default async function AdminLayout({
   const admin = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-stone-50 -mx-4 -my-6">
+    <div className="min-h-screen bg-surface-muted -mx-4 -my-6">
       <div className="bg-stone-900 text-white px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg" aria-hidden>🛠️</span>
           <span className="font-bold">관리자</span>
-          <span className="text-xs text-stone-400 ml-2">{admin.nickname}</span>
+          <span className="text-xs text-ink-4 ml-2">{admin.nickname}</span>
         </div>
-        <Link href="/" className="text-xs text-stone-400 hover:text-white">
+        <Link href="/" className="text-xs text-ink-4 hover:text-white">
           ← 사이트로
         </Link>
       </div>
@@ -38,14 +38,14 @@ export default async function AdminLayout({
       <div className="grid md:grid-cols-[200px_1fr] gap-0">
         <nav
           aria-label="관리자 네비게이션"
-          className="bg-white border-r border-line md:min-h-[calc(100vh-48px)] py-3"
+          className="bg-surface border-r border-line md:min-h-[calc(100vh-48px)] py-3"
         >
           <ul className="flex md:flex-col overflow-x-auto md:overflow-visible">
             {NAV.map((n) => (
               <li key={n.href} className="shrink-0">
                 <Link
                   href={n.href}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-stone-50 whitespace-nowrap"
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-muted whitespace-nowrap"
                 >
                   <span aria-hidden>{n.icon}</span>
                   <span>{n.label}</span>

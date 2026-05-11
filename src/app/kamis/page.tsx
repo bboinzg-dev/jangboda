@@ -49,7 +49,7 @@ export default async function KamisPage({
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold mb-1">📊 오늘의 시세</h1>
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-ink-4">
           KAMIS(농수산물) + 통계청(가공식품) 공식 평균가
         </p>
       </div>
@@ -78,7 +78,7 @@ export default async function KamisPage({
           className={`px-3 py-1.5 rounded-full border transition ${
             sort === "fresh"
               ? "bg-brand-500 text-white border-brand-500"
-              : "bg-white text-stone-700 border-border hover:bg-stone-50"
+              : "bg-surface text-ink-2 border-border hover:bg-surface-muted"
           }`}
         >
           최신순
@@ -88,7 +88,7 @@ export default async function KamisPage({
           className={`px-3 py-1.5 rounded-full border transition ${
             sort === "cheap"
               ? "bg-brand-500 text-white border-brand-500"
-              : "bg-white text-stone-700 border-border hover:bg-stone-50"
+              : "bg-surface text-ink-2 border-border hover:bg-surface-muted"
           }`}
         >
           저렴한 순
@@ -112,7 +112,7 @@ export default async function KamisPage({
         />
       ) : (
         <>
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-ink-4">
             총 {sorted.length}개 품목 시세 · 매일 갱신
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -125,23 +125,23 @@ export default async function KamisPage({
               const isUp = change !== null && change > 0;
               const isDown = change !== null && change < 0;
               const colorClass = isUp
-                ? "text-rose-600"
+                ? "text-danger"
                 : isDown
-                ? "text-blue-600"
-                : "text-stone-400";
+                ? "text-info"
+                : "text-ink-4";
               return (
                 <Link
                   key={p.id}
                   href={`/products/${p.product.id}`}
-                  className="card-clickable relative bg-white border border-border rounded-lg p-4 pr-8"
+                  className="card-clickable relative bg-surface border border-border rounded-lg p-4 pr-8"
                 >
-                  <div className="text-xs text-stone-500 mb-0.5">
+                  <div className="text-xs text-ink-4 mb-0.5">
                     {p.product.category}
                   </div>
-                  <div className="font-semibold text-stone-900 truncate">
+                  <div className="font-semibold text-ink-1 truncate">
                     {p.product.name}
                   </div>
-                  <div className="text-xs text-stone-400 mb-2">
+                  <div className="text-xs text-ink-4 mb-2">
                     {p.product.unit}
                   </div>
                   <div className="text-lg font-bold text-brand-700">
@@ -157,7 +157,7 @@ export default async function KamisPage({
                       </span>
                     </div>
                   )}
-                  <div className="text-[10px] text-stone-400 mt-1">
+                  <div className="text-[10px] text-ink-4 mt-1">
                     {p.source === "kamis" ? "KAMIS" : "통계청"} ·{" "}
                     {formatRelativeDate(p.createdAt)}
                   </div>

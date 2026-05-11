@@ -43,7 +43,7 @@ export default function Nav() {
               href={item.href}
               className={`px-3 py-2 rounded-lg transition ${
                 isActive(item.href)
-                  ? "bg-brand-50 text-brand-700 font-semibold"
+                  ? "bg-brand-soft text-brand-700 font-semibold"
                   : "hover:bg-surface-muted text-ink-2 hover:text-ink-1"
               }`}
             >

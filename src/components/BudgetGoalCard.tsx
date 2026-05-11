@@ -91,7 +91,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
               setDraft(e.target.value.replace(/[^\d,]/g, ""))
             }
             placeholder="예: 300000"
-            className="flex-1 px-3 py-2 border border-stone-300 rounded-md tabular-nums"
+            className="flex-1 px-3 py-2 border border-line-strong rounded-md tabular-nums"
           />
           <button
             onClick={save}
@@ -105,7 +105,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
               setEditing(false);
               setDraft(monthlyAmount ? String(monthlyAmount) : "");
             }}
-            className="border border-stone-300 text-stone-600 px-3 py-2 rounded-md text-sm"
+            className="border border-line-strong text-ink-3 px-3 py-2 rounded-md text-sm"
           >
             취소
           </button>
@@ -146,8 +146,8 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
   const pct = Math.min(Math.round((thisMonth / goal) * 100), 999);
   const remaining = goal - thisMonth;
   const isOver = remaining < 0;
-  const barColor = pct <= 70 ? "bg-emerald-500" : pct <= 100 ? "bg-amber-500" : "bg-rose-500";
-  const textColor = isOver ? "text-rose-700" : pct <= 70 ? "text-emerald-700" : "text-amber-700";
+  const barColor = pct <= 70 ? "bg-success" : pct <= 100 ? "bg-warning" : "bg-danger";
+  const textColor = isOver ? "text-danger-text" : pct <= 70 ? "text-success-text" : "text-warning-text";
 
   return (
     <div className="card p-5">
@@ -167,7 +167,7 @@ export default function BudgetGoalCard({ thisMonth }: Props) {
       </div>
 
       {/* 진행률 바 */}
-      <div className="h-3 bg-stone-100 rounded-full overflow-hidden mb-2">
+      <div className="h-3 bg-surface-muted rounded-full overflow-hidden mb-2">
         <div
           className={`h-full ${barColor} transition-all`}
           style={{ width: `${Math.min(pct, 100)}%` }}

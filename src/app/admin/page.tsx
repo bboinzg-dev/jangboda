@@ -94,7 +94,7 @@ export default async function AdminDashboard() {
         {cards.map((c) => (
           <div
             key={c.label}
-            className="bg-white border border-line rounded-xl p-4"
+            className="bg-surface border border-line rounded-xl p-4"
           >
             <div className="text-xs text-ink-3">{c.label}</div>
             <div className="text-2xl font-bold mt-1 text-ink-1">{fmt(c.value)}</div>
@@ -103,7 +103,7 @@ export default async function AdminDashboard() {
         ))}
       </section>
 
-      <section className="bg-white border border-line rounded-xl p-4">
+      <section className="bg-surface border border-line rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold">최근 영수증</h2>
           <Link href="/admin/receipts" className="text-xs text-brand-600 hover:underline">
@@ -139,7 +139,7 @@ export default async function AdminDashboard() {
                       ? "bg-success-soft text-success-text"
                       : r.status === "failed"
                       ? "bg-danger-soft text-danger-text"
-                      : "bg-stone-100 text-stone-600"
+                      : "bg-surface-muted text-ink-3"
                   }`}
                 >
                   {r.status ?? "pending"}

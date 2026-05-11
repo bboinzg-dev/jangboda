@@ -70,9 +70,9 @@ export default async function AdminProductsPage({
         </button>
       </form>
 
-      <div className="bg-white border border-line rounded-xl overflow-hidden">
+      <div className="bg-surface border border-line rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-stone-50 text-xs text-ink-3">
+          <thead className="bg-surface-muted text-xs text-ink-3">
             <tr>
               <th className="text-left px-3 py-2 w-14">이미지</th>
               <th className="text-left px-3 py-2">상품명</th>
@@ -83,9 +83,9 @@ export default async function AdminProductsPage({
           </thead>
           <tbody className="divide-y divide-line">
             {items.map((p) => (
-              <tr key={p.id} className="hover:bg-stone-50">
+              <tr key={p.id} className="hover:bg-surface-muted">
                 <td className="px-3 py-2">
-                  <div className="w-10 h-10 bg-stone-100 rounded overflow-hidden flex items-center justify-center text-stone-300">
+                  <div className="w-10 h-10 bg-surface-muted rounded overflow-hidden flex items-center justify-center text-stone-300">
                     {p.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -132,7 +132,7 @@ export default async function AdminProductsPage({
           {page > 1 && (
             <Link
               href={`/admin/products?q=${encodeURIComponent(q)}&page=${page - 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               이전
             </Link>
@@ -143,7 +143,7 @@ export default async function AdminProductsPage({
           {page < lastPage && (
             <Link
               href={`/admin/products?q=${encodeURIComponent(q)}&page=${page + 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               다음
             </Link>

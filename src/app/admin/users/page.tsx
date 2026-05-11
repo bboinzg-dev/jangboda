@@ -40,9 +40,9 @@ export default async function AdminUsersPage({
         <span className="text-sm text-ink-3">총 {total.toLocaleString()}명</span>
       </div>
 
-      <div className="bg-white border border-line rounded-xl overflow-hidden">
+      <div className="bg-surface border border-line rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-stone-50 text-xs text-ink-3">
+          <thead className="bg-surface-muted text-xs text-ink-3">
             <tr>
               <th className="text-left px-3 py-2">닉네임</th>
               <th className="text-left px-3 py-2">권한</th>
@@ -54,13 +54,13 @@ export default async function AdminUsersPage({
           </thead>
           <tbody className="divide-y divide-line">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-stone-50">
+              <tr key={u.id} className="hover:bg-surface-muted">
                 <td className="px-3 py-2 font-medium text-ink-1">
                   {u.nickname}
                 </td>
                 <td className="px-3 py-2">
                   {u.role === "admin" ? (
-                    <span className="inline-block text-[11px] px-2 py-0.5 rounded bg-brand-50 text-brand-700 font-bold">
+                    <span className="inline-block text-[11px] px-2 py-0.5 rounded bg-brand-soft text-brand-700 font-bold">
                       ADMIN
                     </span>
                   ) : (
@@ -92,7 +92,7 @@ export default async function AdminUsersPage({
           {page > 1 && (
             <Link
               href={`/admin/users?page=${page - 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               이전
             </Link>
@@ -103,7 +103,7 @@ export default async function AdminUsersPage({
           {page < lastPage && (
             <Link
               href={`/admin/users?page=${page + 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               다음
             </Link>

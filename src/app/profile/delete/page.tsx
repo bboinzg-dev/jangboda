@@ -64,7 +64,7 @@ export default async function ProfileDeletePage() {
         </ul>
       </section>
 
-      <section className="bg-stone-50 border border-line rounded-2xl p-4 text-sm space-y-2">
+      <section className="bg-surface-muted border border-line rounded-2xl p-4 text-sm space-y-2">
         <div className="font-bold text-ink-1">익명 보존되는 정보</div>
         <p className="text-ink-2">
           본인이 등록한 가격·매장 정보({me._count.prices}건)는{" "}

@@ -189,7 +189,7 @@ export default function ScanPage() {
     <div className="space-y-4 max-w-2xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold mb-1">📷 바코드 스캐너</h1>
-        <p className="text-sm text-stone-500 leading-relaxed">
+        <p className="text-sm text-ink-4 leading-relaxed">
           마트에서 상품 바코드를 찍으면 우리 DB의 매장별 가격을 비교하고,
           식약처 카탈로그에서 제조사 정보를 보여드려요.
         </p>
@@ -266,28 +266,28 @@ export default function ScanPage() {
       )}
 
       {loading && (
-        <div className="text-center text-sm text-stone-500 py-6">
+        <div className="text-center text-sm text-ink-4 py-6">
           바코드 조회 중...
         </div>
       )}
 
       {/* 결과 */}
       {result && !loading && (
-        <section className="bg-white border border-border rounded-xl p-4 md:p-5 space-y-3">
+        <section className="bg-surface border border-border rounded-xl p-4 md:p-5 space-y-3">
           {result.found && result.product && (
             <>
               <div className="flex items-baseline gap-2 mb-2">
                 <span className="badge-success">✓ 우리 DB 매칭</span>
-                <span className="text-xs text-stone-400">{result.barcode}</span>
+                <span className="text-xs text-ink-4">{result.barcode}</span>
               </div>
               <div>
-                <div className="text-xs text-stone-500">{result.product.category}</div>
+                <div className="text-xs text-ink-4">{result.product.category}</div>
                 <h2 className="text-xl font-bold">{result.product.name}</h2>
-                <div className="text-sm text-stone-500">{result.product.unit}</div>
+                <div className="text-sm text-ink-4">{result.product.unit}</div>
               </div>
               {result.prices && result.prices.length > 0 ? (
                 <div>
-                  <div className="text-xs font-semibold text-stone-700 mb-2">
+                  <div className="text-xs font-semibold text-ink-2 mb-2">
                     📍 매장별 가격 ({result.prices.length}건, 최저가 순)
                   </div>
                   <ul className="space-y-1.5 max-h-72 overflow-y-auto">
@@ -299,7 +299,7 @@ export default function ScanPage() {
                           key={p.id}
                           className={`flex items-center justify-between p-2 rounded border ${
                             i === 0
-                              ? "border-brand-400 bg-brand-50/30"
+                              ? "border-brand-400 bg-brand-soft/30"
                               : "border-border"
                           }`}
                         >
@@ -310,11 +310,11 @@ export default function ScanPage() {
                             <span className="text-sm font-medium">
                               {p.chainName}
                             </span>
-                            <span className="text-xs text-stone-500 ml-1.5">
+                            <span className="text-xs text-ink-4 ml-1.5">
                               {p.storeName}
                             </span>
                           </div>
-                          <span className="font-bold text-stone-900">
+                          <span className="font-bold text-ink-1">
                             {formatWon(p.price)}
                           </span>
                         </li>
@@ -322,7 +322,7 @@ export default function ScanPage() {
                   </ul>
                 </div>
               ) : (
-                <div className="text-sm text-stone-500">
+                <div className="text-sm text-ink-4">
                   등록된 가격이 아직 없어요
                 </div>
               )}
@@ -344,16 +344,16 @@ export default function ScanPage() {
             <>
               <div className="flex items-baseline gap-2 mb-2">
                 <span className="badge-info">📋 식약처 카탈로그</span>
-                <span className="text-xs text-stone-400">{result.barcode}</span>
+                <span className="text-xs text-ink-4">{result.barcode}</span>
               </div>
               <div>
                 <h2 className="text-xl font-bold">
                   {result.foodsafety.productName}
                 </h2>
-                <div className="text-sm text-stone-500">
+                <div className="text-sm text-ink-4">
                   {result.foodsafety.manufacturer}
                 </div>
-                <div className="text-xs text-stone-400 mt-1">
+                <div className="text-xs text-ink-4 mt-1">
                   {result.foodsafety.foodType}
                 </div>
               </div>
@@ -376,11 +376,11 @@ export default function ScanPage() {
               <div className="text-center py-4">
                 <div className="text-4xl mb-2">🔍</div>
                 <h2 className="font-bold mb-1">못 찾았어요</h2>
-                <p className="text-sm text-stone-500 mb-2">
-                  바코드 <code className="bg-stone-100 px-1.5 py-0.5 rounded">{result.barcode}</code>{" "}
+                <p className="text-sm text-ink-4 mb-2">
+                  바코드 <code className="bg-surface-muted px-1.5 py-0.5 rounded">{result.barcode}</code>{" "}
                   정보를 어디서도 찾지 못했습니다.
                 </p>
-                <p className="text-xs text-stone-400 mb-3">
+                <p className="text-xs text-ink-4 mb-3">
                   검색 소스: 우리 카탈로그 · 식약처 식품안전나라 ·
                   Open Food Facts
                   <br />
@@ -390,11 +390,11 @@ export default function ScanPage() {
                   <p className="text-xs text-danger-text">{result.error}</p>
                 )}
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                <div className="text-sm font-semibold text-amber-900 mb-1">
+              <div className="bg-warning-soft border border-warning/30 rounded-lg p-3 mb-3">
+                <div className="text-sm font-semibold text-warning-text mb-1">
                   💡 직접 등록하시겠어요?
                 </div>
-                <p className="text-xs text-amber-800">
+                <p className="text-xs text-warning-text">
                   영수증 사진을 올리면 자동으로 품목과 가격이 등록되고,
                   같은 바코드를 다음에 누구나 찾을 수 있게 됩니다.
                 </p>
@@ -413,7 +413,7 @@ export default function ScanPage() {
       )}
 
       {supported === false && !result && (
-        <p className="text-xs text-stone-400 text-center">
+        <p className="text-xs text-ink-4 text-center">
           📌 iOS Safari는 바코드 인식 미지원 — 위 입력란에 직접 입력하시거나, Chrome/Edge/삼성인터넷에서 카메라 스캔을 사용하세요.
         </p>
       )}

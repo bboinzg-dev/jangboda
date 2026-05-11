@@ -115,7 +115,7 @@ export default async function StoreDetailPage({
             size={80}
           />
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full font-medium">
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-700 bg-brand-soft px-2 py-0.5 rounded-full font-medium">
               <span>{icon}</span>
               <span>{label}</span>
               <span className="text-brand-300">·</span>

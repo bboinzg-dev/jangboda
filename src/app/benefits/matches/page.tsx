@@ -98,9 +98,9 @@ export default async function BenefitsMatchesPage({
         <div>
           <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
         </div>
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
-          <div className="text-stone-700 font-medium mb-1">로그인이 필요합니다</div>
-          <div className="text-sm text-stone-500 mb-4">
+        <div className="bg-surface-muted border border-line rounded-xl p-10 text-center">
+          <div className="text-ink-2 font-medium mb-1">로그인이 필요합니다</div>
+          <div className="text-sm text-ink-4 mb-4">
             매칭 결과를 확인하려면 먼저 로그인 후 정보를 입력해 주세요.
           </div>
           <Link
@@ -126,11 +126,11 @@ export default async function BenefitsMatchesPage({
         <div>
           <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
         </div>
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
-          <div className="text-stone-700 font-medium mb-1">
+        <div className="bg-surface-muted border border-line rounded-xl p-10 text-center">
+          <div className="text-ink-2 font-medium mb-1">
             아직 입력된 정보가 없습니다
           </div>
-          <div className="text-sm text-stone-500 mb-4">
+          <div className="text-sm text-ink-4 mb-4">
             온보딩에서 기본 정보를 입력하면 받을 수 있는 혜택을 자동 매칭해 드립니다.
           </div>
           <Link
@@ -152,7 +152,7 @@ export default async function BenefitsMatchesPage({
       <div>
         <Link
           href="/benefits"
-          className="text-sm text-stone-500 hover:text-stone-700"
+          className="text-sm text-ink-4 hover:text-ink-2"
         >
           ← 정부 혜택 홈으로
         </Link>
@@ -160,14 +160,14 @@ export default async function BenefitsMatchesPage({
 
       <header>
         <h1 className="text-2xl font-bold">내게 맞는 혜택</h1>
-        <p className="text-sm text-stone-600 mt-1">
+        <p className="text-sm text-ink-3 mt-1">
           입력하신 정보({profile.completeness}%)를 기반으로 매칭된 결과입니다. 점수가 높은
           순으로 표시됩니다.
         </p>
       </header>
 
       {/* 상태 필터 탭 */}
-      <nav className="flex flex-wrap gap-2 border-b border-stone-200">
+      <nav className="flex flex-wrap gap-2 border-b border-line">
         {STATUS_TABS.map((tab) => {
           const active = f.status === tab.key;
           // 탭 변경 시 page는 1로 리셋
@@ -179,7 +179,7 @@ export default async function BenefitsMatchesPage({
               className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
                 active
                   ? "border-indigo-600 text-indigo-700"
-                  : "border-transparent text-stone-500 hover:text-stone-800"
+                  : "border-transparent text-ink-4 hover:text-ink-1"
               }`}
             >
               {tab.label}
@@ -188,8 +188,8 @@ export default async function BenefitsMatchesPage({
         })}
       </nav>
 
-      <div className="text-sm text-stone-600">
-        총 <strong className="text-stone-900">{total.toLocaleString()}</strong>건
+      <div className="text-sm text-ink-3">
+        총 <strong className="text-ink-1">{total.toLocaleString()}</strong>건
         {totalPages > 1 && (
           <>
             {" · "}
@@ -199,11 +199,11 @@ export default async function BenefitsMatchesPage({
       </div>
 
       {items.length === 0 ? (
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
-          <div className="text-stone-700 font-medium mb-1">
+        <div className="bg-surface-muted border border-line rounded-xl p-10 text-center">
+          <div className="text-ink-2 font-medium mb-1">
             조건에 맞는 매칭 결과가 없습니다
           </div>
-          <div className="text-sm text-stone-500">
+          <div className="text-sm text-ink-4">
             다른 상태 탭을 확인하거나{" "}
             <Link href="/benefits" className="text-indigo-600 hover:underline">
               홈
@@ -236,27 +236,27 @@ export default async function BenefitsMatchesPage({
           {f.page > 1 ? (
             <Link
               href={`/benefits/matches${buildQuery(f, { page: f.page - 1 })}`}
-              className="text-sm bg-white border border-stone-300 hover:bg-stone-50 px-4 py-2 rounded-md"
+              className="text-sm bg-surface border border-line-strong hover:bg-surface-muted px-4 py-2 rounded-md"
             >
               ← 이전
             </Link>
           ) : (
-            <span className="text-sm text-stone-300 border border-stone-200 px-4 py-2 rounded-md">
+            <span className="text-sm text-stone-300 border border-line px-4 py-2 rounded-md">
               ← 이전
             </span>
           )}
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-ink-4">
             {f.page} / {totalPages}
           </div>
           {f.page < totalPages ? (
             <Link
               href={`/benefits/matches${buildQuery(f, { page: f.page + 1 })}`}
-              className="text-sm bg-white border border-stone-300 hover:bg-stone-50 px-4 py-2 rounded-md"
+              className="text-sm bg-surface border border-line-strong hover:bg-surface-muted px-4 py-2 rounded-md"
             >
               다음 →
             </Link>
           ) : (
-            <span className="text-sm text-stone-300 border border-stone-200 px-4 py-2 rounded-md">
+            <span className="text-sm text-stone-300 border border-line px-4 py-2 rounded-md">
               다음 →
             </span>
           )}

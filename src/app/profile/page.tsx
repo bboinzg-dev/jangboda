@@ -494,7 +494,7 @@ export default async function ProfilePage() {
             <li
               key={u.id}
               className={`flex justify-between p-3 text-sm border-b last:border-b-0 border-line ${
-                u.id === authUser.id ? "bg-brand-50/50" : ""
+                u.id === authUser.id ? "bg-brand-soft/50" : ""
               }`}
             >
               <div className="flex items-center gap-2">
@@ -699,7 +699,7 @@ function PointsCard({ points }: { points: number }) {
   return (
     <Link
       href="/rewards"
-      className="block rounded-2xl border border-line/60 bg-surface-muted/40 p-3 hover:border-brand-300 hover:bg-brand-50/30 transition"
+      className="block rounded-2xl border border-line/60 bg-surface-muted/40 p-3 hover:border-brand-300 hover:bg-brand-soft/30 transition"
       aria-label="포인트 혜택 정책 보기"
     >
       <div className="flex items-center justify-between">
@@ -711,7 +711,7 @@ function PointsCard({ points }: { points: number }) {
       </div>
       {next ? (
         <>
-          <div className="mt-1.5 w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
+          <div className="mt-1.5 w-full bg-surface-muted rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-gradient-to-r from-brand-400 to-brand-600 h-1.5 rounded-full transition-all"
               style={{ width: `${progressPct}%` }}
@@ -722,7 +722,7 @@ function PointsCard({ points }: { points: number }) {
           </div>
         </>
       ) : (
-        <div className="text-[10px] text-emerald-700 font-medium mt-1.5">
+        <div className="text-[10px] text-success-text font-medium mt-1.5">
           🏆 마스터 등급
         </div>
       )}

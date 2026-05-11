@@ -107,7 +107,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
             className={`px-3 py-1 rounded-full text-xs border ${
               !activeCategory
                 ? "bg-brand-500 text-white border-brand-500"
-                : "bg-white text-ink-2 border-line-strong hover:border-ink-3"
+                : "bg-surface text-ink-2 border-line-strong hover:border-ink-3"
             }`}
           >
             전체
@@ -121,7 +121,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
               className={`px-3 py-1 rounded-full text-xs border ${
                 activeCategory === c
                   ? "bg-brand-500 text-white border-brand-500"
-                  : "bg-white text-ink-2 border-line-strong hover:border-ink-3"
+                  : "bg-surface text-ink-2 border-line-strong hover:border-ink-3"
               }`}
             >
               {c}
@@ -141,12 +141,12 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
             {Array.from({ length: 4 }).map((_, i) => (
               <li
                 key={i}
-                className="flex items-center gap-3 p-3 border border-line rounded-xl bg-white"
+                className="flex items-center gap-3 p-3 border border-line rounded-xl bg-surface"
               >
-                <div className="w-12 h-12 rounded bg-stone-100 animate-pulse shrink-0" />
+                <div className="w-12 h-12 rounded bg-surface-muted animate-pulse shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-3/4 bg-stone-100 animate-pulse rounded" />
-                  <div className="h-2.5 w-1/2 bg-stone-100 animate-pulse rounded" />
+                  <div className="h-3.5 w-3/4 bg-surface-muted animate-pulse rounded" />
+                  <div className="h-2.5 w-1/2 bg-surface-muted animate-pulse rounded" />
                 </div>
               </li>
             ))}
@@ -164,7 +164,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
             return (
               <li
                 key={p.id}
-                className={`flex items-center gap-3 p-3 border rounded-xl bg-white transition ${
+                className={`flex items-center gap-3 p-3 border rounded-xl bg-surface transition ${
                   inCart
                     ? "border-success-soft bg-success-soft/40"
                     : "border-line hover:border-brand-300"
@@ -176,7 +176,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                   <div className="font-medium text-sm truncate flex items-center gap-1.5 text-ink-1">
                     <span className="truncate">{p.name}</span>
                     {p.hasHaccp && (
-                      <span className="inline-flex items-center rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                      <span className="inline-flex items-center rounded bg-success-soft text-success-text px-1.5 py-0.5 text-[10px] font-medium shrink-0">
                         HACCP
                       </span>
                     )}
@@ -201,12 +201,12 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                         return (
                           <span
                             key={name}
-                            className="inline-flex items-center text-[10px] bg-stone-100 text-stone-700 rounded px-1.5 py-0.5"
+                            className="inline-flex items-center text-[10px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                             title={count ? `${name} ${count}매장` : name}
                           >
                             {name}
                             {count && count > 1 && (
-                              <span className="ml-0.5 text-stone-500">·{count}</span>
+                              <span className="ml-0.5 text-ink-4">·{count}</span>
                             )}
                           </span>
                         );

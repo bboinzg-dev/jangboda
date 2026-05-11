@@ -36,11 +36,11 @@ export function RematchButton() {
       <button
         onClick={onClick}
         disabled={loading}
-        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-stone-300 text-white px-5 py-2.5 rounded-lg font-medium"
+        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-line-strong text-white px-5 py-2.5 rounded-lg font-medium"
       >
         {loading ? "매칭 중..." : "다시 매칭하기"}
       </button>
-      {msg && <span className="text-xs text-stone-600">{msg}</span>}
+      {msg && <span className="text-xs text-ink-3">{msg}</span>}
     </div>
   );
 }

@@ -25,13 +25,13 @@ export default async function CategoryOnboardingPage({ params }: Params) {
       <div className="space-y-6">
         <Link
           href="/benefits/onboarding"
-          className="text-sm text-stone-500 hover:text-stone-700"
+          className="text-sm text-ink-4 hover:text-ink-2"
         >
           ← 카테고리 목록으로
         </Link>
         <div className="card p-8 text-center space-y-3">
           <h1 className="text-xl font-bold">로그인이 필요합니다</h1>
-          <p className="text-stone-600 text-sm">
+          <p className="text-ink-3 text-sm">
             정부 혜택 매칭을 위해 입력하신 정보는 사용자 본인만 조회할 수
             있습니다. 안전하게 보관하기 위해 로그인이 필요합니다.
           </p>
@@ -59,13 +59,13 @@ export default async function CategoryOnboardingPage({ params }: Params) {
       <section>
         <Link
           href="/benefits/onboarding"
-          className="text-sm text-stone-500 hover:text-stone-700"
+          className="text-sm text-ink-4 hover:text-ink-2"
         >
           ← 카테고리 목록으로
         </Link>
         <div className="mt-2 flex items-baseline justify-between">
           <h1 className="text-2xl font-bold">{meta.label}</h1>
-          <span className="text-xs text-stone-500">
+          <span className="text-xs text-ink-4">
             현재 완성도: {profile?.completeness ?? 0}%
           </span>
         </div>

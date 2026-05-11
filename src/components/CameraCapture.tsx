@@ -146,7 +146,7 @@ export default function CameraCapture({
             <div className="text-sm mb-4">{error}</div>
             <button
               onClick={onCancel}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded"
+              className="bg-surface/10 hover:bg-surface/20 text-white px-4 py-2 rounded"
             >
               닫기
             </button>
@@ -189,7 +189,7 @@ export default function CameraCapture({
             <>
               <button
                 onClick={retake}
-                className="bg-white/15 hover:bg-white/25 text-white px-5 py-3 rounded-full font-medium"
+                className="bg-surface/15 hover:bg-surface/25 text-white px-5 py-3 rounded-full font-medium"
               >
                 🔄 다시 찍기
               </button>
@@ -205,7 +205,7 @@ export default function CameraCapture({
               onClick={capture}
               disabled={!ready}
               aria-label="촬영"
-              className="bg-white text-stone-900 w-16 h-16 rounded-full font-bold disabled:opacity-50 flex items-center justify-center text-2xl shadow-lg"
+              className="bg-surface text-ink-1 w-16 h-16 rounded-full font-bold disabled:opacity-50 flex items-center justify-center text-2xl shadow-lg"
             >
               📸
             </button>

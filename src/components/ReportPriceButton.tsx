@@ -52,7 +52,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
   if (done) {
     return (
       <span
-        className="text-[10px] text-stone-400 px-1.5 py-0.5"
+        className="text-[10px] text-ink-4 px-1.5 py-0.5"
         title="신고 접수됨"
       >
         🚩 신고됨
@@ -65,7 +65,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[10px] text-stone-400 hover:text-danger px-1.5 py-0.5"
+        className="text-[10px] text-ink-4 hover:text-danger px-1.5 py-0.5"
         title="가격 신고"
         aria-label="가격 신고"
       >
@@ -80,10 +80,10 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={submit}
-            className="bg-white rounded-xl p-5 w-full max-w-sm shadow-lg space-y-3"
+            className="bg-surface rounded-xl p-5 w-full max-w-sm shadow-lg space-y-3"
           >
             <div className="font-bold text-base">이 가격이 잘못됐나요?</div>
-            <div className="text-xs text-stone-500">
+            <div className="text-xs text-ink-4">
               현재 등록 가격: {currentPrice.toLocaleString("ko-KR")}원
             </div>
 
@@ -106,7 +106,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-stone-500">
+              <label className="text-xs text-ink-4">
                 제안 가격 (선택, 원 단위)
               </label>
               <input
@@ -114,7 +114,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
                 value={suggested}
                 onChange={(e) => setSuggested(e.target.value)}
                 placeholder="예: 2900"
-                className="w-full px-2 py-1.5 border border-stone-300 rounded text-sm"
+                className="w-full px-2 py-1.5 border border-line-strong rounded text-sm"
                 min={0}
               />
             </div>
@@ -130,7 +130,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={busy}
-                className="px-3 py-1.5 text-sm text-stone-500 hover:text-stone-700"
+                className="px-3 py-1.5 text-sm text-ink-4 hover:text-ink-2"
               >
                 취소
               </button>

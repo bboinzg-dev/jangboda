@@ -15,11 +15,11 @@ export default async function RecallBanner() {
 
   // 등급 배지 색상 — 1등급(가장 심각)만 danger, 2/3등급은 본래 단계별 톤 유지
   const gradeBadgeClass = (grade?: string | null) => {
-    if (!grade) return "bg-stone-100 text-stone-600";
+    if (!grade) return "bg-surface-muted text-ink-3";
     if (grade.includes("1")) return "bg-danger-soft text-danger-text";
     if (grade.includes("2")) return "bg-orange-100 text-orange-700";
     if (grade.includes("3")) return "bg-warning-soft text-warning-text";
-    return "bg-stone-100 text-stone-600";
+    return "bg-surface-muted text-ink-3";
   };
 
   return (
@@ -39,11 +39,11 @@ export default async function RecallBanner() {
         {recalls.map((r) => (
           <li
             key={r.id}
-            className="bg-white border border-danger-soft rounded-lg p-3 flex items-start gap-3"
+            className="bg-surface border border-danger-soft rounded-lg p-3 flex items-start gap-3"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-stone-900 truncate">
+                <span className="font-semibold text-ink-1 truncate">
                   {r.productName}
                 </span>
                 {r.grade && (
@@ -57,7 +57,7 @@ export default async function RecallBanner() {
                 )}
               </div>
               {r.manufacturer && (
-                <div className="text-xs text-stone-500 mt-0.5 truncate">
+                <div className="text-xs text-ink-4 mt-0.5 truncate">
                   {r.manufacturer}
                 </div>
               )}
@@ -68,7 +68,7 @@ export default async function RecallBanner() {
           </li>
         ))}
       </ul>
-      <div className="text-[10px] text-stone-400 mt-3">
+      <div className="text-[10px] text-ink-4 mt-3">
         출처: 식약처 식품안전나라 (회수·판매중지 정보, 최근 7일)
       </div>
     </section>

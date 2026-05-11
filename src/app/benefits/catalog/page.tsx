@@ -137,7 +137,7 @@ export default async function BenefitsCatalogPage({
 
       <header>
         <h1 className="text-2xl font-bold">전체 혜택 카탈로그</h1>
-        <p className="text-sm text-stone-600 mt-1">
+        <p className="text-sm text-ink-3 mt-1">
           정부24·중기부·기업마당 등에서 가져온 혜택을 한 번에 둘러보세요.
         </p>
       </header>
@@ -150,23 +150,23 @@ export default async function BenefitsCatalogPage({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* 검색어 */}
           <label className="block">
-            <span className="text-xs text-stone-500 mb-1 block">검색어</span>
+            <span className="text-xs text-ink-4 mb-1 block">검색어</span>
             <input
               type="text"
               name="q"
               defaultValue={f.q}
               placeholder="제목으로 검색"
-              className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm focus:outline-none focus:border-indigo-400"
+              className="w-full px-3 py-2 border border-line-strong rounded-md text-sm focus:outline-none focus:border-indigo-400"
             />
           </label>
 
           {/* 카테고리 */}
           <label className="block">
-            <span className="text-xs text-stone-500 mb-1 block">카테고리</span>
+            <span className="text-xs text-ink-4 mb-1 block">카테고리</span>
             <select
               name="category"
               defaultValue={f.category}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm bg-white focus:outline-none focus:border-indigo-400"
+              className="w-full px-3 py-2 border border-line-strong rounded-md text-sm bg-surface focus:outline-none focus:border-indigo-400"
             >
               <option value="">전체</option>
               {CATEGORY_GROUP_KEYS.map((g) => (
@@ -179,11 +179,11 @@ export default async function BenefitsCatalogPage({
 
           {/* 지역 (시도) */}
           <label className="block">
-            <span className="text-xs text-stone-500 mb-1 block">지역</span>
+            <span className="text-xs text-ink-4 mb-1 block">지역</span>
             <select
               name="region"
               defaultValue={f.region}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm bg-white focus:outline-none focus:border-indigo-400"
+              className="w-full px-3 py-2 border border-line-strong rounded-md text-sm bg-surface focus:outline-none focus:border-indigo-400"
             >
               <option value="">전체</option>
               {SIDO_FILTER_OPTIONS.map((s) => (
@@ -196,11 +196,11 @@ export default async function BenefitsCatalogPage({
 
           {/* 대상 */}
           <label className="block">
-            <span className="text-xs text-stone-500 mb-1 block">대상</span>
+            <span className="text-xs text-ink-4 mb-1 block">대상</span>
             <select
               name="target"
               defaultValue={f.target}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md text-sm bg-white focus:outline-none focus:border-indigo-400"
+              className="w-full px-3 py-2 border border-line-strong rounded-md text-sm bg-surface focus:outline-none focus:border-indigo-400"
             >
               <option value="">전체</option>
               {TARGET_OPTIONS.map((t) => (
@@ -213,13 +213,13 @@ export default async function BenefitsCatalogPage({
         </div>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <label className="flex items-center gap-2 text-sm text-stone-700">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               name="endingSoon"
               value="1"
               defaultChecked={f.endingSoon}
-              className="rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+              className="rounded border-line-strong text-indigo-600 focus:ring-indigo-500"
             />
             마감 30일 이내만 보기
           </label>
@@ -227,7 +227,7 @@ export default async function BenefitsCatalogPage({
           <div className="flex gap-2">
             <Link
               href="/benefits/catalog"
-              className="text-sm text-stone-600 hover:text-stone-900 px-3 py-1.5"
+              className="text-sm text-ink-3 hover:text-ink-1 px-3 py-1.5"
             >
               초기화
             </Link>
@@ -242,8 +242,8 @@ export default async function BenefitsCatalogPage({
       </form>
 
       {/* 결과 요약 */}
-      <div className="text-sm text-stone-600">
-        총 <strong className="text-stone-900">{total.toLocaleString()}</strong>건
+      <div className="text-sm text-ink-3">
+        총 <strong className="text-ink-1">{total.toLocaleString()}</strong>건
         {totalPages > 1 && (
           <>
             {" · "}
@@ -254,11 +254,11 @@ export default async function BenefitsCatalogPage({
 
       {/* 카드 리스트 */}
       {items.length === 0 ? (
-        <div className="bg-stone-50 border border-stone-200 rounded-xl p-10 text-center">
-          <div className="text-stone-700 font-medium mb-1">
+        <div className="bg-surface-muted border border-line rounded-xl p-10 text-center">
+          <div className="text-ink-2 font-medium mb-1">
             조건에 맞는 혜택이 없습니다
           </div>
-          <div className="text-sm text-stone-500">
+          <div className="text-sm text-ink-4">
             필터를 바꾸거나{" "}
             <Link href="/benefits/catalog" className="text-indigo-600 hover:underline">
               초기화
@@ -290,27 +290,27 @@ export default async function BenefitsCatalogPage({
           {f.page > 1 ? (
             <Link
               href={`/benefits/catalog${buildQuery(f, { page: f.page - 1 })}`}
-              className="text-sm bg-white border border-stone-300 hover:bg-stone-50 px-4 py-2 rounded-md"
+              className="text-sm bg-surface border border-line-strong hover:bg-surface-muted px-4 py-2 rounded-md"
             >
               ← 이전
             </Link>
           ) : (
-            <span className="text-sm text-stone-300 border border-stone-200 px-4 py-2 rounded-md">
+            <span className="text-sm text-stone-300 border border-line px-4 py-2 rounded-md">
               ← 이전
             </span>
           )}
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-ink-4">
             {f.page} / {totalPages}
           </div>
           {f.page < totalPages ? (
             <Link
               href={`/benefits/catalog${buildQuery(f, { page: f.page + 1 })}`}
-              className="text-sm bg-white border border-stone-300 hover:bg-stone-50 px-4 py-2 rounded-md"
+              className="text-sm bg-surface border border-line-strong hover:bg-surface-muted px-4 py-2 rounded-md"
             >
               다음 →
             </Link>
           ) : (
-            <span className="text-sm text-stone-300 border border-stone-200 px-4 py-2 rounded-md">
+            <span className="text-sm text-stone-300 border border-line px-4 py-2 rounded-md">
               다음 →
             </span>
           )}

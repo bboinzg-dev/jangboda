@@ -35,7 +35,7 @@ export default async function AdminSponsorsPage() {
         </p>
       </div>
 
-      <section className="bg-white border border-line rounded-xl p-4">
+      <section className="bg-surface border border-line rounded-xl p-4">
         <h2 className="font-bold mb-3">새 슬롯 등록</h2>
         <SponsorForm placements={PLACEMENTS} />
       </section>
@@ -43,7 +43,7 @@ export default async function AdminSponsorsPage() {
       <section className="space-y-4">
         <h2 className="font-bold">등록된 슬롯</h2>
         {slots.length === 0 ? (
-          <div className="text-sm text-ink-3 text-center py-8 bg-white border border-line rounded-xl">
+          <div className="text-sm text-ink-3 text-center py-8 bg-surface border border-line rounded-xl">
             등록된 슬롯이 없습니다.
           </div>
         ) : (
@@ -53,9 +53,9 @@ export default async function AdminSponsorsPage() {
             return (
               <div
                 key={p.key}
-                className="bg-white border border-line rounded-xl overflow-hidden"
+                className="bg-surface border border-line rounded-xl overflow-hidden"
               >
-                <div className="bg-stone-50 px-4 py-2 text-xs font-medium text-ink-2 border-b border-line">
+                <div className="bg-surface-muted px-4 py-2 text-xs font-medium text-ink-2 border-b border-line">
                   {p.label}{" "}
                   <span className="text-ink-3">({list.length}개)</span>
                 </div>
@@ -70,7 +70,7 @@ export default async function AdminSponsorsPage() {
                         <img
                           src={s.imageUrl}
                           alt=""
-                          className="w-12 h-12 rounded object-cover bg-stone-100 shrink-0"
+                          className="w-12 h-12 rounded object-cover bg-surface-muted shrink-0"
                         />
                       )}
                       <div className="min-w-0 flex-1">

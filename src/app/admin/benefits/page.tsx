@@ -71,7 +71,7 @@ export default async function AdminBenefitsPage({
           className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
             !source
               ? "bg-stone-900 text-white border-stone-900"
-              : "bg-white border-line text-ink-2 hover:bg-stone-50"
+              : "bg-surface border-line text-ink-2 hover:bg-surface-muted"
           }`}
         >
           전체
@@ -83,7 +83,7 @@ export default async function AdminBenefitsPage({
             className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
               source === s.sourceCode
                 ? "bg-stone-900 text-white border-stone-900"
-                : "bg-white border-line text-ink-2 hover:bg-stone-50"
+                : "bg-surface border-line text-ink-2 hover:bg-surface-muted"
             }`}
           >
             {s.sourceCode}{" "}
@@ -108,12 +108,12 @@ export default async function AdminBenefitsPage({
         </button>
       </form>
 
-      <div className="bg-white border border-line rounded-xl overflow-hidden">
+      <div className="bg-surface border border-line rounded-xl overflow-hidden">
         <ul className="divide-y divide-line">
           {items.map((b) => {
             const expired = b.applyEndAt ? b.applyEndAt.getTime() < now.getTime() : false;
             return (
-              <li key={b.id} className="p-3 hover:bg-stone-50">
+              <li key={b.id} className="p-3 hover:bg-surface-muted">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <Link
@@ -129,7 +129,7 @@ export default async function AdminBenefitsPage({
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0 text-[11px]">
                     {!b.active && (
-                      <span className="bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-bold">
+                      <span className="bg-surface-sunken text-ink-2 px-2 py-0.5 rounded font-bold">
                         비활성
                       </span>
                     )}
@@ -139,7 +139,7 @@ export default async function AdminBenefitsPage({
                       </span>
                     )}
                     {b.normalizedRules && (
-                      <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded font-bold">
+                      <span className="bg-brand-soft text-brand-700 px-2 py-0.5 rounded font-bold">
                         정형화
                       </span>
                     )}
@@ -157,7 +157,7 @@ export default async function AdminBenefitsPage({
           {page > 1 && (
             <Link
               href={`/admin/benefits?source=${source}&q=${encodeURIComponent(q)}&page=${page - 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               이전
             </Link>
@@ -168,7 +168,7 @@ export default async function AdminBenefitsPage({
           {page < lastPage && (
             <Link
               href={`/admin/benefits?source=${source}&q=${encodeURIComponent(q)}&page=${page + 1}`}
-              className="px-3 py-1.5 border border-line rounded hover:bg-stone-50"
+              className="px-3 py-1.5 border border-line rounded hover:bg-surface-muted"
             >
               다음
             </Link>

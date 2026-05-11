@@ -1,0 +1,12 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/(?:^|[\\s'\"`])(?:bg-white|bg-stone-\\d{2,3}|text-stone-\\d{2,3}|border-stone-\\d{2,3}|bg-(?:amber|emerald|rose|red|blue|sky)-(?:50|100|200|300|400|500|600|700|800|900)|text-(?:amber|emerald|rose|red|blue|sky)-(?:300|400|500|600|700|800|900))(?:[\\s'\"`]|$)/]",
+        "message": "하드코딩 색 대신 시맨틱 토큰 사용: bg-surface, text-ink-{1..4}, bg-{success|warning|danger|info}-soft, text-{success|warning|danger|info}-text. (admin 다크 헤더 bg-stone-900은 의도된 예외)"
+      }
+    ]
+  }
+}

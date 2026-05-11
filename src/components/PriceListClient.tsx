@@ -205,7 +205,7 @@ export default function PriceListClient({
               onClick={() => setSortBy("unit")}
               className={`px-2 py-0.5 rounded ${
                 sortBy === "unit"
-                  ? "bg-brand-100 text-brand-700 font-medium"
+                  ? "bg-brand-soft text-brand-700 font-medium"
                   : "text-ink-2 hover:bg-surface-muted"
               }`}
               title="단위가격(100g당, 1L당 등)으로 비교"
@@ -217,7 +217,7 @@ export default function PriceListClient({
             onClick={() => setSortBy("price")}
             className={`px-2 py-0.5 rounded ${
               sortBy === "price"
-                ? "bg-brand-100 text-brand-700 font-medium"
+                ? "bg-brand-soft text-brand-700 font-medium"
                 : "text-ink-2 hover:bg-surface-muted"
             }`}
           >
@@ -227,7 +227,7 @@ export default function PriceListClient({
             onClick={() => setSortBy("promo")}
             className={`px-2 py-0.5 rounded ${
               sortBy === "promo"
-                ? "bg-rose-100 text-rose-700 font-medium"
+                ? "bg-danger-soft text-danger-text font-medium"
                 : "text-ink-2 hover:bg-surface-muted"
             }`}
             title="최근 14일 내 행사가 적용된 매장 우선 정렬"
@@ -258,9 +258,9 @@ export default function PriceListClient({
                 key={p.storeId}
                 className={`card p-4 flex items-center justify-between gap-3 ${
                   isLowest
-                    ? "border-l-4 border-l-brand-500 bg-brand-50/30"
+                    ? "border-l-4 border-l-brand-500 bg-brand-soft/30"
                     : isFav
-                    ? "border-amber-200 bg-amber-50/30"
+                    ? "border-warning/30 bg-warning-soft/30"
                     : ""
                 }`}
               >
@@ -301,7 +301,7 @@ export default function PriceListClient({
                             href={p.productUrl}
                             kind="product_buy"
                             id={p.priceId}
-                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium"
+                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-success/30 bg-success-soft hover:bg-success-soft text-success-text font-medium"
                           >
                             <span aria-hidden>🛒</span>
                             <span>구매하러 가기</span>
@@ -342,7 +342,7 @@ export default function PriceListClient({
                   {p.paidPrice != null &&
                     p.paidPrice < p.price &&
                     isPromoFresh(p.updatedAt) && (
-                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.5 font-medium">
+                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-danger-text bg-danger-soft border border-danger/30 rounded px-1.5 py-0.5 font-medium">
                         🎉 최근 행사가 {formatWon(p.paidPrice)}
                         {p.promotionType ? ` · ${p.promotionType}` : ""}
                       </div>
@@ -365,7 +365,7 @@ export default function PriceListClient({
                       {formatRelativeDate(p.updatedAt)}
                     </span>
                     {savingsPct > 0 && (
-                      <span className="text-xs text-rose-500">
+                      <span className="text-xs text-danger">
                         +{savingsPct}%
                       </span>
                     )}
@@ -402,7 +402,7 @@ export default function PriceListClient({
               return (
                 <li
                   key={p.priceId}
-                  className="flex items-center justify-between gap-2 bg-white border border-warning-soft rounded p-2"
+                  className="flex items-center justify-between gap-2 bg-surface border border-warning-soft rounded p-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-ink-2 truncate flex items-center gap-1.5">

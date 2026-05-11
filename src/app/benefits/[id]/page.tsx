@@ -102,32 +102,32 @@ export default async function BenefitDetailPage({
             {srcLabel}
           </span>
           {catLabel && (
-            <span className="text-xs font-medium bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded">
+            <span className="text-xs font-medium bg-surface border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded">
               {catLabel}
             </span>
           )}
           {isClosed && (
-            <span className="text-xs font-medium bg-stone-200 text-stone-600 px-2 py-0.5 rounded">
+            <span className="text-xs font-medium bg-surface-sunken text-ink-3 px-2 py-0.5 rounded">
               마감
             </span>
           )}
           {isClosingSoon && !isClosed && (
-            <span className="text-xs font-medium bg-rose-600 text-white px-2 py-0.5 rounded">
+            <span className="text-xs font-medium bg-danger text-white px-2 py-0.5 rounded">
               마감 임박 D-{remainDays}
             </span>
           )}
         </div>
-        <h1 className="text-2xl font-bold text-stone-900">
+        <h1 className="text-2xl font-bold text-ink-1">
           {stripHtml(benefit.title)}
         </h1>
         {benefit.summary && (
-          <p className="text-stone-700 text-sm mt-2 leading-relaxed whitespace-pre-line">
+          <p className="text-ink-2 text-sm mt-2 leading-relaxed whitespace-pre-line">
             {stripHtml(benefit.summary)}
           </p>
         )}
         {benefit.agency && (
-          <div className="text-xs text-stone-600 mt-3">
-            <span className="text-stone-500">제공기관 </span>
+          <div className="text-xs text-ink-3 mt-3">
+            <span className="text-ink-4">제공기관 </span>
             <span className="font-medium">{benefit.agency}</span>
           </div>
         )}
@@ -150,7 +150,7 @@ export default async function BenefitDetailPage({
                 href={benefit.detailUrl}
                 kind="benefit_detail"
                 id={benefit.id}
-                className="bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm font-medium"
+                className="bg-surface hover:bg-surface-muted border border-line-strong text-ink-2 px-4 py-2 rounded-lg text-sm font-medium"
               >
                 상세 페이지 ↗
               </TrackedLink>
@@ -159,7 +159,7 @@ export default async function BenefitDetailPage({
         )}
 
         {/* 면책 — 잘못된 매칭으로 인한 신청·미신청 책임 회피 */}
-        <p className="mt-5 text-[11px] text-stone-500 leading-relaxed border-t border-stone-100 pt-3">
+        <p className="mt-5 text-[11px] text-ink-4 leading-relaxed border-t border-line pt-3">
           본 정보는 {sourceLabel(benefit.sourceCode)} 등 공공 데이터에서 자동 수집·정형화한 참고 자료입니다.
           최신·정확한 자격 요건과 신청 방법은 반드시 해당 기관에서 직접 확인하세요.
           매칭 결과는 입력하신 정보를 기반으로 한 추정이며, 실제 자격 판정과 다를 수 있습니다.
@@ -171,15 +171,15 @@ export default async function BenefitDetailPage({
         <section
           className={`border rounded-xl p-5 ${
             match.status === "matched"
-              ? "bg-emerald-50 border-emerald-200"
+              ? "bg-success-soft border-success/30"
               : match.status === "uncertain"
-              ? "bg-amber-50 border-amber-200"
-              : "bg-stone-50 border-stone-200"
+              ? "bg-warning-soft border-warning/30"
+              : "bg-surface-muted border-line"
           }`}
         >
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <div className="text-xs text-stone-500">내 매칭 결과</div>
+              <div className="text-xs text-ink-4">내 매칭 결과</div>
               <div className="text-lg font-bold mt-1">
                 {match.status === "matched"
                   ? "받을 수 있을 가능성이 높습니다"
@@ -189,24 +189,24 @@ export default async function BenefitDetailPage({
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-stone-500">자격 충족도</div>
+              <div className="text-xs text-ink-4">자격 충족도</div>
               <div className="text-2xl font-bold text-indigo-600">
                 {match.score}
-                <span className="text-sm text-stone-400">/100</span>
+                <span className="text-sm text-ink-4">/100</span>
               </div>
             </div>
           </div>
 
           {match.missingFields.length > 0 && (
             <div className="mt-4 text-sm">
-              <div className="text-xs text-stone-500 mb-1">
+              <div className="text-xs text-ink-4 mb-1">
                 정확도를 올리려면 추가 입력이 필요해요
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {match.missingFields.map((f) => (
                   <span
                     key={f}
-                    className="text-xs bg-white border border-stone-300 text-stone-700 px-2 py-0.5 rounded"
+                    className="text-xs bg-surface border border-line-strong text-ink-2 px-2 py-0.5 rounded"
                   >
                     {f}
                   </span>
@@ -235,16 +235,16 @@ export default async function BenefitDetailPage({
         <section className="card p-5">
           {authed ? (
             <>
-              <div className="text-sm text-stone-700 mb-1">
+              <div className="text-sm text-ink-2 mb-1">
                 아직 자격 평가 결과가 없어요.
               </div>
-              <div className="text-xs text-stone-500">
+              <div className="text-xs text-ink-4">
                 저장해두고 정보를 입력하면 매칭 점수가 계산됩니다.
               </div>
               <MatchActions benefitId={benefit.id} initialAction={null} />
             </>
           ) : (
-            <div className="text-sm text-stone-600">
+            <div className="text-sm text-ink-3">
               로그인하면 이 혜택을 저장하고 자격 매칭 결과를 받아볼 수 있어요.
             </div>
           )}
@@ -253,10 +253,10 @@ export default async function BenefitDetailPage({
 
       {/* 신청 기간 */}
       <section className="card p-5">
-        <h2 className="text-sm font-bold text-stone-900 mb-3">신청 기간</h2>
+        <h2 className="text-sm font-bold text-ink-1 mb-3">신청 기간</h2>
         <div
           className={`flex items-center gap-3 ${
-            isClosingSoon && !isClosed ? "text-rose-700" : "text-stone-700"
+            isClosingSoon && !isClosed ? "text-danger-text" : "text-ink-2"
           }`}
         >
           <div className="text-base font-medium">
@@ -268,15 +268,15 @@ export default async function BenefitDetailPage({
             <span
               className={`text-xs font-bold px-2 py-0.5 rounded ${
                 isClosingSoon
-                  ? "bg-rose-600 text-white"
-                  : "bg-stone-100 text-stone-700"
+                  ? "bg-danger text-white"
+                  : "bg-surface-muted text-ink-2"
               }`}
             >
               D-{remainDays}
             </span>
           )}
           {isClosed && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-600">
+            <span className="text-xs font-bold px-2 py-0.5 rounded bg-surface-sunken text-ink-3">
               마감
             </span>
           )}
@@ -286,14 +286,14 @@ export default async function BenefitDetailPage({
       {/* 자격 조건 / 안내문 */}
       {textBlocks.length > 0 && (
         <section className="card p-5">
-          <h2 className="text-sm font-bold text-stone-900 mb-3">자격 조건 및 안내</h2>
+          <h2 className="text-sm font-bold text-ink-1 mb-3">자격 조건 및 안내</h2>
           <dl className="space-y-4">
             {textBlocks.map((b) => (
               <div key={b.label}>
                 <dt className="text-xs font-medium text-indigo-700 mb-1">
                   {b.label}
                 </dt>
-                <dd className="text-sm text-stone-700 whitespace-pre-line pl-3 border-l-2 border-indigo-100">
+                <dd className="text-sm text-ink-2 whitespace-pre-line pl-3 border-l-2 border-indigo-100">
                   {b.text}
                 </dd>
               </div>
@@ -304,14 +304,14 @@ export default async function BenefitDetailPage({
 
       {/* 대상 지역 */}
       <section className="card p-5">
-        <h2 className="text-sm font-bold text-stone-900 mb-3">대상 지역</h2>
-        <div className="text-sm text-stone-700">
+        <h2 className="text-sm font-bold text-ink-1 mb-3">대상 지역</h2>
+        <div className="text-sm text-ink-2">
           {regionCodesLabel(benefit.regionCodes)}
         </div>
       </section>
 
       {/* 메타 정보 */}
-      <section className="text-xs text-stone-400 flex flex-wrap gap-x-4 gap-y-1">
+      <section className="text-xs text-ink-4 flex flex-wrap gap-x-4 gap-y-1">
         <span>출처 ID: {benefit.sourceId}</span>
         <span>최종 동기화: {formatDateOnly(benefit.lastSyncedAt)}</span>
       </section>

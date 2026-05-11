@@ -42,7 +42,7 @@ export default function PriceHistoryChart({
   if (!history || history.length <= 1) {
     return (
       <div
-        className="bg-white border border-border rounded-lg flex items-center justify-center text-sm text-stone-500 h-[var(--ch-m)] md:h-[var(--ch-d)]"
+        className="bg-surface border border-border rounded-lg flex items-center justify-center text-sm text-ink-4 h-[var(--ch-m)] md:h-[var(--ch-d)]"
         style={
           {
             ["--ch-m" as string]: `${mobileHeight}px`,
@@ -68,7 +68,7 @@ export default function PriceHistoryChart({
   if (points.length <= 1) {
     return (
       <div
-        className="bg-white border border-border rounded-lg flex items-center justify-center text-sm text-stone-500 h-[var(--ch-m)] md:h-[var(--ch-d)]"
+        className="bg-surface border border-border rounded-lg flex items-center justify-center text-sm text-ink-4 h-[var(--ch-m)] md:h-[var(--ch-d)]"
         style={
           {
             ["--ch-m" as string]: `${mobileHeight}px`,
@@ -135,7 +135,7 @@ export default function PriceHistoryChart({
   const xTickPoints = Array.from(new Set(xTickIndices)).map((i) => points[i]);
 
   return (
-    <div className="bg-white border border-border rounded-lg p-3">
+    <div className="bg-surface border border-border rounded-lg p-3">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -252,7 +252,7 @@ export default function PriceHistoryChart({
               style={{ backgroundColor: c.color }}
               aria-hidden
             />
-            <span className="text-stone-700">{c.name}</span>
+            <span className="text-ink-2">{c.name}</span>
           </div>
         ))}
       </div>

@@ -22,10 +22,10 @@ export interface BenefitCardProps {
 
 // D-day 라벨 색상 — 7일 이내 rose, 30일 이내 amber, 그 외 stone
 function dDayClassName(dDays: number): string {
-  if (dDays < 0) return "text-stone-400";
-  if (dDays <= 7) return "text-rose-600 font-medium";
-  if (dDays <= 30) return "text-amber-600";
-  return "text-stone-500";
+  if (dDays < 0) return "text-ink-4";
+  if (dDays <= 7) return "text-danger font-medium";
+  if (dDays <= 30) return "text-warning";
+  return "text-ink-4";
 }
 
 // 매칭 점수 배지 — status에 따른 색상 분기
@@ -40,10 +40,10 @@ function ScoreBadge({
     status === "matched"
       ? score >= 70
         ? "bg-indigo-100 text-indigo-700"
-        : "bg-blue-100 text-blue-700"
+        : "bg-info-soft text-info-text"
       : status === "uncertain"
-      ? "bg-amber-100 text-amber-700"
-      : "bg-stone-100 text-stone-600";
+      ? "bg-warning-soft text-warning-text"
+      : "bg-surface-muted text-ink-3";
   const label =
     status === "matched" ? "매칭" : status === "uncertain" ? "검토" : "제외";
   return (
@@ -83,23 +83,23 @@ export default function BenefitCard({
   return (
     <Link
       href={href}
-      className={`block bg-white border border-stone-200 hover:border-indigo-300 hover:shadow-sm rounded-lg ${padding} transition`}
+      className={`block bg-surface border border-line hover:border-indigo-300 hover:shadow-sm rounded-lg ${padding} transition`}
     >
       {/* 상단: 배지 + 제목 + (옵션) 점수 배지 */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs text-stone-500 mb-1 flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-ink-4 mb-1 flex-wrap">
             {srcLabel && (
               <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
                 {srcLabel}
               </span>
             )}
             {catLabel && (
-              <span className="bg-stone-100 px-2 py-0.5 rounded">{catLabel}</span>
+              <span className="bg-surface-muted px-2 py-0.5 rounded">{catLabel}</span>
             )}
             {agency && <span className="truncate">{agency}</span>}
           </div>
-          <h3 className="font-semibold text-stone-900 leading-snug line-clamp-2">
+          <h3 className="font-semibold text-ink-1 leading-snug line-clamp-2">
             {cleanTitle}
           </h3>
         </div>
@@ -110,11 +110,11 @@ export default function BenefitCard({
 
       {/* 요약 */}
       {cleanSummary && (
-        <p className="text-sm text-stone-600 line-clamp-2 mb-2">{cleanSummary}</p>
+        <p className="text-sm text-ink-3 line-clamp-2 mb-2">{cleanSummary}</p>
       )}
 
       {/* 하단 메타: D-day + 보강 필드 hint */}
-      <div className="flex items-center gap-3 text-xs text-stone-500">
+      <div className="flex items-center gap-3 text-xs text-ink-4">
         {dDays !== null && (
           <span className={dDayClassName(dDays)}>
             {dDays >= 0 ? `D-${dDays}` : "마감"}

@@ -48,7 +48,7 @@ export default async function BenefitsOnboardingPage() {
       <section>
         <BackButton fallbackHref="/benefits" fallbackLabel="정부 혜택 홈으로" />
         <h1 className="text-2xl font-bold mt-2 mb-1">정보 입력</h1>
-        <p className="text-stone-600 text-sm">
+        <p className="text-ink-3 text-sm">
           입력한 정보로 받을 수 있는 혜택을 매칭합니다. 처음에는 필수 정보만 입력해도
           되고, 더 정확한 매칭을 원하면 모든 카테고리를 채워주세요.
         </p>
@@ -65,7 +65,7 @@ export default async function BenefitsOnboardingPage() {
               {completeness}%
             </span>
           </div>
-          <div className="w-full bg-white rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-surface rounded-full h-2 overflow-hidden">
             <div
               className="bg-indigo-600 h-2 rounded-full transition-all"
               style={{ width: `${completeness}%` }}
@@ -82,8 +82,8 @@ export default async function BenefitsOnboardingPage() {
           return (
             <div key={priority}>
               <div className="mb-3">
-                <h2 className="text-lg font-bold text-stone-900">{meta.title}</h2>
-                <p className="text-xs text-stone-500">{meta.desc}</p>
+                <h2 className="text-lg font-bold text-ink-1">{meta.title}</h2>
+                <p className="text-xs text-ink-4">{meta.desc}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {cats.map((cat) => {
@@ -99,8 +99,8 @@ export default async function BenefitsOnboardingPage() {
                         isComplete
                           ? "bg-indigo-50 border-indigo-300 hover:border-indigo-500"
                           : isStarted
-                          ? "bg-white border-indigo-200 hover:border-indigo-400"
-                          : "bg-white border-stone-200 hover:border-indigo-400 hover:bg-indigo-50/30"
+                          ? "bg-surface border-indigo-200 hover:border-indigo-400"
+                          : "bg-surface border-line hover:border-indigo-400 hover:bg-indigo-50/30"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -113,14 +113,14 @@ export default async function BenefitsOnboardingPage() {
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-stone-500 mt-0.5">
+                          <div className="text-xs text-ink-4 mt-0.5">
                             {filled} / {total} 입력됨
                           </div>
                         </div>
-                        <div className="text-stone-400">›</div>
+                        <div className="text-ink-4">›</div>
                       </div>
                       {/* 카테고리별 미니 진행 바 */}
-                      <div className="mt-2 w-full bg-stone-100 rounded-full h-1 overflow-hidden">
+                      <div className="mt-2 w-full bg-surface-muted rounded-full h-1 overflow-hidden">
                         <div
                           className={`h-1 rounded-full transition-all ${
                             isComplete ? "bg-indigo-600" : "bg-indigo-400"
@@ -139,8 +139,8 @@ export default async function BenefitsOnboardingPage() {
         })}
       </section>
 
-      <section className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-xs text-stone-500">
-        <strong className="text-stone-700">개인정보 처리 안내:</strong> 입력하신
+      <section className="bg-surface-muted border border-line rounded-lg p-4 text-xs text-ink-4">
+        <strong className="text-ink-2">개인정보 처리 안내:</strong> 입력하신
         정보는 혜택 매칭 외 다른 목적으로 사용되지 않으며, 사용자만 조회할 수
         있습니다. 제3자 제공 없음.
       </section>

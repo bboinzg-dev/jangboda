@@ -53,9 +53,9 @@ export default function AgriTraceLookup({ productName }: { productName: string }
 
   if (loading) {
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <div className="h-5 w-36 bg-stone-100 rounded animate-pulse mb-3" />
-        <div className="text-xs text-stone-400">
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <div className="h-5 w-36 bg-surface-muted rounded animate-pulse mb-3" />
+        <div className="text-xs text-ink-4">
           농가 이력 정보 불러오는 중...
         </div>
       </section>
@@ -64,14 +64,14 @@ export default function AgriTraceLookup({ productName }: { productName: string }
 
   if (!data || data.items.length === 0) {
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
+      <section className="bg-surface border border-border rounded-xl p-4">
         <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
           🌱 농산물이력추적
         </h2>
-        <div className="text-xs text-stone-400">
+        <div className="text-xs text-ink-4">
           등록된 농가 이력 없음
         </div>
-        <div className="text-[11px] text-stone-400 mt-1">
+        <div className="text-[11px] text-ink-4 mt-1">
           출처: 식품안전나라 (국립농산물품질관리원)
         </div>
       </section>
@@ -79,14 +79,14 @@ export default function AgriTraceLookup({ productName }: { productName: string }
   }
 
   return (
-    <section className="bg-white border border-border rounded-xl p-4">
+    <section className="bg-surface border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🌱 농산물이력추적
-        <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
+        <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
           {data.items.length}건
         </span>
       </h2>
-      <div className="text-[11px] text-stone-500 mb-2">
+      <div className="text-[11px] text-ink-4 mb-2">
         출처: 식품안전나라 (국립농산물품질관리원)
       </div>
 
@@ -98,15 +98,15 @@ export default function AgriTraceLookup({ productName }: { productName: string }
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-stone-800 truncate">
+                <div className="font-medium text-ink-1 truncate">
                   {item.orgnName ?? "(농가명 미상)"}
                 </div>
-                <div className="text-xs text-stone-500 mt-0.5">
+                <div className="text-xs text-ink-4 mt-0.5">
                   {item.rprsntPrdltName}
                   {item.presidentName ? ` · 대표 ${item.presidentName}` : ""}
                 </div>
               </div>
-              <div className="text-[10px] text-stone-400 shrink-0 text-right">
+              <div className="text-[10px] text-ink-4 shrink-0 text-right">
                 <div className="font-mono">{item.histTraceRegNo}</div>
                 {item.validEndDate && (
                   <div className="mt-0.5">~{item.validEndDate}</div>
@@ -114,7 +114,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
               </div>
             </div>
             {item.regInstName && (
-              <div className="text-[11px] text-stone-400 mt-1">
+              <div className="text-[11px] text-ink-4 mt-1">
                 등록기관: {item.regInstName}
               </div>
             )}

@@ -66,7 +66,7 @@ export default function ContributePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">✍️ 가격 직접 입력</h1>
-      <p className="text-stone-600 text-sm">
+      <p className="text-ink-3 text-sm">
         영수증이 없어도 본 가격을 직접 등록할 수 있어요.
       </p>
 
@@ -76,7 +76,7 @@ export default function ContributePage() {
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-            className="w-full px-3 py-2 border border-stone-300 rounded"
+            className="w-full px-3 py-2 border border-line-strong rounded"
           >
             <option value="">상품 선택...</option>
             {products.map((p) => (
@@ -92,7 +92,7 @@ export default function ContributePage() {
           <select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full px-3 py-2 border border-stone-300 rounded"
+            className="w-full px-3 py-2 border border-line-strong rounded"
           >
             <option value="">매장 선택...</option>
             {stores.map((s) => (
@@ -110,12 +110,12 @@ export default function ContributePage() {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="예: 4280"
-            className="w-full px-3 py-2 border border-stone-300 rounded"
+            className="w-full px-3 py-2 border border-line-strong rounded"
           />
         </div>
 
-        <div className="border-t border-stone-100 pt-3 space-y-2">
-          <div className="text-xs text-stone-500">
+        <div className="border-t border-line pt-3 space-y-2">
+          <div className="text-xs text-ink-4">
             행사 중이라면 아래 두 칸도 입력 (선택)
           </div>
           <div>
@@ -125,7 +125,7 @@ export default function ContributePage() {
               value={paidPrice}
               onChange={(e) => setPaidPrice(e.target.value)}
               placeholder="예: 3990"
-              className="w-full px-3 py-2 border border-stone-300 rounded"
+              className="w-full px-3 py-2 border border-line-strong rounded"
             />
           </div>
           <div>
@@ -133,7 +133,7 @@ export default function ContributePage() {
             <select
               value={promotionType}
               onChange={(e) => setPromotionType(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded"
+              className="w-full px-3 py-2 border border-line-strong rounded"
             >
               <option value="">— 선택 —</option>
               <option value="할인">할인</option>

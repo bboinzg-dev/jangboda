@@ -45,7 +45,7 @@ export default function KamisTicker({ items }: Props) {
 
   return (
     <div
-      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-border bg-white"
+      className="ticker-container relative h-[280px] md:h-[200px] overflow-hidden rounded-lg border border-border bg-surface"
       style={{ ["--ticker-duration" as string]: duration }}
     >
       {/* 위/아래 페이드 그라데이션 — 흐름의 시작/끝을 부드럽게 */}
@@ -69,14 +69,14 @@ function ItemCard({ item }: { item: TickerItem }) {
   const isUp = change !== null && change > 0;
   const isDown = change !== null && change < 0;
   const colorClass = isUp
-    ? "text-rose-600"
+    ? "text-danger"
     : isDown
-    ? "text-blue-600"
-    : "text-stone-400";
+    ? "text-info"
+    : "text-ink-4";
   return (
     <Link
       href={`/products/${item.productId}`}
-      className="flex items-center gap-2 px-3 py-2 bg-stone-50 hover:bg-brand-50 border border-border rounded-md transition"
+      className="flex items-center gap-2 px-3 py-2 bg-surface-muted hover:bg-brand-soft border border-border rounded-md transition"
     >
       <ProductImage
         src={item.productImageUrl}
@@ -85,10 +85,10 @@ function ItemCard({ item }: { item: TickerItem }) {
         className="shrink-0"
       />
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-stone-900 truncate">
+        <div className="text-sm font-medium text-ink-1 truncate">
           {item.productName}
         </div>
-        <div className="text-[10px] text-stone-500 truncate">
+        <div className="text-[10px] text-ink-4 truncate">
           {item.productUnit}
         </div>
       </div>
@@ -102,7 +102,7 @@ function ItemCard({ item }: { item: TickerItem }) {
           const upl = unitPriceLabel(item.price, item.productUnit);
           if (!upl) return null;
           return (
-            <div className="text-[11px] text-stone-500 tabular-nums">
+            <div className="text-[11px] text-ink-4 tabular-nums">
               {upl}
             </div>
           );

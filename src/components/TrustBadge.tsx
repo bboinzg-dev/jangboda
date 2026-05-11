@@ -10,7 +10,7 @@ export default function TrustBadge({ count, latestDate, source }: Props) {
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 
   let label = "단독 등록";
-  let className = "bg-stone-100 text-stone-600";
+  let className = "bg-surface-muted text-ink-3";
 
   if (count >= 5 && days <= 7) {
     label = "🛡️ 검증됨";

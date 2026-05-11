@@ -33,11 +33,11 @@ export default function UnlockForm({ onUnlock }: { onUnlock: () => void }) {
   }
 
   return (
-    <section className="bg-white border border-stone-200 rounded-2xl p-6 max-w-md mx-auto">
+    <section className="bg-surface border border-line rounded-2xl p-6 max-w-md mx-auto">
       <div className="text-center mb-5">
         <div className="text-4xl mb-2">🔒</div>
         <h2 className="font-bold text-lg mb-1">비밀번호 확인</h2>
-        <p className="text-sm text-stone-500 leading-relaxed">
+        <p className="text-sm text-ink-4 leading-relaxed">
           이 기능은 외부 AI API를 호출하므로
           <br />
           관리자에게 받은 비밀번호가 필요합니다.
@@ -52,13 +52,13 @@ export default function UnlockForm({ onUnlock }: { onUnlock: () => void }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="비밀번호"
-          className="w-full px-4 py-3 border border-stone-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
+          className="w-full px-4 py-3 border border-line-strong rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
           disabled={submitting}
           autoFocus
         />
 
         {error && (
-          <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+          <div className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
             {error}
           </div>
         )}
@@ -66,13 +66,13 @@ export default function UnlockForm({ onUnlock }: { onUnlock: () => void }) {
         <button
           type="submit"
           disabled={submitting || !password}
-          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors"
+          className="w-full bg-brand-500 hover:bg-brand-600 disabled:bg-line-strong disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors"
         >
           {submitting ? "확인 중..." : "확인"}
         </button>
       </form>
 
-      <p className="text-[11px] text-stone-400 text-center mt-4 leading-relaxed">
+      <p className="text-[11px] text-ink-4 text-center mt-4 leading-relaxed">
         인증은 12시간 동안 유지됩니다.
       </p>
     </section>

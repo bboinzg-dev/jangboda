@@ -90,9 +90,9 @@ export default function IngredientsPanel({
   if (loading) {
     if (hideIfEmpty) return null;
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <div className="h-5 w-28 bg-stone-100 rounded animate-pulse mb-3" />
-        <div className="text-xs text-stone-400">
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <div className="h-5 w-28 bg-surface-muted rounded animate-pulse mb-3" />
+        <div className="text-xs text-ink-4">
           원재료 정보 불러오는 중...
         </div>
       </section>
@@ -102,11 +102,11 @@ export default function IngredientsPanel({
   if (!data || !data.found || data.ingredients.length === 0) {
     if (hideIfEmpty) return null;
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <h2 className="font-bold text-sm mb-1 text-stone-600">
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <h2 className="font-bold text-sm mb-1 text-ink-3">
           🧪 원재료 정보
         </h2>
-        <div className="text-xs text-stone-400">
+        <div className="text-xs text-ink-4">
           원재료 정보를 찾지 못했습니다
         </div>
       </section>
@@ -122,20 +122,20 @@ export default function IngredientsPanel({
         }${data.productName ?? ""})`;
 
   return (
-    <section className="bg-white border border-border rounded-xl p-4">
+    <section className="bg-surface border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🧪 원재료 정보
         {data.productType && (
-          <span className="text-[10px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
+          <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
             {data.productType}
           </span>
         )}
       </h2>
-      <div className="text-[11px] text-stone-500 mb-2">
+      <div className="text-[11px] text-ink-4 mb-2">
         출처: {sourceLabel}
       </div>
 
-      <div className="text-sm text-stone-700 leading-relaxed">{data.raw}</div>
+      <div className="text-sm text-ink-2 leading-relaxed">{data.raw}</div>
 
       {allergens.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -151,10 +151,10 @@ export default function IngredientsPanel({
       )}
 
       <details className="mt-3 group">
-        <summary className="text-xs text-stone-500 cursor-pointer hover:text-stone-700 select-none">
+        <summary className="text-xs text-ink-4 cursor-pointer hover:text-ink-2 select-none">
           전체 {data.ingredients.length}개 원재료 보기
         </summary>
-        <ol className="mt-2 list-decimal list-inside text-xs text-stone-600 space-y-0.5 pl-1">
+        <ol className="mt-2 list-decimal list-inside text-xs text-ink-3 space-y-0.5 pl-1">
           {data.ingredients.map((ing, idx) => (
             <li key={`${ing.order}-${idx}`}>{ing.rawMaterialName}</li>
           ))}

@@ -2,16 +2,16 @@
 export default function HomeLoading() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-12 bg-stone-100 rounded-lg" />
+      <div className="h-12 bg-surface-muted rounded-lg" />
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-32 bg-stone-100 rounded-lg" />
+          <div key={i} className="h-32 bg-surface-muted rounded-lg" />
         ))}
       </div>
-      <div className="h-24 bg-stone-100 rounded-lg" />
+      <div className="h-24 bg-surface-muted rounded-lg" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-20 bg-stone-100 rounded-lg" />
+          <div key={i} className="h-20 bg-surface-muted rounded-lg" />
         ))}
       </div>
     </div>

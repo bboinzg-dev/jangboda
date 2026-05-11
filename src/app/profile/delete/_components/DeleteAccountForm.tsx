@@ -43,10 +43,10 @@ export default function DeleteAccountForm({ nickname }: Props) {
   }
 
   return (
-    <section className="bg-white border border-danger/30 rounded-2xl p-4 space-y-3">
+    <section className="bg-surface border border-danger/30 rounded-2xl p-4 space-y-3">
       <div className="text-sm text-ink-2">
         탈퇴를 확인하려면 아래에 본인 닉네임{" "}
-        <strong className="bg-stone-100 px-1.5 py-0.5 rounded">{nickname}</strong>
+        <strong className="bg-surface-muted px-1.5 py-0.5 rounded">{nickname}</strong>
         을(를) 입력하세요.
       </div>
       <input
@@ -69,7 +69,7 @@ export default function DeleteAccountForm({ nickname }: Props) {
         type="button"
         onClick={handleDelete}
         disabled={!matched || busy}
-        className="w-full bg-danger hover:bg-danger/90 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition"
+        className="w-full bg-danger hover:bg-danger/90 disabled:bg-line-strong disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition"
       >
         {busy ? "탈퇴 처리 중…" : "탈퇴하기 (되돌릴 수 없음)"}
       </button>

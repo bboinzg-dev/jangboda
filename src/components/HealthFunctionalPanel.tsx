@@ -84,8 +84,8 @@ export default function HealthFunctionalPanel({
     // 건강기능식품 카테고리일 때만 로딩 placeholder 표시
     if (!isHealthFunctional) return null;
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <div className="text-sm text-stone-500">
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <div className="text-sm text-ink-4">
           건강기능 정보를 불러오는 중…
         </div>
       </section>
@@ -109,25 +109,25 @@ export default function HealthFunctionalPanel({
   }
 
   return (
-    <section className="bg-white border border-border rounded-xl p-5 space-y-4">
+    <section className="bg-surface border border-border rounded-xl p-5 space-y-4">
       <header className="space-y-1">
-        <h2 className="font-bold text-stone-900 flex items-center gap-2">
+        <h2 className="font-bold text-ink-1 flex items-center gap-2">
           🌿 이 제품과 관련된 건강기능 정보
         </h2>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-ink-4">
           식약처 건강기능식품 DB(I0760·I-0050)에서 제품명으로 매칭한 결과입니다.
         </p>
       </header>
 
       {noMatches ? (
-        <div className="text-sm text-stone-500 bg-stone-50 rounded-lg p-3">
+        <div className="text-sm text-ink-4 bg-surface-muted rounded-lg p-3">
           관련된 건강기능 정보를 찾지 못했습니다.
         </div>
       ) : (
         <>
           {categories.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-stone-700 mb-2">
+              <h3 className="text-sm font-semibold text-ink-2 mb-2">
                 기능성 카테고리 ({categories.length})
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -157,7 +157,7 @@ export default function HealthFunctionalPanel({
 
           {rawMaterials.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-stone-700 mb-2">
+              <h3 className="text-sm font-semibold text-ink-2 mb-2">
                 관련 원료 ({rawMaterials.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -171,20 +171,20 @@ export default function HealthFunctionalPanel({
                   return (
                     <div
                       key={rm.id}
-                      className="border border-border rounded-lg p-3 bg-stone-50/50"
+                      className="border border-border rounded-lg p-3 bg-surface-muted/50"
                     >
-                      <div className="font-medium text-stone-900 text-sm">
+                      <div className="font-medium text-ink-1 text-sm">
                         {rm.rawMaterialName}
                       </div>
                       {rm.primaryFunction && (
-                        <div className="mt-1 text-xs text-stone-600 leading-relaxed">
-                          <span className="text-stone-400">주된 기능성: </span>
+                        <div className="mt-1 text-xs text-ink-3 leading-relaxed">
+                          <span className="text-ink-4">주된 기능성: </span>
                           {rm.primaryFunction}
                         </div>
                       )}
                       {intake && (
-                        <div className="mt-1 text-xs text-stone-600">
-                          <span className="text-stone-400">일일 섭취량: </span>
+                        <div className="mt-1 text-xs text-ink-3">
+                          <span className="text-ink-4">일일 섭취량: </span>
                           {intake}
                         </div>
                       )}
@@ -215,7 +215,7 @@ export default function HealthFunctionalPanel({
         </>
       )}
 
-      <p className="text-[11px] text-stone-400 leading-relaxed">
+      <p className="text-[11px] text-ink-4 leading-relaxed">
         출처: 식약처 건강기능식품 DB. 본 정보는 참고용이며 실제 제품 표시와 다를 수
         있습니다.
       </p>

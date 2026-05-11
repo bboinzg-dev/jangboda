@@ -22,7 +22,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-30 bg-white/90 backdrop-blur-md border-t border-line/70 md:hidden shadow-[0_-2px_8px_rgba(27,24,21,0.04)]"
+      className="fixed bottom-0 inset-x-0 z-30 bg-surface/90 backdrop-blur-md border-t border-line/70 md:hidden shadow-[0_-2px_8px_rgba(27,24,21,0.04)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="하단 네비게이션"
     >

@@ -157,12 +157,12 @@ export default function ShoppingMode({ items, onClose }: Props) {
           <div className="text-white text-lg font-bold mb-2">
             장바구니가 비어 있어요
           </div>
-          <p className="text-stone-400 text-sm mb-6">
+          <p className="text-ink-4 text-sm mb-6">
             상품을 먼저 담은 뒤 장보기 모드를 시작하세요
           </p>
           <button
             onClick={onClose}
-            className="bg-white text-stone-900 px-6 py-3 rounded-full text-base font-bold"
+            className="bg-surface text-ink-1 px-6 py-3 rounded-full text-base font-bold"
           >
             돌아가기
           </button>
@@ -249,14 +249,14 @@ export default function ShoppingMode({ items, onClose }: Props) {
                         className={`w-full text-left rounded-2xl p-5 flex items-center gap-4 transition active:scale-[0.98] ${
                           isChecked
                             ? "bg-stone-800 border border-stone-700"
-                            : "bg-white border border-line shadow-sm"
+                            : "bg-surface border border-line shadow-sm"
                         }`}
                       >
                         <span
                           className={`shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                             isChecked
                               ? "bg-success border-2 border-success scale-110"
-                              : "bg-stone-100 border-2 border-line-strong"
+                              : "bg-surface-muted border-2 border-line-strong"
                           }`}
                         >
                           {isChecked && (
@@ -267,7 +267,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
                           <div
                             className={`text-xl font-bold leading-tight ${
                               isChecked
-                                ? "text-stone-500 line-through"
+                                ? "text-ink-4 line-through"
                                 : "text-ink-1"
                             }`}
                           >
@@ -276,7 +276,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
                           {(it.brand || it.unit) && (
                             <div
                               className={`text-sm mt-1 ${
-                                isChecked ? "text-stone-600" : "text-ink-3"
+                                isChecked ? "text-ink-3" : "text-ink-3"
                               }`}
                             >
                               {[it.brand, it.unit].filter(Boolean).join(" · ")}
@@ -285,7 +285,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
                         </div>
                         <div
                           className={`shrink-0 text-2xl font-bold tabular-nums ${
-                            isChecked ? "text-stone-500" : "text-ink-2"
+                            isChecked ? "text-ink-4" : "text-ink-2"
                           }`}
                         >
                           ×{it.quantity}
@@ -324,7 +324,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
           <button
             type="button"
             onClick={reset}
-            className="text-xs text-stone-400 hover:text-stone-200 bg-stone-800/80 backdrop-blur px-3 py-2 rounded-full"
+            className="text-xs text-ink-4 hover:text-stone-200 bg-stone-800/80 backdrop-blur px-3 py-2 rounded-full"
           >
             진행 초기화
           </button>

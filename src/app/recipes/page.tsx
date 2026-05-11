@@ -81,10 +81,10 @@ export default async function RecipesPage({
   return (
     <div className="space-y-5">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-ink-1 flex items-center gap-2">
           🍳 레시피 둘러보기
         </h1>
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-ink-3">
           식약처 조리식품 레시피 DB. 메뉴명이나 재료로 검색해보세요.
         </p>
       </header>
@@ -96,7 +96,7 @@ export default async function RecipesPage({
           name="q"
           defaultValue={q}
           placeholder="메뉴명 또는 재료 (예: 김치, 닭, 양파)"
-          className="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="flex-1 px-3 py-2 border border-line-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
         />
         {category && <input type="hidden" name="category" value={category} />}
         <button
@@ -115,7 +115,7 @@ export default async function RecipesPage({
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
               !category
                 ? "bg-stone-900 text-white border-stone-900"
-                : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
+                : "bg-surface text-ink-2 border-line hover:bg-surface-muted"
             }`}
           >
             전체
@@ -129,7 +129,7 @@ export default async function RecipesPage({
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
                   active
                     ? "bg-stone-900 text-white border-stone-900"
-                    : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
+                    : "bg-surface text-ink-2 border-line hover:bg-surface-muted"
                 }`}
               >
                 {c}
@@ -139,7 +139,7 @@ export default async function RecipesPage({
         </nav>
       )}
 
-      <div className="text-xs text-stone-500">
+      <div className="text-xs text-ink-4">
         총 {total.toLocaleString()}개 레시피
         {q && ` · "${q}"`}
         {category && ` · ${category}`}
@@ -150,7 +150,7 @@ export default async function RecipesPage({
         <div className="card p-8 text-center">
           <div className="text-4xl mb-3">🍽️</div>
           <h2 className="font-bold mb-1">조건에 맞는 레시피가 없어요</h2>
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-ink-4">
             다른 키워드로 검색해보세요.
           </p>
         </div>
@@ -162,7 +162,7 @@ export default async function RecipesPage({
               href={`/recipes/${r.id}`}
               className="card-clickable card overflow-hidden hover:shadow-md transition flex flex-col"
             >
-              <div className="aspect-square bg-stone-100 relative overflow-hidden">
+              <div className="aspect-square bg-surface-muted relative overflow-hidden">
                 {r.imageMain ? (
                   // COOKRCP01은 http URL을 반환 — next/image remotePatterns 회피 위해 plain img
                   // eslint-disable-next-line @next/next/no-img-element
@@ -181,21 +181,21 @@ export default async function RecipesPage({
               <div className="p-3 flex-1 flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-wrap">
                   {r.category && (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-50 text-brand-700">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
                       {r.category}
                     </span>
                   )}
                   {r.cookingMethod && (
-                    <span className="text-[10px] text-stone-500">
+                    <span className="text-[10px] text-ink-4">
                       {r.cookingMethod}
                     </span>
                   )}
                 </div>
-                <div className="font-semibold text-sm text-stone-900 line-clamp-2 leading-snug">
+                <div className="font-semibold text-sm text-ink-1 line-clamp-2 leading-snug">
                   {r.name}
                 </div>
                 {r.caloriesKcal !== null && (
-                  <div className="text-[11px] text-stone-500 mt-auto">
+                  <div className="text-[11px] text-ink-4 mt-auto">
                     🔥 {Math.round(r.caloriesKcal)}kcal
                   </div>
                 )}
@@ -211,18 +211,18 @@ export default async function RecipesPage({
           {safePage > 1 && (
             <Link
               href={linkFor({ page: String(safePage - 1) })}
-              className="px-3 py-1.5 rounded-lg text-sm border border-stone-200 bg-white hover:bg-stone-50"
+              className="px-3 py-1.5 rounded-lg text-sm border border-line bg-surface hover:bg-surface-muted"
             >
               ← 이전
             </Link>
           )}
-          <span className="text-xs text-stone-500 px-2">
+          <span className="text-xs text-ink-4 px-2">
             {safePage} / {totalPages}
           </span>
           {safePage < totalPages && (
             <Link
               href={linkFor({ page: String(safePage + 1) })}
-              className="px-3 py-1.5 rounded-lg text-sm border border-stone-200 bg-white hover:bg-stone-50"
+              className="px-3 py-1.5 rounded-lg text-sm border border-line bg-surface hover:bg-surface-muted"
             >
               다음 →
             </Link>
@@ -230,7 +230,7 @@ export default async function RecipesPage({
         </nav>
       )}
 
-      <footer className="text-[11px] text-stone-400 pt-2">
+      <footer className="text-[11px] text-ink-4 pt-2">
         출처: 식품의약품안전처 식품안전나라 · 조리식품 레시피 DB (COOKRCP01)
       </footer>
     </div>

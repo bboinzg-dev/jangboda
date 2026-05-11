@@ -72,7 +72,7 @@ export default async function AgriTracePage({
   return (
     <div className="space-y-4">
       <div>
-        <Link href="/" className="text-sm text-stone-500 hover:underline">
+        <Link href="/" className="text-sm text-ink-4 hover:underline">
           ← 홈으로
         </Link>
       </div>
@@ -81,7 +81,7 @@ export default async function AgriTracePage({
         <h1 className="text-xl font-bold flex items-center gap-2">
           🌱 농산물이력추적
         </h1>
-        <p className="text-sm text-stone-600 mt-1">
+        <p className="text-sm text-ink-3 mt-1">
           식품안전나라(국립농산물품질관리원) 등록 농가/단체 검색
         </p>
 
@@ -91,14 +91,14 @@ export default async function AgriTracePage({
             name="q"
             defaultValue={q}
             placeholder="품목명 (예: 사과, 배추, 쌀)"
-            className="border border-stone-300 rounded-lg px-3 py-2 text-sm"
+            className="border border-line-strong rounded-lg px-3 py-2 text-sm"
           />
           <input
             type="text"
             name="orgn"
             defaultValue={orgn}
             placeholder="농가/단체명"
-            className="border border-stone-300 rounded-lg px-3 py-2 text-sm"
+            className="border border-line-strong rounded-lg px-3 py-2 text-sm"
           />
           <div className="md:col-span-2 flex gap-2">
             <button
@@ -110,7 +110,7 @@ export default async function AgriTracePage({
             {hasFilter && (
               <Link
                 href="/agritrace"
-                className="border border-stone-300 hover:bg-stone-50 rounded-lg px-4 py-2 text-sm text-stone-600"
+                className="border border-line-strong hover:bg-surface-muted rounded-lg px-4 py-2 text-sm text-ink-3"
               >
                 초기화
               </Link>
@@ -122,19 +122,19 @@ export default async function AgriTracePage({
       <section>
         <h2 className="font-bold mb-3 flex items-center gap-2">
           {hasFilter ? "🔍 검색 결과" : "🆕 최근 등록"}
-          <span className="text-xs text-stone-500 font-normal">
+          <span className="text-xs text-ink-4 font-normal">
             (총 {total.toLocaleString()}건)
           </span>
         </h2>
 
         {dbError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+          <div className="bg-danger-soft border border-danger/30 text-danger-text rounded-lg p-3 text-sm">
             데이터를 불러오지 못했습니다: {dbError}
           </div>
         )}
 
         {!dbError && items.length === 0 && (
-          <div className="bg-stone-50 border border-stone-200 rounded-lg p-6 text-center text-sm text-stone-500">
+          <div className="bg-surface-muted border border-line rounded-lg p-6 text-center text-sm text-ink-4">
             {hasFilter
               ? "검색 결과가 없습니다. 다른 키워드로 시도해보세요."
               : "등록된 농산물이력추적 정보가 아직 없습니다."}
@@ -153,20 +153,20 @@ export default async function AgriTracePage({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-stone-800">
+                    <div className="font-bold text-ink-1">
                       {item.orgnName ?? "(농가명 미상)"}
                     </div>
-                    <div className="text-sm text-stone-600 mt-0.5">
+                    <div className="text-sm text-ink-3 mt-0.5">
                       {item.rprsntPrdltName}
                       {item.presidentName ? ` · 대표 ${item.presidentName}` : ""}
                     </div>
                     {item.regInstName && (
-                      <div className="text-xs text-stone-500 mt-1">
+                      <div className="text-xs text-ink-4 mt-1">
                         등록기관: {item.regInstName}
                       </div>
                     )}
                   </div>
-                  <div className="text-[11px] text-stone-400 shrink-0 text-right">
+                  <div className="text-[11px] text-ink-4 shrink-0 text-right">
                     <div className="font-mono">{item.histTraceRegNo}</div>
                     {item.validBeginDate && item.validEndDate && (
                       <div className="mt-0.5">
@@ -178,10 +178,10 @@ export default async function AgriTracePage({
 
                 {partners.length > 0 && (
                   <details className="mt-3 group">
-                    <summary className="text-xs text-stone-500 cursor-pointer hover:text-stone-700 select-none">
+                    <summary className="text-xs text-ink-4 cursor-pointer hover:text-ink-2 select-none">
                       거래처 {partners.length}곳 보기
                     </summary>
-                    <ul className="mt-2 text-xs text-stone-600 space-y-1 pl-2">
+                    <ul className="mt-2 text-xs text-ink-3 space-y-1 pl-2">
                       {partners.map((p, i) => (
                         <li key={i}>
                           <span className="font-medium">{p.grpName ?? "-"}</span>

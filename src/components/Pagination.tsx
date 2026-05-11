@@ -26,7 +26,7 @@ export default function Pagination({
       {hasPrev ? (
         <Link
           href={buildHref(currentPage - 1)}
-          className="px-3 py-1.5 border border-border rounded hover:bg-stone-50"
+          className="px-3 py-1.5 border border-border rounded hover:bg-surface-muted"
           aria-label="이전 페이지"
         >
           ← 이전
@@ -40,15 +40,15 @@ export default function Pagination({
         </span>
       )}
 
-      <span className="text-stone-500 px-3">
-        <span className="font-bold text-stone-900">{currentPage}</span> /{" "}
+      <span className="text-ink-4 px-3">
+        <span className="font-bold text-ink-1">{currentPage}</span> /{" "}
         {totalPages}
       </span>
 
       {hasNext ? (
         <Link
           href={buildHref(currentPage + 1)}
-          className="px-3 py-1.5 border border-border rounded hover:bg-stone-50"
+          className="px-3 py-1.5 border border-border rounded hover:bg-surface-muted"
           aria-label="다음 페이지"
         >
           다음 →

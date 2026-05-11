@@ -78,7 +78,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
   if (!isAuthConfigured()) return null;
   if (!user) {
     return (
-      <div className="text-xs text-stone-500 text-center mt-2">
+      <div className="text-xs text-ink-4 text-center mt-2">
         🔔 가격 알림은 로그인 후 이용 가능합니다
       </div>
     );
@@ -140,7 +140,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
   }
 
   return (
-    <div className="bg-white border border-border rounded-lg p-3">
+    <div className="bg-surface border border-border rounded-lg p-3">
       {!open ? (
         <button
           onClick={() => setOpen(true)}
@@ -156,10 +156,10 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
               type="number"
               value={threshold}
               onChange={(e) => setThreshold(parseInt(e.target.value) || 0)}
-              className="px-2 py-1 border border-stone-300 rounded w-32"
+              className="px-2 py-1 border border-line-strong rounded w-32"
               aria-label="임계가"
             />
-            <span className="text-stone-500">원 이하면</span>
+            <span className="text-ink-4">원 이하면</span>
             <button
               onClick={register}
               disabled={busy}
@@ -169,7 +169,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
             </button>
             <button
               onClick={() => setOpen(false)}
-              className="text-stone-400 hover:text-stone-600 text-sm"
+              className="text-ink-4 hover:text-ink-3 text-sm"
             >
               취소
             </button>

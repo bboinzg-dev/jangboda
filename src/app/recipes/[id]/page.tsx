@@ -38,14 +38,14 @@ export default async function RecipeDetailPage({
       <div>
         <Link
           href="/recipes"
-          className="text-xs text-stone-500 hover:text-stone-700"
+          className="text-xs text-ink-4 hover:text-ink-2"
         >
           ← 레시피 목록
         </Link>
       </div>
 
       {/* 메인 이미지 */}
-      <div className="bg-stone-100 rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[16/9] relative">
+      <div className="bg-surface-muted rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[16/9] relative">
         {heroImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -65,22 +65,22 @@ export default async function RecipeDetailPage({
       <header className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
           {recipe.category && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded bg-brand-50 text-brand-700">
+            <span className="text-xs font-medium px-2 py-0.5 rounded bg-brand-soft text-brand-700">
               {recipe.category}
             </span>
           )}
           {recipe.cookingMethod && (
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-ink-4">
               {recipe.cookingMethod}
             </span>
           )}
           {recipe.servingWeight && (
-            <span className="text-xs text-stone-500">
+            <span className="text-xs text-ink-4">
               · 1인분 {recipe.servingWeight}g
             </span>
           )}
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
+        <h1 className="text-2xl md:text-3xl font-bold text-ink-1">
           {recipe.name}
         </h1>
         {tags.length > 0 && (
@@ -88,7 +88,7 @@ export default async function RecipeDetailPage({
             {tags.map((t, i) => (
               <span
                 key={`${t}-${i}`}
-                className="text-[11px] text-stone-500 bg-stone-100 rounded-full px-2 py-0.5"
+                className="text-[11px] text-ink-4 bg-surface-muted rounded-full px-2 py-0.5"
               >
                 #{t}
               </span>
@@ -112,18 +112,18 @@ export default async function RecipeDetailPage({
           <h2 className="font-bold mb-2 flex items-center gap-2">
             🥘 재료
           </h2>
-          <pre className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed font-sans">
+          <pre className="text-sm text-ink-2 whitespace-pre-wrap leading-relaxed font-sans">
             {recipe.ingredientsRaw}
           </pre>
           {recipe.ingredientsList.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-stone-100">
-              <div className="text-xs text-stone-500 mb-1.5">검색 키워드</div>
+            <div className="mt-3 pt-3 border-t border-line">
+              <div className="text-xs text-ink-4 mb-1.5">검색 키워드</div>
               <div className="flex flex-wrap gap-1.5">
                 {recipe.ingredientsList.map((ing) => (
                   <Link
                     key={ing}
                     href={`/recipes?q=${encodeURIComponent(ing)}`}
-                    className="text-[11px] bg-stone-100 hover:bg-stone-200 rounded px-2 py-0.5 text-stone-700"
+                    className="text-[11px] bg-surface-muted hover:bg-surface-sunken rounded px-2 py-0.5 text-ink-2"
                   >
                     {ing}
                   </Link>
@@ -147,7 +147,7 @@ export default async function RecipeDetailPage({
                   {s.idx}
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-sm text-ink-2 whitespace-pre-wrap leading-relaxed">
                     {s.text}
                   </p>
                   {s.image && (
@@ -168,17 +168,17 @@ export default async function RecipeDetailPage({
 
       {/* 저감조리법 TIP */}
       {recipe.tip && (
-        <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 md:p-5">
-          <h2 className="font-bold mb-2 flex items-center gap-2 text-amber-800">
+        <section className="bg-warning-soft border border-warning/30 rounded-xl p-4 md:p-5">
+          <h2 className="font-bold mb-2 flex items-center gap-2 text-warning-text">
             💡 저감조리법 TIP
           </h2>
-          <p className="text-sm text-amber-900 whitespace-pre-wrap leading-relaxed">
+          <p className="text-sm text-warning-text whitespace-pre-wrap leading-relaxed">
             {recipe.tip}
           </p>
         </section>
       )}
 
-      <footer className="text-[11px] text-stone-400 pt-2">
+      <footer className="text-[11px] text-ink-4 pt-2">
         출처: 식품의약품안전처 식품안전나라 · 조리식품 레시피 DB (COOKRCP01)
       </footer>
     </div>
@@ -196,11 +196,11 @@ function NutritionItem({
 }) {
   return (
     <div className="text-center">
-      <div className="text-[10px] text-stone-500">{label}</div>
-      <div className="text-sm md:text-base font-bold text-stone-900 mt-0.5">
+      <div className="text-[10px] text-ink-4">{label}</div>
+      <div className="text-sm md:text-base font-bold text-ink-1 mt-0.5">
         {value !== null ? Math.round(value * 10) / 10 : "—"}
       </div>
-      <div className="text-[10px] text-stone-400">{unit}</div>
+      <div className="text-[10px] text-ink-4">{unit}</div>
     </div>
   );
 }

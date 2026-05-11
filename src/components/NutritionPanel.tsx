@@ -101,9 +101,9 @@ export default function NutritionPanel({
   if (loading) {
     if (hideIfEmpty) return null;
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <div className="h-5 w-28 bg-stone-100 rounded animate-pulse mb-3" />
-        <div className="text-xs text-stone-400">영양정보 불러오는 중...</div>
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <div className="h-5 w-28 bg-surface-muted rounded animate-pulse mb-3" />
+        <div className="text-xs text-ink-4">영양정보 불러오는 중...</div>
       </section>
     );
   }
@@ -111,11 +111,11 @@ export default function NutritionPanel({
   if (!data || !data.found || !data.nutrition) {
     if (hideIfEmpty) return null;
     return (
-      <section className="bg-white border border-border rounded-xl p-4">
-        <h2 className="font-bold text-sm mb-1 text-stone-600">
+      <section className="bg-surface border border-border rounded-xl p-4">
+        <h2 className="font-bold text-sm mb-1 text-ink-3">
           🥗 영양 정보
         </h2>
-        <div className="text-xs text-stone-400">
+        <div className="text-xs text-ink-4">
           영양정보를 찾지 못했습니다 (식품의약품안전처 DB 기준)
         </div>
       </section>
@@ -144,7 +144,7 @@ export default function NutritionPanel({
   if (n.energyKcal !== null && n.energyKcal > 400) {
     flags.push({
       label: "고열량",
-      cls: "bg-red-100 text-red-700 border-red-200",
+      cls: "bg-danger-soft text-danger-text border-danger/30",
     });
   }
 
@@ -154,18 +154,18 @@ export default function NutritionPanel({
       : "식품의약품안전처 식품영양성분DB";
 
   return (
-    <section className="bg-white border border-border rounded-xl p-4">
+    <section className="bg-surface border border-border rounded-xl p-4">
       <div className="flex items-baseline justify-between gap-2 flex-wrap mb-2">
         <h2 className="font-bold text-sm flex items-center gap-2">
           🥗 영양 정보
           {data.servingSize && (
-            <span className="text-[11px] font-normal text-stone-500 bg-stone-100 rounded px-1.5 py-0.5">
+            <span className="text-[11px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
               1회 제공량 {data.servingSize}
             </span>
           )}
         </h2>
         {data.foodName && (
-          <span className="text-[11px] text-stone-400 truncate max-w-[60%]">
+          <span className="text-[11px] text-ink-4 truncate max-w-[60%]">
             매칭: {data.foodName}
           </span>
         )}
@@ -185,7 +185,7 @@ export default function NutritionPanel({
       )}
 
       {visibleRows.length === 0 ? (
-        <div className="text-xs text-stone-400">
+        <div className="text-xs text-ink-4">
           표시할 영양소 값이 없습니다.
         </div>
       ) : (
@@ -195,12 +195,12 @@ export default function NutritionPanel({
             return (
               <div
                 key={r.key}
-                className="flex items-baseline justify-between border-b border-stone-100 py-1"
+                className="flex items-baseline justify-between border-b border-line py-1"
               >
-                <dt className="text-stone-600">{r.label}</dt>
-                <dd className="font-medium text-stone-800">
+                <dt className="text-ink-3">{r.label}</dt>
+                <dd className="font-medium text-ink-1">
                   {formatVal(val, r.decimals ?? 1)}
-                  <span className="text-[11px] text-stone-500 ml-0.5">
+                  <span className="text-[11px] text-ink-4 ml-0.5">
                     {r.unit}
                   </span>
                 </dd>
@@ -210,9 +210,9 @@ export default function NutritionPanel({
         </dl>
       )}
 
-      <div className="mt-3 text-[11px] text-stone-500">출처: {sourceLabel}</div>
+      <div className="mt-3 text-[11px] text-ink-4">출처: {sourceLabel}</div>
       {flags.length > 0 && (
-        <div className="mt-1 text-[10px] italic text-stone-400">
+        <div className="mt-1 text-[10px] italic text-ink-4">
           1회 제공량 기준 일반적 권고치 — 정확한 기준은 식약처 가이드 참조
         </div>
       )}

@@ -43,7 +43,7 @@ export default async function RewardsPage() {
       </header>
 
       {points !== null && (
-        <section className="bg-white border border-line rounded-2xl p-5">
+        <section className="bg-surface border border-line rounded-2xl p-5">
           <div className="flex items-baseline justify-between">
             <div className="text-xs text-ink-3">내 포인트</div>
             <div className="text-3xl font-extrabold text-brand-600 tabular-nums">
@@ -55,7 +55,7 @@ export default async function RewardsPage() {
           </div>
           {next ? (
             <div className="mt-3">
-              <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-surface-muted rounded-full h-2 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-brand-400 to-brand-600 h-2 rounded-full transition-all"
                   style={{ width: `${progressPct}%` }}
@@ -67,7 +67,7 @@ export default async function RewardsPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-3 text-sm text-emerald-700 font-medium">
+            <div className="mt-3 text-sm text-success-text font-medium">
               🏆 모든 등급을 달성했어요. 감사합니다!
             </div>
           )}
@@ -75,7 +75,7 @@ export default async function RewardsPage() {
       )}
 
       {points === null && (
-        <section className="bg-brand-50 border border-brand-200 rounded-2xl p-5 text-sm">
+        <section className="bg-brand-soft border border-brand-200 rounded-2xl p-5 text-sm">
           <div className="font-semibold text-ink-1 mb-1">
             로그인 후 확인할 수 있어요
           </div>
@@ -98,7 +98,7 @@ export default async function RewardsPage() {
               className={`border rounded-2xl p-4 ${
                 reached
                   ? "bg-success-soft/30 border-success/30"
-                  : "bg-white border-line"
+                  : "bg-surface border-line"
               }`}
             >
               <div className="flex items-baseline justify-between gap-3 mb-1">
@@ -123,7 +123,7 @@ export default async function RewardsPage() {
         })}
       </section>
 
-      <section className="bg-stone-50 border border-line rounded-2xl p-4 text-xs text-ink-3 space-y-1">
+      <section className="bg-surface-muted border border-line rounded-2xl p-4 text-xs text-ink-3 space-y-1">
         <div className="font-semibold text-ink-2">포인트 적립 방법</div>
         <div>· 영수증 1장 등록 = +2점 (자동 매칭된 품목)</div>
         <div>· 가격 직접 등록 1건 = +5점 (상품 상세 페이지)</div>

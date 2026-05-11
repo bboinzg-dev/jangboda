@@ -45,15 +45,15 @@ export default async function SavedBenefitsPage() {
       </div>
 
       <header>
-        <h1 className="text-2xl font-bold text-stone-900">저장한 혜택</h1>
-        <p className="text-sm text-stone-600 mt-1">
+        <h1 className="text-2xl font-bold text-ink-1">저장한 혜택</h1>
+        <p className="text-sm text-ink-3 mt-1">
           나중에 다시 볼 혜택을 모아둔 곳이에요.
         </p>
       </header>
 
       {!user ? (
         <div className="card p-8 text-center">
-          <div className="text-stone-700 mb-2">
+          <div className="text-ink-2 mb-2">
             로그인하면 저장한 혜택을 볼 수 있어요.
           </div>
           <Link
@@ -75,9 +75,9 @@ async function SavedList({ userId }: { userId: string }) {
 
   if (matches.length === 0) {
     return (
-      <div className="bg-stone-50 border border-stone-200 rounded-xl p-8 text-center">
-        <div className="text-stone-700 mb-2">아직 저장한 혜택이 없어요</div>
-        <div className="text-xs text-stone-500 mb-4">
+      <div className="bg-surface-muted border border-line rounded-xl p-8 text-center">
+        <div className="text-ink-2 mb-2">아직 저장한 혜택이 없어요</div>
+        <div className="text-xs text-ink-4 mb-4">
           마음에 드는 혜택을 ★ 저장하면 여기에 모입니다.
         </div>
         <Link

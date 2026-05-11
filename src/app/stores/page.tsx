@@ -312,7 +312,7 @@ export default function StoresPage() {
               className={`text-xs px-3 py-1.5 rounded-full border transition ${
                 filter === c
                   ? "bg-ink-1 text-white border-ink-1 shadow-soft"
-                  : "bg-white text-ink-2 border-line hover:border-line-strong hover:bg-surface-muted"
+                  : "bg-surface text-ink-2 border-line hover:border-line-strong hover:bg-surface-muted"
               }`}
             >
               {c === "all"
@@ -345,7 +345,7 @@ export default function StoresPage() {
             value={regionQuery}
             onChange={(e) => setRegionQuery(e.target.value)}
             placeholder="예: 강남역, 잠실, 서울 송파구"
-            className="w-full h-11 px-4 rounded-xl bg-white border-line border text-sm focus:outline-none focus:border-brand-400"
+            className="w-full h-11 px-4 rounded-xl bg-surface border-line border text-sm focus:outline-none focus:border-brand-400"
             aria-label="지역 검색"
           />
           <button
@@ -391,7 +391,7 @@ export default function StoresPage() {
             </button>
             <button
               onClick={handleSearchByLocation}
-              className="bg-white hover:bg-surface-muted text-ink-2 border border-line-strong px-5 py-2.5 rounded-xl font-medium text-sm inline-flex items-center justify-center gap-1.5"
+              className="bg-surface hover:bg-surface-muted text-ink-2 border border-line-strong px-5 py-2.5 rounded-xl font-medium text-sm inline-flex items-center justify-center gap-1.5"
             >
               <IconPin size={16} className="text-ink-2" />
               내 위치로 검색
@@ -478,7 +478,7 @@ export default function StoresPage() {
                                 2) 영업 중/종료 + 시간
                                 3) 체인 default(평균)면 라벨 명시 */}
                           {closedToday ? (
-                            <div className="text-[11px] mt-0.5 font-medium text-rose-700">
+                            <div className="text-[11px] mt-0.5 font-medium text-danger-text">
                               🛑 오늘 정기 휴무
                               <span className="ml-1 text-[10px] text-ink-3 font-normal">
                                 (대형마트 의무휴업)
@@ -489,9 +489,9 @@ export default function StoresPage() {
                               <div
                                 className={`text-[11px] mt-0.5 font-medium ${
                                   openStatus.isOpen === true
-                                    ? "text-emerald-700"
+                                    ? "text-success-text"
                                     : openStatus.isOpen === false
-                                      ? "text-rose-600"
+                                      ? "text-danger"
                                       : "text-ink-3"
                                 }`}
                               >

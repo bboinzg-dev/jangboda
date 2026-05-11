@@ -44,7 +44,7 @@ export default async function AdSlot({ placement, limit = 1 }: Props) {
       {slots.map((s) => (
         <div
           key={s.id}
-          className="bg-white border border-line rounded-2xl p-3 flex items-center gap-3"
+          className="bg-surface border border-line rounded-2xl p-3 flex items-center gap-3"
         >
           {s.imageUrl && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -52,12 +52,12 @@ export default async function AdSlot({ placement, limit = 1 }: Props) {
               src={s.imageUrl}
               alt=""
               loading="lazy"
-              className="w-14 h-14 rounded-xl object-cover bg-stone-100 shrink-0"
+              className="w-14 h-14 rounded-xl object-cover bg-surface-muted shrink-0"
             />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-[10px] text-ink-3 mb-0.5">
-              <span className="bg-stone-100 px-1.5 py-0.5 rounded">협찬</span>
+              <span className="bg-surface-muted px-1.5 py-0.5 rounded">협찬</span>
             </div>
             <div className="font-semibold text-sm text-ink-1 truncate">
               {s.title}

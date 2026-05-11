@@ -80,7 +80,7 @@ export default async function AdminSyncPage() {
         {TRIGGERS.map((t) => (
           <div
             key={t.key}
-            className="bg-white border border-line rounded-xl p-4 flex items-start justify-between gap-3"
+            className="bg-surface border border-line rounded-xl p-4 flex items-start justify-between gap-3"
           >
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-ink-1">{t.title}</div>

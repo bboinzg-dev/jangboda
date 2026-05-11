@@ -83,7 +83,7 @@ export default function StoresMap({ stores, myLocation, height = "400px" }: Prop
     return (
       <div
         style={{ height }}
-        className="bg-stone-100 rounded-lg flex items-center justify-center text-stone-500 text-sm"
+        className="bg-surface-muted rounded-lg flex items-center justify-center text-ink-4 text-sm"
       >
         지도에 표시할 매장이 없습니다
       </div>
@@ -119,14 +119,14 @@ export default function StoresMap({ stores, myLocation, height = "400px" }: Prop
               <div className="text-sm">
                 <div className="font-semibold text-brand-700">{s.chainName}</div>
                 <div>{s.name}</div>
-                <div className="text-xs text-stone-500 mt-1">{s.address}</div>
+                <div className="text-xs text-ink-4 mt-1">{s.address}</div>
                 {s.distanceKm !== null && s.distanceKm !== undefined && (
                   <div className="text-xs mt-1">
                     내 위치에서 <strong>{s.distanceKm.toFixed(1)}km</strong>
                   </div>
                 )}
                 {typeof s.priceCount === "number" && (
-                  <div className="text-xs text-stone-500">
+                  <div className="text-xs text-ink-4">
                     {s.priceCount}건 가격 등록
                   </div>
                 )}

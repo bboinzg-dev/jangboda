@@ -27,7 +27,7 @@ export default async function ParsaProductDetailPage({
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-2xl font-bold text-stone-900">상품을 찾을 수 없어요</h1>
+          <h1 className="text-2xl font-bold text-ink-1">상품을 찾을 수 없어요</h1>
         </header>
         <EmptyState
           icon="🔎"
@@ -126,29 +126,29 @@ export default async function ParsaProductDetailPage({
       <div>
         <Link
           href="/parsa"
-          className="text-xs text-stone-500 hover:text-stone-700"
+          className="text-xs text-ink-4 hover:text-ink-2"
         >
           ← 공공 가격 정보
         </Link>
       </div>
 
       <header className="card p-5 space-y-2">
-        <h1 className="text-xl font-bold text-stone-900">
+        <h1 className="text-xl font-bold text-ink-1">
           {product.goodName}
         </h1>
         <div className="flex flex-wrap gap-2 text-xs">
           {smallCat && (
-            <span className="px-2 py-1 rounded bg-brand-50 text-brand-700 font-medium">
+            <span className="px-2 py-1 rounded bg-brand-soft text-brand-700 font-medium">
               {smallCat.codeName}
             </span>
           )}
           {unitText && (
-            <span className="px-2 py-1 rounded bg-stone-100 text-stone-600">
+            <span className="px-2 py-1 rounded bg-surface-muted text-ink-3">
               {unitText}
             </span>
           )}
           {product.detailMean && product.detailMean !== unitText && (
-            <span className="px-2 py-1 rounded bg-stone-100 text-stone-600">
+            <span className="px-2 py-1 rounded bg-surface-muted text-ink-3">
               {product.detailMean}
             </span>
           )}
@@ -183,7 +183,7 @@ export default async function ParsaProductDetailPage({
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="font-bold">💰 매장별 가격 비교</h2>
             {inspectDay && (
-              <small className="text-xs text-stone-500">
+              <small className="text-xs text-ink-4">
                 조사일: {formatInspectDay(inspectDay)}
               </small>
             )}
@@ -204,7 +204,7 @@ export default async function ParsaProductDetailPage({
                 <li
                   key={p.id}
                   className={`p-3 flex justify-between items-center text-sm ${
-                    isLowest ? "bg-brand-50/40" : ""
+                    isLowest ? "bg-brand-soft/40" : ""
                   }`}
                 >
                   <div className="min-w-0 flex-1">
@@ -214,13 +214,13 @@ export default async function ParsaProductDetailPage({
                           최저가
                         </span>
                       )}
-                      <span className="font-medium text-stone-900 truncate">
+                      <span className="font-medium text-ink-1 truncate">
                         {store?.entpName ?? p.entpId}
                       </span>
                     </div>
-                    <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <div className="text-xs text-ink-4 mt-0.5 flex items-center gap-2 flex-wrap">
                       {typeName && (
-                        <span className="px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
+                        <span className="px-1.5 py-0.5 rounded bg-surface-muted text-ink-3">
                           {typeName}
                         </span>
                       )}
@@ -230,17 +230,17 @@ export default async function ParsaProductDetailPage({
                     </div>
                   </div>
                   <div className="text-right shrink-0 ml-3">
-                    <div className="font-bold text-stone-900">
+                    <div className="font-bold text-ink-1">
                       {p.price.toLocaleString()}원
                     </div>
                     <div className="flex gap-1 justify-end mt-0.5">
                       {p.plusoneYn && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-danger-soft text-danger-text">
                           1+1
                         </span>
                       )}
                       {p.discountYn && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning-soft text-warning-text">
                           할인
                         </span>
                       )}
@@ -253,7 +253,7 @@ export default async function ParsaProductDetailPage({
         </section>
       )}
 
-      <footer className="text-[11px] text-stone-400 pt-2">
+      <footer className="text-[11px] text-ink-4 pt-2">
         출처: 한국소비자원 참가격(price.go.kr). 표시 가격은 조사 시점의 정보로
         실제 매장 가격과 다를 수 있습니다.
       </footer>

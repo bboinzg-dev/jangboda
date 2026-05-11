@@ -48,11 +48,11 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-30 bg-white border border-border rounded-xl shadow-lg p-4 flex items-center gap-3">
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-30 bg-surface border border-border rounded-xl shadow-lg p-4 flex items-center gap-3">
       <div className="text-2xl shrink-0">🛒</div>
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm">홈 화면에 추가</div>
-        <div className="text-xs text-stone-500">앱처럼 빠르게 영수증 올리기</div>
+        <div className="text-xs text-ink-4">앱처럼 빠르게 영수증 올리기</div>
       </div>
       <button
         onClick={install}
@@ -63,7 +63,7 @@ export default function InstallPrompt() {
       <button
         onClick={dismiss}
         aria-label="닫기"
-        className="text-stone-400 hover:text-stone-600 shrink-0"
+        className="text-ink-4 hover:text-ink-3 shrink-0"
       >
         ✕
       </button>

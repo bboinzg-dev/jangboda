@@ -82,13 +82,13 @@ export default function ProductSearchPicker({
           <div className="min-w-0">
             <div className="font-medium truncate">{selected.name}</div>
             {selected.unit && (
-              <div className="text-[10px] text-stone-500 truncate">
+              <div className="text-[10px] text-ink-4 truncate">
                 {selected.unit}
               </div>
             )}
           </div>
           <span
-            className="text-xs text-stone-400 hover:text-danger shrink-0"
+            className="text-xs text-ink-4 hover:text-danger shrink-0"
             aria-label="다시 선택"
           >
             ✕
@@ -105,24 +105,24 @@ export default function ProductSearchPicker({
             }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="w-full px-3 py-2 border border-stone-300 rounded text-sm focus:outline-none focus:border-brand-400"
+            className="w-full px-3 py-2 border border-line-strong rounded text-sm focus:outline-none focus:border-brand-400"
             aria-label="상품 검색"
           />
           {open && filtered.length > 0 && (
             <ul
-              className="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto bg-white border border-border rounded-md shadow-lg"
+              className="absolute z-20 mt-1 w-full max-h-72 overflow-y-auto bg-surface border border-border rounded-md shadow-lg"
               role="listbox"
             >
               {filtered.map((p) => (
                 <li
                   key={p.id}
                   onClick={() => pick(p)}
-                  className="px-3 py-2 text-sm hover:bg-brand-50 cursor-pointer border-b last:border-b-0 border-stone-100"
+                  className="px-3 py-2 text-sm hover:bg-brand-soft cursor-pointer border-b last:border-b-0 border-line"
                   role="option"
                   aria-selected="false"
                 >
                   <div className="font-medium truncate">{p.name}</div>
-                  <div className="text-[10px] text-stone-500 truncate">
+                  <div className="text-[10px] text-ink-4 truncate">
                     {p.category}
                     {p.brand ? ` · ${p.brand}` : ""}
                     {p.unit ? ` · ${p.unit}` : ""}
@@ -132,7 +132,7 @@ export default function ProductSearchPicker({
             </ul>
           )}
           {open && filtered.length === 0 && query.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full bg-white border border-border rounded-md shadow-lg p-3 text-xs text-stone-500 text-center">
+            <div className="absolute z-20 mt-1 w-full bg-surface border border-border rounded-md shadow-lg p-3 text-xs text-ink-4 text-center">
               "{query}"에 맞는 상품이 없습니다
             </div>
           )}

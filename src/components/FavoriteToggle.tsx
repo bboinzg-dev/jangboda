@@ -35,7 +35,7 @@ export default function FavoriteToggle({
       type="button"
       onClick={handleClick}
       aria-label={enabled ? "즐겨찾기 해제" : "즐겨찾기 추가"}
-      className={`${dim} ${enabled ? "text-amber-400" : "text-stone-300 hover:text-amber-400"} leading-none transition-colors`}
+      className={`${dim} ${enabled ? "text-warning" : "text-stone-300 hover:text-warning"} leading-none transition-colors`}
       title={enabled ? "즐겨찾기 해제" : "즐겨찾기 추가"}
     >
       {enabled ? "★" : "☆"}

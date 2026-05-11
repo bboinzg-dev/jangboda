@@ -31,7 +31,7 @@ export default function AuthButton() {
   }
 
   if (loading) {
-    return <span className="text-xs text-stone-400">···</span>;
+    return <span className="text-xs text-ink-4">···</span>;
   }
 
   async function login() {
@@ -57,10 +57,10 @@ export default function AuthButton() {
       "사용자";
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-stone-600 hidden sm:inline">{display}</span>
+        <span className="text-ink-3 hidden sm:inline">{display}</span>
         <button
           onClick={logout}
-          className="text-xs text-stone-500 hover:text-stone-700 px-2 py-1 hover:bg-stone-100 rounded"
+          className="text-xs text-ink-4 hover:text-ink-2 px-2 py-1 hover:bg-surface-muted rounded"
         >
           로그아웃
         </button>
@@ -71,7 +71,7 @@ export default function AuthButton() {
   return (
     <button
       onClick={login}
-      className="text-xs text-stone-600 hover:text-brand-600 px-2 py-1 hover:bg-stone-100 rounded inline-flex items-center gap-1"
+      className="text-xs text-ink-3 hover:text-brand-600 px-2 py-1 hover:bg-surface-muted rounded inline-flex items-center gap-1"
     >
       <svg width="14" height="14" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
