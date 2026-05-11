@@ -96,13 +96,13 @@ export default async function BenefitDetailPage({
       </div>
 
       {/* 헤더 카드 */}
-      <header className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-6">
+      <header className="bg-gradient-to-br from-info-soft to-info-soft border border-line rounded-xl p-6">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <span className="text-xs font-medium bg-indigo-600 text-white px-2 py-0.5 rounded">
             {srcLabel}
           </span>
           {catLabel && (
-            <span className="text-xs font-medium bg-surface border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded">
+            <span className="text-xs font-medium bg-surface border border-line text-indigo-700 px-2 py-0.5 rounded">
               {catLabel}
             </span>
           )}
@@ -293,7 +293,7 @@ export default async function BenefitDetailPage({
                 <dt className="text-xs font-medium text-indigo-700 mb-1">
                   {b.label}
                 </dt>
-                <dd className="text-sm text-ink-2 whitespace-pre-line pl-3 border-l-2 border-indigo-100">
+                <dd className="text-sm text-ink-2 whitespace-pre-line pl-3 border-l-2 border-line">
                   {b.text}
                 </dd>
               </div>

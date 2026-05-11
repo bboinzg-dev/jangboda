@@ -103,7 +103,7 @@ export default function RecipeRecommendations({ productNames }: Props) {
             <li key={r.id}>
               <Link
                 href={`/recipes/${r.id}`}
-                className="card-clickable flex gap-3 p-2 border border-border rounded-lg hover:border-brand-300 hover:bg-brand-soft/30 transition"
+                className="card-clickable flex gap-3 p-2 border border-border rounded-lg hover:border-line-strong hover:bg-brand-soft/30 transition"
               >
                 <div className="shrink-0 w-16 h-16 rounded-lg bg-surface-muted overflow-hidden flex items-center justify-center text-stone-300 text-2xl">
                   {r.imageMain ? (

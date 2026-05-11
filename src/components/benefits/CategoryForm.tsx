@@ -1043,7 +1043,7 @@ function ChildrenFields({ values, setField }: FieldProps) {
       <button
         type="button"
         onClick={add}
-        className="w-full bg-surface hover:bg-indigo-50 border border-dashed border-indigo-300 text-indigo-600 py-2.5 rounded-lg font-medium text-sm"
+        className="w-full bg-surface hover:bg-indigo-50 border border-dashed border-line text-indigo-600 py-2.5 rounded-lg font-medium text-sm"
       >
         + 자녀 추가
       </button>

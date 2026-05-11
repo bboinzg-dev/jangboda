@@ -83,7 +83,7 @@ export default function BenefitCard({
   return (
     <Link
       href={href}
-      className={`block bg-surface border border-line hover:border-indigo-300 hover:shadow-sm rounded-lg ${padding} transition`}
+      className={`block bg-surface border border-line hover:border-line hover:shadow-sm rounded-lg ${padding} transition`}
     >
       {/* 상단: 배지 + 제목 + (옵션) 점수 배지 */}
       <div className="flex items-start justify-between gap-2 mb-2">

@@ -167,7 +167,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                 className={`flex items-center gap-3 p-3 border rounded-xl bg-surface transition ${
                   inCart
                     ? "border-success-soft bg-success-soft/40"
-                    : "border-line hover:border-brand-300"
+                    : "border-line hover:border-line-strong"
                 }`}
               >
                 {/* 좌측 썸네일 — imageUrl 없으면 폴백 아이콘 */}

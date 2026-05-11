@@ -56,7 +56,7 @@ export default function CategorySelect({
       disabled={saving}
       className={`text-[10px] px-1.5 py-0.5 rounded border ${
         isOverride
-          ? "border-brand-300 bg-brand-soft text-brand-700"
+          ? "border-line-strong bg-brand-soft text-brand-700"
           : "border-line bg-surface-muted text-ink-3"
       } cursor-pointer hover:border-brand-400`}
       title={isOverride ? "사용자가 직접 분류한 카테고리" : "자동 분류"}

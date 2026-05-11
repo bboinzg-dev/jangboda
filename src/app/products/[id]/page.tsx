@@ -549,7 +549,7 @@ export default async function ProductDetailPage({
         ) : null}
 
         {winnerSection && (
-          <div className="mt-4 text-sm bg-brand-soft border border-brand-200 rounded-xl p-3">
+          <div className="mt-4 text-sm bg-brand-soft border border-line-strong rounded-xl p-3">
             💡{" "}
             {winnerSection === "offline"
               ? "오프라인 매장이 더 쌉니다 — 가까우면 직접 사러 가는 게 이득"
@@ -807,7 +807,7 @@ function PriceStat({
   return (
     <div
       className={`rounded-xl p-3 ${
-        highlight ? "bg-brand-soft border border-brand-200" : "bg-surface-muted"
+        highlight ? "bg-brand-soft border border-line-strong" : "bg-surface-muted"
       }`}
     >
       <div className="text-xs text-ink-3">{label}</div>

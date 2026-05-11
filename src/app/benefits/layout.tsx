@@ -38,7 +38,7 @@ function BenefitsGate({
 
   return (
     <div className="space-y-6">
-      <section className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-8 border border-indigo-100 text-center">
+      <section className="bg-gradient-to-br from-info-soft to-info-soft rounded-xl p-8 border border-line text-center">
         <div className="text-3xl mb-3">🎁</div>
         <h1 className="text-2xl font-bold text-ink-1 mb-2">
           정부 혜택 추천은 곧 열립니다

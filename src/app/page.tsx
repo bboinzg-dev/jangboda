@@ -195,7 +195,7 @@ export default async function HomePage() {
     <div className="space-y-8">
       {/* Hero — 메인 CTA 1 + 보조 3.
           기존 평면 surface-muted 카드 → 살짝 그라데이션 + warm 배경. 90년대 표 느낌 탈피. */}
-      <section className="relative overflow-hidden rounded-3xl px-5 py-7 md:px-8 md:py-8 bg-gradient-to-br from-brand-50 via-white to-surface-muted border border-line/60 shadow-soft">
+      <section className="relative overflow-hidden rounded-3xl px-5 py-7 md:px-8 md:py-8 bg-gradient-to-br from-brand-soft via-surface to-surface-muted border border-line/60 shadow-soft">
         <div className="md:grid md:grid-cols-[1fr_auto] md:gap-8 md:items-center relative">
           <div>
             <h1 className="text-[26px] md:text-[34px] font-extrabold tracking-tight text-ink-1 leading-tight">

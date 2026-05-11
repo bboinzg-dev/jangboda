@@ -56,7 +56,7 @@ export default async function BenefitsOnboardingPage() {
 
       {/* 전체 진행률 — 로그인 사용자만 */}
       {user && (
-        <section className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+        <section className="bg-indigo-50 border border-line rounded-lg p-4">
           <div className="flex items-baseline justify-between mb-2">
             <span className="text-sm font-medium text-indigo-900">
               전체 입력 완성도
@@ -97,9 +97,9 @@ export default async function BenefitsOnboardingPage() {
                       href={`/benefits/onboarding/${cat.key}`}
                       className={`rounded-lg p-4 transition border ${
                         isComplete
-                          ? "bg-indigo-50 border-indigo-300 hover:border-indigo-500"
+                          ? "bg-indigo-50 border-line hover:border-indigo-500"
                           : isStarted
-                          ? "bg-surface border-indigo-200 hover:border-indigo-400"
+                          ? "bg-surface border-line hover:border-indigo-400"
                           : "bg-surface border-line hover:border-indigo-400 hover:bg-indigo-50/30"
                       }`}
                     >

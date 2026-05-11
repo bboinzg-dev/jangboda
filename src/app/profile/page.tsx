@@ -173,7 +173,7 @@ export default async function ProfilePage() {
       {/* 1. 사용자 정보 헤더 — 인사 + 포인트/순위 + 활동 통계 한 카드로 통합 */}
       <header className="card p-5 md:p-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center shrink-0 shadow-soft">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-soft to-brand-soft flex items-center justify-center shrink-0 shadow-soft">
             <IconUser size={28} className="text-brand-600" />
           </div>
           <div className="min-w-0 flex-1">
@@ -699,7 +699,7 @@ function PointsCard({ points }: { points: number }) {
   return (
     <Link
       href="/rewards"
-      className="block rounded-2xl border border-line/60 bg-surface-muted/40 p-3 hover:border-brand-300 hover:bg-brand-soft/30 transition"
+      className="block rounded-2xl border border-line/60 bg-surface-muted/40 p-3 hover:border-line-strong hover:bg-brand-soft/30 transition"
       aria-label="포인트 혜택 정책 보기"
     >
       <div className="flex items-center justify-between">

@@ -214,7 +214,7 @@ export default async function ParsaPage({
                     <Link
                       key={p.goodId}
                       href={`/parsa/products/${encodeURIComponent(p.goodId)}`}
-                      className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
+                      className="card-clickable card p-4 hover:border-line-strong flex flex-col gap-1"
                     >
                       <div className="font-semibold text-ink-1 line-clamp-2">
                         {p.goodName}
@@ -250,7 +250,7 @@ export default async function ParsaPage({
               <Link
                 key={c.code}
                 href={`/parsa?q=${encodeURIComponent(c.name)}`}
-                className="card-clickable card p-4 hover:border-brand-300 flex flex-col gap-1"
+                className="card-clickable card p-4 hover:border-line-strong flex flex-col gap-1"
               >
                 <div className="text-sm font-semibold text-ink-1">
                   {c.name}

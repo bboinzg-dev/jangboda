@@ -66,7 +66,7 @@ export default function CollapsibleList({
           className={`mt-2 w-full text-sm py-2 px-3 rounded-lg border transition-colors font-medium ${
             expanded
               ? "border-line bg-surface-muted text-ink-3 hover:bg-surface-muted"
-              : "border-brand-200 bg-brand-soft text-brand-700 hover:bg-brand-soft"
+              : "border-line-strong bg-brand-soft text-brand-700 hover:bg-brand-soft"
           }`}
           aria-expanded={expanded}
         >

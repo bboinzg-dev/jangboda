@@ -10,7 +10,7 @@ type Props = {
 
 export default function HomeColdStart({ stats }: Props) {
   return (
-    <section className="bg-gradient-to-br from-brand-50 via-white to-brand-50/30 border border-brand-100 rounded-2xl p-5 md:p-6">
+    <section className="bg-gradient-to-br from-brand-soft via-surface to-brand-soft/30 border border-line rounded-2xl p-5 md:p-6">
       <div className="text-center mb-5">
         <h2 className="text-lg md:text-xl font-extrabold text-ink-1">
           영수증 한 장으로 우리 동네 마트 가격이 한눈에

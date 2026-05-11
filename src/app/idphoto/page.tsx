@@ -17,7 +17,7 @@ export default function IdPhotoPage() {
 
   return (
     <div className="space-y-6">
-      <header className="bg-gradient-to-br from-amber-50 to-orange-50 border border-warning/20 rounded-2xl p-6">
+      <header className="bg-gradient-to-br from-warning-soft to-warning-soft border border-warning/20 rounded-2xl p-6">
         <div className="text-[11px] font-medium text-warning-text mb-1">
           부가기능 · 유료 API 사용
         </div>

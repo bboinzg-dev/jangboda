@@ -47,7 +47,7 @@ export default function BudgetSummaryWidget() {
     return (
       <Link
         href="/upload"
-        className="block bg-gradient-to-br from-emerald-50 to-emerald-100 border border-success/30 rounded-xl p-5 hover:shadow-sm transition-shadow"
+        className="block bg-gradient-to-br from-success-soft to-success-soft border border-success/30 rounded-xl p-5 hover:shadow-sm transition-shadow"
       >
         <div className="flex items-center gap-3">
           <span className="text-3xl" aria-hidden>
@@ -71,7 +71,7 @@ export default function BudgetSummaryWidget() {
   return (
     <Link
       href="/budget"
-      className="block bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200 rounded-xl p-5 hover:shadow-sm transition-shadow"
+      className="block bg-gradient-to-br from-brand-soft to-brand-soft border border-line-strong rounded-xl p-5 hover:shadow-sm transition-shadow"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>

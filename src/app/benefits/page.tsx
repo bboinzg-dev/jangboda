@@ -65,7 +65,7 @@ export default async function BenefitsHomePage() {
 
   return (
     <div className="space-y-8">
-      <section className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-8 border border-indigo-100">
+      <section className="bg-gradient-to-br from-info-soft to-info-soft rounded-xl p-8 border border-line">
         <div className="text-xs font-medium text-indigo-700 mb-2">정부 혜택 추천</div>
         <h1 className="text-3xl font-bold text-ink-1 mb-2">
           내가 받을 수 있는 혜택, 한 번에 찾기

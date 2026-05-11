@@ -75,7 +75,7 @@ export default async function RewardsPage() {
       )}
 
       {points === null && (
-        <section className="bg-brand-soft border border-brand-200 rounded-2xl p-5 text-sm">
+        <section className="bg-brand-soft border border-line-strong rounded-2xl p-5 text-sm">
           <div className="font-semibold text-ink-1 mb-1">
             로그인 후 확인할 수 있어요
           </div>

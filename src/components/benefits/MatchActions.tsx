@@ -87,7 +87,7 @@ export default function MatchActions({ benefitId, initialAction }: Props) {
           className={`text-sm px-3 py-1.5 rounded-md border transition disabled:opacity-60 disabled:cursor-not-allowed ${
             savedActive
               ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
-              : "bg-surface border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+              : "bg-surface border-line text-indigo-700 hover:bg-indigo-50"
           }`}
         >
           {savedActive ? "★ 저장됨" : "☆ 이 혜택 저장하기"}

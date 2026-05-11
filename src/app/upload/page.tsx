@@ -495,7 +495,7 @@ export default function UploadPage() {
                 <button
                   type="button"
                   onClick={() => setCameraOpen(true)}
-                  className="w-full sm:w-[80%] flex flex-col items-center gap-3 py-10 border-2 border-dashed border-brand-200 hover:border-brand-400 hover:bg-brand-soft rounded-2xl transition-colors text-brand-500"
+                  className="w-full sm:w-[80%] flex flex-col items-center gap-3 py-10 border-2 border-dashed border-line-strong hover:border-brand-400 hover:bg-brand-soft rounded-2xl transition-colors text-brand-500"
                   aria-label="카메라로 영수증 촬영"
                 >
                   <CameraIcon size={64} />
