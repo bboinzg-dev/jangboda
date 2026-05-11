@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "./AuthButton";
+import { ThemeToggle } from "./ui/ThemeToggle";
 
 // 데스크톱 nav — 핵심 5개 + 영수증 강조 버튼.
 // 가계부는 영수증의 출구이자 핵심 가치 도구이므로 메인 nav에 노출.
@@ -20,7 +21,7 @@ export default function Nav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-line/70 sticky top-0 z-20">
+    <header className="bg-surface/80 backdrop-blur-md border-b border-line/70 sticky top-0 z-20">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center gap-2 shrink-0 group">
           <span
@@ -57,13 +58,16 @@ export default function Nav() {
             <span>영수증</span>
           </Link>
 
+          <ThemeToggle className="ml-1" />
+
           <span className="ml-1 pl-2 border-l border-line">
             <AuthButton />
           </span>
         </nav>
 
-        {/* 모바일 — 영수증 + AuthButton만 (나머지는 BottomNav) */}
+        {/* 모바일 — 다크 토글 + AuthButton (나머지는 BottomNav) */}
         <div className="flex md:hidden items-center gap-2">
+          <ThemeToggle />
           <AuthButton />
         </div>
       </div>

@@ -2,38 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   디자인 토큰 — Editorial Grocer (라이트 + 다크).
+   색은 RGB triplet (공백 구분) 으로 저장 — Tailwind opacity modifier
+   ("text-ink-1/70") 지원을 위해. 다크모드는 <html class="dark">.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --bg: #FAF8F4; /* 핸드오프 디자인 토큰: page (warm white) */
+  /* surface */
+  --page: 250 248 244;         /* #FAF8F4 */
+  --surface: 255 255 255;      /* #FFFFFF */
+  --surface-muted: 242 238 229;/* #F2EEE5 */
+  --surface-sunken: 234 228 213;/* #EAE4D5 */
+
+  /* line */
+  --line: 229 222 204;         /* #E5DECC */
+  --line-strong: 210 201 178;  /* #D2C9B2 */
+
+  /* ink (text) */
+  --ink-1: 27 24 21;           /* #1B1815 */
+  --ink-2: 74 69 62;           /* #4A453E */
+  --ink-3: 122 114 100;        /* #7A7264 */
+  --ink-4: 168 159 140;        /* #A89F8C */
+
+  /* brand */
+  --brand: 249 115 22;         /* #F97316 */
+  --brand-hover: 234 88 12;    /* #EA580C */
+  --brand-soft: 255 231 209;   /* #FFE7D1 */
+  --brand-ink: 124 45 18;      /* #7C2D12 */
+
+  /* semantic */
+  --success: 15 157 88;
+  --success-soft: 216 241 225;
+  --success-text: 4 120 87;
+  --warning: 217 119 6;
+  --warning-soft: 252 233 194;
+  --warning-text: 180 83 9;
+  --danger: 220 38 38;
+  --danger-soft: 254 226 226;
+  --danger-text: 190 18 60;
+  --info: 37 99 235;
+  --info-soft: 219 234 254;
+  --info-text: 29 78 216;
+}
+
+.dark {
+  --page: 20 17 13;            /* #14110D */
+  --surface: 30 26 20;         /* #1E1A14 */
+  --surface-muted: 42 36 28;
+  --surface-sunken: 16 14 10;
+
+  --line: 51 44 34;
+  --line-strong: 74 65 51;
+
+  --ink-1: 245 239 226;
+  --ink-2: 201 192 172;
+  --ink-3: 146 136 118;
+  --ink-4: 95 87 74;
+
+  --brand: 251 146 60;         /* #FB923C 한 톤 밝게 */
+  --brand-hover: 249 115 22;
+  --brand-soft: 58 36 16;
+  --brand-ink: 255 212 168;
+
+  --success: 52 211 153;
+  --success-soft: 16 52 42;
+  --success-text: 110 231 183;
+  --warning: 251 191 36;
+  --warning-soft: 58 46 16;
+  --warning-text: 252 211 77;
+  --danger: 248 113 113;
+  --danger-soft: 58 21 24;
+  --danger-text: 252 165 165;
+  --info: 96 165 250;
+  --info-soft: 14 37 66;
+  --info-text: 147 197 253;
 }
 
 html,
 body {
-  background: var(--bg);
-  color: #1B1815; /* ink-1 */
+  background: rgb(var(--page));
+  color: rgb(var(--ink-1));
   -webkit-font-smoothing: antialiased;
 }
 
-/* 카드 클릭 시각 피드백 — hover/active 모두 명확하게 */
+html.dark body,
+html body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* 카드 클릭 시각 피드백 */
 .card-clickable {
   @apply transition-all duration-150 cursor-pointer;
-  /* 카드 우측 상단에 화살표 표시로 클릭 가능 명시 */
 }
 .card-clickable:hover {
-  @apply border-brand-400 shadow-md -translate-y-0.5;
+  @apply border-brand-400 shadow-raise -translate-y-0.5;
 }
 .card-clickable:active {
-  @apply scale-[0.97] shadow-sm bg-brand-50/40 transition-none;
+  @apply scale-[0.97] shadow-soft transition-none bg-brand-soft;
 }
-/* 카드 우측 상단 클릭 화살표 */
 .card-clickable::after {
   content: "→";
-  @apply absolute top-2 right-2 text-stone-300 transition-colors;
+  @apply absolute top-2 right-2 text-ink-4 transition-colors;
 }
 .card-clickable:hover::after {
   @apply text-brand-500;
 }
 
-/* 시세 ticker — 카드들이 위로 흐르는 자동 스크롤 (홈 KAMIS 위젯) */
+/* 시세 ticker */
 @keyframes ticker-up {
   0% { transform: translateY(0); }
   100% { transform: translateY(-50%); }
@@ -45,36 +120,31 @@ body {
   animation-play-state: paused;
 }
 
-/* 재사용 가능한 유틸리티 컴포넌트 (reusable utility components) */
+/* 레거시 유틸리티 — 새 코드는 src/components/ui/* 사용 */
 @layer components {
   .btn-primary {
     @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold rounded-xl shadow-soft hover:shadow-raise transition;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-line text-ink-2 hover:bg-surface-muted font-medium rounded-xl transition;
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-surface border border-line-strong text-ink-1 hover:bg-surface-muted font-medium rounded-xl transition;
   }
   .btn-danger {
     @apply inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-danger hover:opacity-90 text-white font-semibold rounded-xl transition;
   }
   .input-base {
-    @apply w-full px-3 py-2 border border-line rounded-xl bg-white text-ink-1 placeholder:text-ink-3/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1 transition;
+    @apply w-full px-3 py-2 border border-line-strong rounded-xl bg-surface text-ink-1 placeholder:text-ink-3/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-1 transition;
   }
-  /* 표준 카드 — 흰 배경 + 옅은 보더 + soft shadow.
-     기존 `bg-white border border-stone-200 rounded-xl p-5` 같은 패턴 대체. */
   .card {
-    @apply bg-white border border-line/70 rounded-2xl shadow-soft;
+    @apply bg-surface border border-line rounded-2xl shadow-soft;
   }
   .card-hoverable {
-    @apply card transition hover:shadow-raise hover:border-line-strong/60;
+    @apply card transition hover:shadow-raise hover:border-line-strong;
   }
-  /* 섹션 타이틀 — 가계부/마이페이지 등 H2에 일관 적용 */
   .section-title {
     @apply text-base md:text-lg font-bold text-ink-1 tracking-tight;
   }
-  /* KPI 보조 카드 — 색감 한 줄(top accent) 위에 흰 배경.
-     예전엔 카드 전체를 emerald-50/rose-50/sky-50 으로 칠해서 컨피티 같았음. */
   .kpi-card {
-    @apply relative bg-white border border-line/70 rounded-2xl p-4 md:p-5 shadow-soft overflow-hidden;
+    @apply relative bg-surface border border-line rounded-2xl p-4 md:p-5 shadow-soft overflow-hidden;
   }
   .kpi-card::before {
     content: "";
@@ -91,5 +161,8 @@ body {
   }
   .badge-info {
     @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-info-soft text-info-text rounded text-[11px] font-medium;
+  }
+  .caption-mono {
+    @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-3;
   }
 }

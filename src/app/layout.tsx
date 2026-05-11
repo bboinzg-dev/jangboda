@@ -52,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
         {/*
           Pretendard 폰트 로드 (CDN 방식)
@@ -64,8 +64,15 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css"
         />
+        {/* 다크모드 FOUC 방지 — React 하이드레이션 전에 .dark 클래스 결정.
+            저장값 우선, 없으면 시스템 환경설정 반영. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('jb-theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(_){}})();`,
+          }}
+        />
       </head>
-      <body className="min-h-screen font-pretendard">
+      <body className="min-h-screen font-pretendard bg-page text-ink-1">
         {/* useSearchParams는 Suspense boundary 필요 (Next 14 권장) */}
         <Suspense fallback={null}>
           <Analytics />
