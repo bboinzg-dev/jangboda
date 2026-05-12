@@ -259,14 +259,16 @@ export default function StoresPage() {
     if (loc && loc.lat != null && loc.lng != null) {
       list = list.map((s) => ({
         ...s,
+        // 좌표 0/0 또는 null은 거리 계산 불가 → null (참가격 매장 84%가 좌표 없음)
         distanceKm:
-          s.lat != null && s.lng != null
+          s.lat != null && s.lng != null && (s.lat !== 0 || s.lng !== 0)
             ? haversineKm(loc.lat, loc.lng, s.lat, s.lng)
             : null,
       }));
-      // 20km 반경 + 가까운 순
+      // 좌표 있는 매장은 20km 반경, 좌표 없는 매장은 통과(맨 뒤로)
+      // 가까운 순 정렬 — 좌표 없는 매장(distanceKm=null)은 자연히 뒤로 밀림
       list = list
-        .filter((s) => (s.distanceKm ?? Infinity) <= 20)
+        .filter((s) => s.distanceKm == null || s.distanceKm <= 20)
         .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
     }
     return list;
@@ -424,10 +426,9 @@ export default function StoresPage() {
         </EmptyState>
       ) : (
         (() => {
-          // 매장 좌표 0/0 제외하고 정렬된 리스트만 표시
-          const visibleStores = filtered.filter(
-            (s) => s.lat !== 0 || s.lng !== 0
-          );
+          // 좌표 없는 매장도 리스트에는 표시 — 지도엔 못 그리지만 매장 정보·가격은 보여줘야 함
+          // (참가격 매장 84%가 좌표 없는데, 가격 데이터는 거기 다 있음)
+          const visibleStores = filtered;
           return (
             <div>
               <div className="text-xs text-ink-3 mb-2">
