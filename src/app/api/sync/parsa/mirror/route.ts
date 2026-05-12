@@ -57,6 +57,12 @@ function extractChain(entpName: string): { chain: string; category: string } {
   return { chain: FALLBACK_CHAIN_NAME, category: FALLBACK_CHAIN_CATEGORY };
 }
 
+// 매장명 정규화 — 시드/사용자 기여로 미리 들어온 row를 참가격 미러와
+// 같은 매장으로 인식하기 위한 키. 예: "이마트 천호점" ≡ "이마트천호점".
+function normName(s: string): string {
+  return s.toLowerCase().replace(/[\s\-_·.()]+/g, "");
+}
+
 export async function POST(req: NextRequest) {
   const authErr = checkSyncAuth(req);
   if (authErr) return authErr;
@@ -148,7 +154,12 @@ export async function POST(req: NextRequest) {
     (r) => r.lat !== 0 || r.lng !== 0
   ).length;
 
-  // 5) 기존 Store 조회 (externalId 기준)
+  // 5) 기존 Store 조회 — 두 단계 매칭
+  //   (a) externalId 매칭: 이미 미러된 row → 그대로 update
+  //   (b) name 정규화 fallback: externalId가 null인 시드/사용자 row 중
+  //       정규화된 이름이 일치하면 "adopt" — externalId만 채워서 같은 row로 통일.
+  //       이렇게 안 하면 "이마트 천호점"(시드, ext=null)과 "이마트천호점"(parsa)이
+  //       별개 row로 갈라져 가격이 후자에만 붙음.
   const externalIds = mirrorRows.map((r) => r.externalId);
   const existing = await prisma.store.findMany({
     where: { externalId: { in: externalIds } },
@@ -156,8 +167,24 @@ export async function POST(req: NextRequest) {
   });
   const existingSet = new Set(existing.map((e) => e.externalId).filter(Boolean));
 
-  const toInsert = mirrorRows.filter((r) => !existingSet.has(r.externalId));
+  // 미러 후보 이름 → adopt 매칭에 쓸 정규화 키 집합
+  const candidateNameKeys = new Set(mirrorRows.map((r) => normName(r.name)));
+  const adoptCandidates = await prisma.store.findMany({
+    where: { externalId: null },
+    select: { id: true, name: true },
+  });
+  const adoptByKey = new Map<string, string>(); // normName → store.id
+  for (const r of adoptCandidates) {
+    const k = normName(r.name);
+    if (candidateNameKeys.has(k) && !adoptByKey.has(k)) {
+      adoptByKey.set(k, r.id);
+    }
+  }
+
   const toUpdate = mirrorRows.filter((r) => existingSet.has(r.externalId));
+  const remaining = mirrorRows.filter((r) => !existingSet.has(r.externalId));
+  const toAdopt = remaining.filter((r) => adoptByKey.has(normName(r.name)));
+  const toInsert = remaining.filter((r) => !adoptByKey.has(normName(r.name)));
 
   // 6) 신규 createMany — 빠른 일괄 삽입
   let inserted = 0;
@@ -167,6 +194,34 @@ export async function POST(req: NextRequest) {
       skipDuplicates: true,
     });
     inserted = res.count;
+  }
+
+  // 6.5) adopt — 기존 ext=null row에 externalId 채우면서 동시에 메타 업데이트
+  let adopted = 0;
+  if (toAdopt.length > 0) {
+    const CHUNK = 50;
+    for (let i = 0; i < toAdopt.length; i += CHUNK) {
+      const slice = toAdopt.slice(i, i + CHUNK);
+      const results = await Promise.all(
+        slice.map((r) => {
+          const targetId = adoptByKey.get(normName(r.name))!;
+          return prisma.store.update({
+            where: { id: targetId },
+            data: {
+              externalId: r.externalId,
+              chainId: r.chainId,
+              name: r.name,
+              address: r.address,
+              lat: r.lat,
+              lng: r.lng,
+              phone: r.phone,
+              hours: r.hours,
+            },
+          });
+        })
+      );
+      adopted += results.length;
+    }
   }
 
   // 7) 기존 row update — 50개 병렬 chunk
@@ -201,8 +256,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     totalParsaStores,
-    mirrored: inserted + updated,
+    mirrored: inserted + adopted + updated,
     inserted,
+    adopted,
     updated,
     withCoords,
     partial,
