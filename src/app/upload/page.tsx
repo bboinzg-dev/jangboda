@@ -654,8 +654,16 @@ export default function UploadPage() {
                     arr[idx] = next;
                     setItems(arr);
                   }}
+                  onRemove={() => {
+                    setItems((prev) => prev.filter((_, i) => i !== idx));
+                  }}
                 />
               ))}
+              {items.length === 0 && (
+                <div className="px-4 py-6 text-center text-xs text-ink-3">
+                  품목을 전부 삭제했어요. 사진을 다시 찍거나 OCR을 다시 돌려주세요.
+                </div>
+              )}
             </Card>
 
             {/* 액션 버튼 */}
@@ -712,10 +720,12 @@ function ReceiptRow({
   item,
   products,
   onChange,
+  onRemove,
 }: {
   item: ParsedItem;
   products: Product[];
   onChange: (next: ParsedItem) => void;
+  onRemove: () => void;
 }) {
   const conf = confOf(item);
   // 자동확정은 시각적으로 조용하게(좌측 띠 X, 배경 X).
@@ -735,7 +745,16 @@ function ReceiptRow({
           style={{ background: stripColor }}
         />
       )}
-      <div className="flex items-start gap-2.5">
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`품목 삭제: ${item.rawName}`}
+        title="이 품목 삭제 (OCR이 잘못 잡았을 때)"
+        className="absolute top-2 right-2 w-7 h-7 inline-flex items-center justify-center rounded-full text-ink-3 hover:text-danger hover:bg-danger-soft transition text-base leading-none"
+      >
+        ×
+      </button>
+      <div className="flex items-start gap-2.5 pr-8">
         <div className="pt-0.5">
           <ConfChip conf={conf} />
         </div>
