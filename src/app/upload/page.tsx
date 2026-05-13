@@ -599,9 +599,11 @@ export default function UploadPage() {
               </span>
             </div>
 
-            {/* 요약 카드 3개 */}
-            <div className="grid grid-cols-3 gap-2">
-              <SummaryCard label="매장 추측" value={result.storeHint ?? "—"} />
+            {/* 요약 카드 3개 — 모바일은 매장 추측을 풀폭(긴 매장명 잘림 방지) + 일자/합계 2-col */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="col-span-2 sm:col-span-1">
+                <SummaryCard label="매장 추측" value={result.storeHint ?? "—"} />
+              </div>
               <SummaryCard label="영수증 일자" value={result.receiptDate ?? "—"} />
               <SummaryCard
                 label="합계"

@@ -140,7 +140,7 @@ export default function ManualEntryDialog() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm font-medium mb-1">카테고리</label>
                   <select

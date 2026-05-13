@@ -219,21 +219,21 @@ export default async function HomePage() {
             <div className="grid grid-cols-3 gap-2 mt-3">
               <Link
                 href="/upload"
-                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 min-h-[48px] rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconCamera size={16} />
                 영수증
               </Link>
               <Link
                 href="/scan"
-                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 min-h-[48px] rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconBarcode size={16} />
                 바코드
               </Link>
               <Link
                 href="/stores"
-                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 py-2.5 rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
+                className="flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-muted border border-line text-ink-2 px-2 min-h-[48px] rounded-xl text-sm font-medium shadow-soft hover:shadow-raise transition"
               >
                 <IconPin size={16} />
                 주변매장

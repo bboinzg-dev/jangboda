@@ -311,7 +311,7 @@ export default function StoresPage() {
             <button
               key={c}
               onClick={() => setFilter(c)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition ${
+              className={`text-sm px-3.5 py-2 rounded-full border transition ${
                 filter === c
                   ? "bg-ink-1 text-white border-ink-1 shadow-soft"
                   : "bg-surface text-ink-2 border-line hover:border-line-strong hover:bg-surface-muted"
@@ -452,14 +452,18 @@ export default function StoresPage() {
                   return (
                     <li
                       key={s.id}
-                      className="card-clickable relative card p-4 pr-8 flex justify-between"
+                      className="card-clickable relative card p-4 pr-8 flex flex-col sm:flex-row sm:justify-between gap-3 sm:gap-0"
                     >
                       <Link
                         href={`/stores/${s.id}`}
                         className="absolute inset-0 z-0"
                         aria-label={`${s.name} 가격 보기`}
                       />
-                      <div className="min-w-0 relative z-10 pointer-events-none flex-1 flex items-center gap-3">
+                      {/* 즐겨찾기 별: 모바일은 우측 상단 절대 위치(본문 폭 확보) */}
+                      <div className="absolute top-3 right-8 sm:static sm:order-2 sm:mr-2 sm:self-center z-10 pointer-events-auto">
+                        <FavoriteToggle storeId={s.id} stopPropagation />
+                      </div>
+                      <div className="min-w-0 relative z-10 pointer-events-none flex-1 flex items-center gap-3 sm:order-1">
                         <ChainLogo
                           src={s.chainLogoUrl}
                           name={s.chainName}
@@ -508,10 +512,8 @@ export default function StoresPage() {
                           )}
                         </div>
                       </div>
-                      <div className="relative z-10 mr-2 self-center pointer-events-auto">
-                        <FavoriteToggle storeId={s.id} stopPropagation />
-                      </div>
-                      <div className="text-right ml-4 shrink-0 flex flex-col items-end gap-1 relative z-10">
+                      {/* 거리/가격 건수/네비 — 모바일은 본문 아래 한 행, sm↑은 우측 정렬 컬럼 */}
+                      <div className="text-left sm:text-right sm:ml-4 shrink-0 flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1 relative z-10 sm:order-3">
                         {s.distanceKm !== null && s.distanceKm !== undefined && (
                           <div className="text-sm font-bold tabular-nums pointer-events-none text-ink-1">
                             {s.distanceKm.toFixed(1)}km

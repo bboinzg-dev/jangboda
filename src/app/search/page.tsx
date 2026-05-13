@@ -357,7 +357,7 @@ export default function SearchPage() {
                           <div className="text-[10px] text-ink-3 font-medium">
                             최저가
                           </div>
-                          <div className="text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
+                          <div className="text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
                             {formatWon(p.stats.min)}
                           </div>
                           {uparts && (
