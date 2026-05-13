@@ -31,10 +31,10 @@ export default function BottomNav() {
           const active = isActive(t.href);
           if (t.primary) {
             return (
-              <li key={t.href} className="flex justify-center -mt-3">
+              <li key={t.href} className="flex justify-center -mt-4">
                 <Link
                   href={t.href}
-                  className="bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-soft text-xl ring-2 ring-white transition"
+                  className="bg-gradient-to-br from-brand-400 to-brand-600 hover:from-brand-500 hover:to-brand-700 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-raise text-2xl ring-[3px] ring-surface transition active:scale-95"
                   aria-label={t.label}
                 >
                   {t.icon}

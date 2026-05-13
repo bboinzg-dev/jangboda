@@ -518,7 +518,7 @@ export default async function ProductDetailPage({
 
         {headlinePrices.length > 0 ? (
           <>
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
               <PriceStat
                 label="전체 최저가"
                 value={formatWon(minPrice)}
@@ -806,13 +806,14 @@ function PriceStat({
 }) {
   return (
     <div
-      className={`rounded-xl p-3 ${
+      className={`rounded-xl p-2 sm:p-3 ${
         highlight ? "bg-brand-soft border border-line-strong" : "bg-surface-muted"
       }`}
     >
-      <div className="text-xs text-ink-3">{label}</div>
+      <div className="text-[11px] sm:text-xs text-ink-3">{label}</div>
+      {/* 모바일은 좁은 3-col이라 lg, sm↑은 2xl로 시각 강조 */}
       <div
-        className={`text-2xl font-extrabold tabular-nums tracking-tight ${
+        className={`text-lg sm:text-2xl font-extrabold tabular-nums tracking-tight ${
           highlight ? "text-brand-600" : "text-ink-1"
         }`}
       >

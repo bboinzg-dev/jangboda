@@ -92,7 +92,9 @@ html body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* 카드 클릭 시각 피드백 */
+/* 카드 클릭 시각 피드백.
+   ::after 화살표(top-2 right-2)와 콘텐츠 겹침은 각 카드에서 pr-8을 명시.
+   (recipes 등 이미지 풀폭 카드 때문에 글로벌 pr-8을 박지 못함) */
 .card-clickable {
   @apply transition-all duration-150 cursor-pointer;
 }

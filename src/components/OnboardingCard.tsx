@@ -79,7 +79,7 @@ export default function OnboardingCard({
           <button
             onClick={dismiss}
             aria-label="온보딩 닫기"
-            className="text-ink-4 hover:text-ink-2 text-lg leading-none px-1"
+            className="w-10 h-10 -mr-2 -mt-2 flex items-center justify-center text-xl text-ink-4 hover:text-ink-2 active:bg-surface-muted rounded-full shrink-0"
           >
             ×
           </button>
@@ -126,7 +126,7 @@ export default function OnboardingCard({
         <button
           onClick={dismiss}
           aria-label="온보딩 닫기"
-          className="text-ink-4 hover:text-ink-2 text-lg leading-none px-1 shrink-0"
+          className="w-10 h-10 -mr-2 -mt-2 flex items-center justify-center text-xl text-ink-4 hover:text-ink-2 active:bg-surface-muted rounded-full shrink-0"
           title="닫기"
         >
           ×

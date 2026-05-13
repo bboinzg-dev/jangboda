@@ -1009,7 +1009,14 @@ function StepIndicator({ current }: { current: number }) {
               >
                 {done ? "✓" : s.icon}
               </span>
-              <span className="text-center truncate w-full font-medium">{s.label}</span>
+              {/* 모바일: 활성 step 라벨만 표시(다른 건 잘림). sm↑: 모든 라벨 노출 */}
+              <span
+                className={`text-center truncate w-full font-medium ${
+                  active ? "inline-block" : "hidden sm:inline-block"
+                }`}
+              >
+                {s.label}
+              </span>
             </div>
             {i < steps.length - 1 && (
               <span

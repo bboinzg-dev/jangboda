@@ -772,10 +772,11 @@ export default function CartPage() {
         </div>
       )}
 
-      {/* 모바일 고정 비교 버튼 */}
+      {/* 모바일 고정 비교 버튼.
+          bottom = safe-area + BottomNav(~64px) + 12px gap → 기기별 home indicator 차이 흡수 */}
       <div
-        className="md:hidden fixed bottom-[80px] left-0 right-0 px-4 z-30 pointer-events-none"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="md:hidden fixed left-0 right-0 px-4 z-30 pointer-events-none"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 76px)" }}
       >
         <Button
           fullWidth

@@ -188,9 +188,11 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* 4 통계 — 포인트·순위·등록·도움 한 줄 */}
+        {/* 4 통계 — 포인트·순위·등록·도움 한 줄. 모바일은 포인트 카드(진행률 바 포함)가 풀폭 */}
         <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-          <PointsCard points={points} />
+          <div className="col-span-2 md:col-span-1">
+            <PointsCard points={points} />
+          </div>
           <div className="rounded-2xl border border-line/60 bg-surface-muted/40 p-3">
             <div className="text-xs text-ink-3">순위</div>
             <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-ink-1">

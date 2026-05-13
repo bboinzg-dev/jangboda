@@ -841,28 +841,35 @@ export default async function BudgetPage() {
                       {r.items.map((it, i) => (
                         <li
                           key={`${r.id}-${i}`}
-                          className="flex items-center justify-between gap-2 px-4 py-2 text-sm border-b border-line/60 last:border-0"
+                          className="px-4 py-2.5 text-sm border-b border-line/60 last:border-0"
                         >
-                          <Link
-                            href={`/products/${it.productId}`}
-                            className="hover:underline truncate min-w-0 text-ink-2 flex-1"
-                          >
-                            {it.name}
-                          </Link>
-                          <CategorySelect
-                            productId={it.productId}
-                            current={it.category}
-                            isOverride={it.isOverride}
-                          />
-                          {it.quantity > 1 ? (
-                            <span className="text-[11px] tabular-nums text-ink-3 shrink-0">
-                              {formatWon(it.price)} × {it.quantity}
+                          {/* 모바일: 2행(상품명+가격 / 카테고리·수량·삭제). sm↑: 1행 */}
+                          <div className="flex items-center justify-between gap-2">
+                            <Link
+                              href={`/products/${it.productId}`}
+                              className="hover:underline truncate min-w-0 text-ink-2 flex-1"
+                            >
+                              {it.name}
+                            </Link>
+                            <span className="font-semibold tabular-nums text-ink-1 shrink-0 min-w-[5ch] text-right">
+                              {formatWon(it.lineTotal)}
                             </span>
-                          ) : null}
-                          <span className="font-semibold tabular-nums text-ink-1 shrink-0 min-w-[5ch] text-right">
-                            {formatWon(it.lineTotal)}
-                          </span>
-                          <RemovePriceButton priceId={it.priceId} productName={it.name} />
+                          </div>
+                          <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <CategorySelect
+                                productId={it.productId}
+                                current={it.category}
+                                isOverride={it.isOverride}
+                              />
+                              {it.quantity > 1 ? (
+                                <span className="text-[11px] tabular-nums text-ink-3 shrink-0">
+                                  {formatWon(it.price)} × {it.quantity}
+                                </span>
+                              ) : null}
+                            </div>
+                            <RemovePriceButton priceId={it.priceId} productName={it.name} />
+                          </div>
                         </li>
                       ))}
                     </ul>
