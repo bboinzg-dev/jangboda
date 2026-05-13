@@ -784,13 +784,15 @@ export default function CartPage() {
           variant="primary"
           disabled={loading || cart.length === 0}
           onClick={compare}
-          className="pointer-events-auto shadow-pop"
+          className="pointer-events-auto shadow-pop whitespace-nowrap"
         >
-          {loading
-            ? "계산 중..."
-            : cart.length === 0
-              ? "장바구니가 비어있어요"
-              : `마트별 비교 (${cart.length}종)`}
+          <span className="truncate">
+            {loading
+              ? "계산 중..."
+              : cart.length === 0
+                ? "장바구니가 비어있어요"
+                : `마트별 비교 (${cart.length}종)`}
+          </span>
         </Button>
       </div>
 

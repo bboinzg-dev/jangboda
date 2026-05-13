@@ -330,7 +330,7 @@ export default function PriceListClient({
                           {formatWon(p.price)}
                         </div>
                         {uparts && (
-                          <div className="text-[11px] text-ink-3 tabular-nums leading-none mt-0.5">
+                          <div className="text-[11px] text-ink-3 tabular-nums leading-tight mt-1">
                             {uparts.basis} {uparts.amount}
                           </div>
                         )}

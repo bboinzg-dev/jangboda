@@ -394,19 +394,19 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="text-right shrink-0 ml-2 md:ml-4">
-                    {/* 실판매가가 메인 — 사용자가 실제 지불할 금액. 단가는 패키지 비교용 보조 */}
-                    <div className="text-[10px] text-ink-3 font-medium leading-none">
+                    {/* 실판매가가 메인. 라벨/가격/단가/절약을 일정한 수직 호흡으로 정렬 */}
+                    <div className="text-[11px] text-ink-3 font-medium leading-tight mb-0.5">
                       최저
                     </div>
-                    <div className="text-[20px] font-extrabold tabular-nums text-ink-1 leading-tight">
+                    <div className="text-[20px] font-extrabold tabular-nums text-ink-1 leading-none">
                       {formatWon(c.min)}
                     </div>
                     {uparts && (
-                      <div className="text-[11px] text-ink-3 tabular-nums font-mono">
+                      <div className="text-[11px] text-ink-3 tabular-nums font-mono leading-tight mt-1">
                         {uparts.basis} {uparts.amount}
                       </div>
                     )}
-                    <div className="text-xs text-danger-text mt-0.5 font-medium">
+                    <div className="text-xs text-danger-text mt-1 font-medium leading-tight">
                       {c.unitSavingsPct !== null && c.unitSavingsPct > 0
                         ? `${c.unitSavingsPct}% 절약`
                         : `최대 ${formatWon(c.diff)} 절약`}

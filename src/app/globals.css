@@ -85,6 +85,19 @@ body {
   background: rgb(var(--page));
   color: rgb(var(--ink-1));
   -webkit-font-smoothing: antialiased;
+  /* 한국어 wrap: 어절(공백) 단위로 줄바꿈 — 좁은 칼럼에서 "장 / 보 / 다" 처럼 글자 단위로
+     세로 나열되는 현상 방지. tabular-nums + 숫자/이메일은 그대로 유지됨. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 숫자·코드·이메일은 keep-all이 부자연스러우니 mono/tabular는 일반 break-word로 복원 */
+.tabular-nums,
+code,
+pre,
+.font-mono {
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 html.dark body,

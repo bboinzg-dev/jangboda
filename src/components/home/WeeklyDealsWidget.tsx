@@ -108,7 +108,8 @@ export default async function WeeklyDealsWidget() {
             <div className="flex items-start gap-2">
               <ProductImage src={d.imageUrl} alt={d.productName} size={44} />
               <div className="min-w-0 flex-1">
-                <div className="font-semibold text-sm text-ink-1 line-clamp-2 leading-tight">
+                {/* 상품명은 line-clamp-2 + 최소 높이 고정 — grid에서 카드 높이 들쑥날쑥 방지 */}
+                <div className="font-semibold text-sm text-ink-1 line-clamp-2 leading-tight min-h-[2.4em]">
                   {d.productName}
                 </div>
                 {d.chainName && (
@@ -118,7 +119,8 @@ export default async function WeeklyDealsWidget() {
                 )}
               </div>
             </div>
-            <div className="flex items-baseline justify-between gap-1 mt-auto pt-1">
+            {/* 원가(작은 글씨) ↔ 할인가(큰 글씨) — baseline은 작은 글씨가 위로 떠 보임 → items-center */}
+            <div className="flex items-center justify-between gap-1 mt-auto pt-1">
               <div className="text-[10px] text-ink-3 line-through tabular-nums">
                 {formatWon(d.list)}
               </div>

@@ -1066,7 +1066,8 @@ function SummaryCard({
           : "bg-surface-muted border-line",
       ].join(" ")}
     >
-      <div className="text-[10px] text-ink-3 font-mono uppercase tracking-wider">{label}</div>
+      {/* 한국어 라벨엔 uppercase/tracking-wider/mono가 시각적으로 어색 — 평범한 한글 캡션 */}
+      <div className="text-[11px] text-ink-3 font-medium">{label}</div>
       <div
         className={[
           "mt-1 text-sm font-semibold truncate",
