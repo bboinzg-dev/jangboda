@@ -329,7 +329,8 @@ export default function StoresPage() {
       </div>
 
       {/* 지도 */}
-      <StoresMap stores={filtered} myLocation={loc} height="380px" />
+      {/* 모바일에선 화면 절반 이하로 — 지도 아래 리스트가 보여야 탐색이 됨 */}
+      <StoresMap stores={filtered} myLocation={loc} height="clamp(260px, 42vh, 380px)" />
 
       {/* 지역 검색 — 평소엔 접혀있고, 필요한 사람만 펼침 */}
       <details className="card">

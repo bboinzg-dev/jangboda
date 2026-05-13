@@ -639,7 +639,8 @@ export default async function BudgetPage() {
               </div>
               <span className="text-xs text-ink-3 tabular-nums">{data.frequentProducts.length}건</span>
             </div>
-            <div className="grid grid-cols-[1fr_90px_100px_110px] px-4 py-2 bg-surface-sunken text-[11px] uppercase tracking-wider text-ink-3 font-semibold border-y border-line">
+            {/* 헤더 행 — 데스크톱에서만 표시. 모바일은 카드 형태로 흐름 */}
+            <div className="hidden md:grid md:grid-cols-[1fr_90px_100px_110px] px-4 py-2 bg-surface-sunken text-[11px] uppercase tracking-wider text-ink-3 font-semibold border-y border-line">
               <span>상품</span>
               <span>다음 구매</span>
               <span>구매 횟수</span>
@@ -650,19 +651,20 @@ export default async function BudgetPage() {
                 key={fp.productId}
                 href={`/products/${fp.productId}`}
                 className={[
-                  "grid grid-cols-[1fr_90px_100px_110px] px-4 py-3 border-b border-line last:border-b-0 items-center transition hover:bg-surface-muted",
+                  // 모바일: 2-컬럼 (상품정보 / 다음구매). 데스크톱: 4-컬럼 그리드.
+                  "grid grid-cols-[1fr_auto] md:grid-cols-[1fr_90px_100px_110px] gap-3 md:gap-0 px-4 py-3 border-b border-line last:border-b-0 items-center transition hover:bg-surface-muted",
                   fp.isDue ? "bg-brand-soft/40" : "",
                 ].join(" ")}
               >
                 <div className="min-w-0">
-                  <div className="text-[13.5px] font-semibold text-ink-1 truncate">
+                  <div className="text-sm md:text-[13.5px] font-semibold text-ink-1 truncate">
                     {fp.productName}
                   </div>
                   <div className="text-[11px] text-ink-3 mt-0.5 tabular-nums">
                     {fp.count}회 · 마지막 {fp.daysSinceLast}일 전
                   </div>
                 </div>
-                <div>
+                <div className="shrink-0">
                   {fp.isDue ? (
                     <Badge tone="brand" icon={<BellIcon size={11} />}>살 때</Badge>
                   ) : fp.avgInterval !== null ? (
@@ -673,10 +675,11 @@ export default async function BudgetPage() {
                     <span className="text-xs text-ink-4">—</span>
                   )}
                 </div>
-                <div>
+                {/* 모바일에선 위 메타라인에 이미 N회가 노출되므로 중복 컬럼 숨김 */}
+                <div className="hidden md:block">
                   <Badge tone="neutral">{fp.count}회</Badge>
                 </div>
-                <div className="text-right text-ink-3 text-sm">›</div>
+                <div className="hidden md:block text-right text-ink-3 text-sm">›</div>
               </Link>
             ))}
           </Card>

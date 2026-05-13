@@ -198,12 +198,12 @@ export default function PriceListClient({
           <span />
         )}
         {/* 정렬 토글 — 행사가순은 모든 상품에서 의미 있어 단가 비교 불가 케이스에도 노출 */}
-        <div className="inline-flex items-center gap-1 text-[11px]">
+        <div className="inline-flex items-center gap-1 text-xs">
           <span className="text-ink-3">정렬:</span>
           {canCompareUnit && (
             <button
               onClick={() => setSortBy("unit")}
-              className={`px-2 py-0.5 rounded ${
+              className={`px-2.5 py-1.5 rounded-lg ${
                 sortBy === "unit"
                   ? "bg-brand-soft text-brand-700 font-medium"
                   : "text-ink-2 hover:bg-surface-muted"
@@ -215,7 +215,7 @@ export default function PriceListClient({
           )}
           <button
             onClick={() => setSortBy("price")}
-            className={`px-2 py-0.5 rounded ${
+            className={`px-2.5 py-1.5 rounded-lg ${
               sortBy === "price"
                 ? "bg-brand-soft text-brand-700 font-medium"
                 : "text-ink-2 hover:bg-surface-muted"
@@ -225,7 +225,7 @@ export default function PriceListClient({
           </button>
           <button
             onClick={() => setSortBy("promo")}
-            className={`px-2 py-0.5 rounded ${
+            className={`px-2.5 py-1.5 rounded-lg ${
               sortBy === "promo"
                 ? "bg-danger-soft text-danger-text font-medium"
                 : "text-ink-2 hover:bg-surface-muted"

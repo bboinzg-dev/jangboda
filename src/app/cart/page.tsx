@@ -466,7 +466,8 @@ export default function CartPage() {
                 key={r.storeId}
                 raised={i === 0}
                 className={[
-                  "shrink-0 w-[220px] snap-start p-4 relative",
+                  // 모바일: 화면 약 70%(다음 카드 살짝 보이게 peek). 데스크톱: 220px 고정.
+                  "shrink-0 basis-[72%] sm:basis-auto sm:w-[220px] snap-start p-4 relative",
                   i === 0 ? "border-2 border-brand-500" : "",
                 ].join(" ")}
               >

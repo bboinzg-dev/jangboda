@@ -351,25 +351,25 @@ export default async function HomePage() {
                       c.hasHaccp) && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {c.origin && (
-                          <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             🌾 {c.origin}
                           </span>
                         )}
                         {c.grade && (
-                          <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             {c.grade}
                           </span>
                         )}
                         {c.certifications?.slice(0, 2).map((cert) => (
                           <span
                             key={cert}
-                            className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
+                            className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                           >
                             {cert}
                           </span>
                         ))}
                         {c.hasHaccp && (
-                          <span className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                             🏅 HACCP
                           </span>
                         )}
@@ -381,7 +381,7 @@ export default async function HomePage() {
                         {c.chains.map((ch) => (
                           <span
                             key={ch.name}
-                            className="inline-flex items-center text-[10px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
+                            className="inline-flex items-center text-[11px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                             title={`${ch.name} ${ch.count}매장`}
                           >
                             {ch.name}
@@ -393,7 +393,7 @@ export default async function HomePage() {
                       </div>
                     )}
                   </div>
-                  <div className="text-right shrink-0 ml-4">
+                  <div className="text-right shrink-0 ml-2 md:ml-4">
                     {/* 실판매가가 메인 — 사용자가 실제 지불할 금액. 단가는 패키지 비교용 보조 */}
                     <div className="text-[10px] text-ink-3 font-medium leading-none">
                       최저

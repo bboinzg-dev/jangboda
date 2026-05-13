@@ -79,7 +79,9 @@ export default function RootLayout({
         </Suspense>
         <FavoritesProvider>
           <Nav />
-          <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-6">{children}</main>
+          {/* 모바일은 px-3 / py-4로 컴팩트, sm 이상은 px-4 / py-6.
+              하단은 BottomNav(약 64px) + safe-area를 위해 pb-28 확보. */}
+          <main className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-28 md:pb-6">{children}</main>
           <BottomNav />
           <InstallPrompt />
         </FavoritesProvider>

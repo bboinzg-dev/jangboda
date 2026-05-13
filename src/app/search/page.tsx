@@ -171,18 +171,18 @@ export default function SearchPage() {
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-1.5 text-xs">
         <span className="text-ink-3">정렬:</span>
         <button
           onClick={() => setSortBy("min")}
-          className={`px-2 py-1 rounded ${sortBy === "min" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
+          className={`px-2.5 py-1.5 rounded-lg ${sortBy === "min" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
           최저가
         </button>
         <button
           onClick={() => setSortBy("unit")}
           title="같은 용량으로 환산했을 때 더 싼 상품이 위로 (예: 100g당 가격, 1L당 가격)"
-          className={`px-2 py-1 rounded inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
+          className={`px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 ${sortBy === "unit" ? "bg-brand-soft text-brand-700 font-medium" : "text-ink-2 hover:bg-surface-muted"}`}
         >
           단가순
           <span
@@ -308,25 +308,25 @@ export default function SearchPage() {
                       {(p.origin || p.grade || (p.certifications && p.certifications.length > 0) || p.hasHaccp) && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {p.origin && (
-                            <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               🌾 {p.origin}
                             </span>
                           )}
                           {p.grade && (
-                            <span className="inline-flex items-center text-[10px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               {p.grade}
                             </span>
                           )}
                           {p.certifications?.slice(0, 2).map((c) => (
                             <span
                               key={c}
-                              className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
+                              className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                             >
                               {c}
                             </span>
                           ))}
                           {p.hasHaccp && (
-                            <span className="inline-flex items-center text-[10px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                               🏅 HACCP
                             </span>
                           )}
@@ -338,7 +338,7 @@ export default function SearchPage() {
                           {p.chains.map((c) => (
                             <span
                               key={c.name}
-                              className="inline-flex items-center text-[10px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
+                              className="inline-flex items-center text-[11px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                               title={`${c.name} ${c.count}매장`}
                             >
                               {c.name}
