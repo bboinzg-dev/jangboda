@@ -3,6 +3,8 @@
 //   - C005: 바코드연계제품정보 (47번) — 소비기한/제조사 주소/식품유형까지 (메인)
 //   - I2570: 가공식품 바코드정보 (136번) — 53,242건, 카테고리 대/중/소 분류 (검색용)
 
+import { logError } from "./observability";
+
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
 export type FoodSafetyItem = {
@@ -114,7 +116,7 @@ export async function lookupByBarcode(barcode: string): Promise<FoodSafetyItem |
       }
     }
   } catch (e) {
-    console.warn("[foodsafety] C005 lookup 실패:", e);
+    logError("foodsafety.C005Lookup", e, { barcode });
   }
 
   // C005 못 찾으면 I2570 fallback
@@ -127,7 +129,7 @@ export async function lookupByBarcode(barcode: string): Promise<FoodSafetyItem |
       if (row) return rowI2570(row);
     }
   } catch (e) {
-    console.warn("[foodsafety] I2570 fallback 실패:", e);
+    logError("foodsafety.I2570Fallback", e, { barcode });
   }
 
   return null;
@@ -144,7 +146,7 @@ export async function searchByName(query: string, limit = 10): Promise<FoodSafet
     const json = (await res.json()) as { I2570?: { row?: I2570Row[] } };
     return (json.I2570?.row ?? []).map(rowI2570);
   } catch (e) {
-    console.warn("[foodsafety] searchByName 실패:", e);
+    logError("foodsafety.searchByName", e, { query });
     return [];
   }
 }

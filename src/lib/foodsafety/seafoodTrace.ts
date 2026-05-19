@@ -9,6 +9,7 @@
 // 응답 받은 후 한 번 더 클라이언트단 필터(case-insensitive)로 안전성 확보.
 
 import { readFileSync } from "node:fs";
+import { logError } from "@/lib/observability";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
@@ -119,7 +120,7 @@ async function fetchRows<T>(
     if (resultCode && resultCode !== "INFO-000") return [];
     return envelope?.row ?? [];
   } catch (e) {
-    console.warn(`[foodsafety/seafood/${code}] fetch 실패:`, e);
+    logError("foodsafety.seafoodTrace", e, { code, filters });
     return [];
   }
 }

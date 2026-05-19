@@ -8,6 +8,7 @@
 // 있도록 self-contained로 작성. (loadKey 로컬 정의)
 
 import { readFileSync } from "node:fs";
+import { logError } from "@/lib/observability";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
@@ -124,7 +125,7 @@ async function fetchC002(
     const totalCount = parseInt(json.C002?.total_count ?? "0", 10) || 0;
     return { rows, totalCount };
   } catch (e) {
-    console.warn("[foodsafety/c002] fetch 실패:", e);
+    logError("foodsafety.c002", e, { filters });
     return null;
   }
 }

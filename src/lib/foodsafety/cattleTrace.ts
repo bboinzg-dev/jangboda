@@ -11,6 +11,7 @@
 // `ENTTY_IDNTFC_NO=값`을 일관되게 시도. 실패 시 결과는 0건으로 처리.
 
 import { readFileSync } from "node:fs";
+import { logError } from "@/lib/observability";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
@@ -124,7 +125,7 @@ async function fetchRows(
     if (resultCode && resultCode !== "INFO-000") return [];
     return node?.row ?? [];
   } catch (e) {
-    console.warn(`[foodsafety/cattleTrace] ${code} fetch 실패:`, e);
+    logError("foodsafety.cattleTrace", e, { code, enttyIdNo });
     return null;
   }
 }
