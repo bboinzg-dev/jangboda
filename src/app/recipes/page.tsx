@@ -95,6 +95,7 @@ export default async function RecipesPage({
           type="text"
           name="q"
           defaultValue={q}
+          aria-label="레시피 검색 (메뉴명 또는 재료)"
           placeholder="메뉴명 또는 재료 (예: 김치, 닭, 양파)"
           className="flex-1 px-3 py-2 border border-line-strong rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
         />

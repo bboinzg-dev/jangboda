@@ -63,6 +63,7 @@ export default async function KamisPage({
           name="q"
           type="text"
           defaultValue={q}
+          aria-label="상품명 검색"
           placeholder="상품명 검색 (예: 사과, 양파, 돼지고기)"
           className="input-base flex-1"
         />

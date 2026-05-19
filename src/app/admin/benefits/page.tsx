@@ -97,6 +97,7 @@ export default async function AdminBenefitsPage({
         <input
           name="q"
           defaultValue={q}
+          aria-label="혜택 제목 검색"
           placeholder="제목 검색"
           className="flex-1 px-3 py-2 border border-line rounded-lg text-sm"
         />

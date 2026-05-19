@@ -153,6 +153,7 @@ export default async function ParsaPage({
           type="text"
           name="q"
           defaultValue={q}
+          aria-label="상품명 검색"
           placeholder="상품명 검색 (예: 계란, 우유, 라면)"
           className="flex-1 px-4 py-2.5 rounded-lg border border-line-strong bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import Pagination from "@/components/Pagination";
+import { logError } from "@/lib/observability";
 
 export const revalidate = 3600;
 
@@ -101,7 +102,7 @@ export default async function HealthFunctionalBrowsePage({
       rawMaterials = items;
     }
   } catch (e) {
-    console.error("[health-functional] page load error:", e);
+    logError("health-functional", e);
   }
 
   const totalPages = Math.max(Math.ceil(filteredTotal / PAGE_SIZE), 1);
@@ -156,6 +157,7 @@ export default async function HealthFunctionalBrowsePage({
         <input
           name="q"
           defaultValue={q}
+          aria-label={tab === "category" ? "기능성 그룹명 검색" : "원료명 검색"}
           placeholder={
             tab === "category"
               ? "기능성 그룹명 검색 (예: 면역, 장)"
