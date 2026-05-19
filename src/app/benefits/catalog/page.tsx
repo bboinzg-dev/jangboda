@@ -9,7 +9,9 @@ import {
 import BackButton from "@/components/benefits/BackButton";
 import BenefitCard from "@/components/benefits/BenefitCard";
 
-export const dynamic = "force-dynamic";
+// 정부혜택 카탈로그는 매시간 sync로 갱신됨 → 1시간 ISR
+// (force-dynamic은 매 요청 SSR로 캐시 미사용 — 카탈로그 특성상 불필요)
+export const revalidate = 3600;
 
 const PAGE_SIZE = 20;
 
