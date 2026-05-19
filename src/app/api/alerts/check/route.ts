@@ -26,25 +26,39 @@ export async function POST(req: NextRequest) {
   });
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  let checked = 0;
-  let triggered = 0;
   let pushed = 0;
   let pushFailed = 0;
   const expiredEndpoints: string[] = [];
+  const triggeredAlertIds: string[] = [];
 
-  for (const alert of alerts) {
-    checked++;
-    if (alert.lastNotifiedAt && alert.lastNotifiedAt > oneDayAgo) continue;
+  // 24시간 내 이미 알린 건은 미리 스킵
+  const eligible = alerts.filter(
+    (a) => !a.lastNotifiedAt || a.lastNotifiedAt <= oneDayAgo
+  );
+  const checked = alerts.length;
 
-    // product의 최저가 (정가 기준)
-    const minRow = await prisma.price.findFirst({
-      where: { productId: alert.productId },
-      orderBy: { listPrice: "asc" },
-      include: { store: { include: { chain: true } } },
-    });
+  // 대상 product들의 최저가를 한 번에 조회 (N+1 방지: 알림 수만큼 쿼리 → 1회)
+  const productIds = Array.from(new Set(eligible.map((a) => a.productId)));
+  const allPrices =
+    productIds.length === 0
+      ? []
+      : await prisma.price.findMany({
+          where: { productId: { in: productIds } },
+          orderBy: { listPrice: "asc" },
+          include: { store: { include: { chain: true } } },
+        });
+
+  // productId → 최저가 행 (orderBy asc 이므로 첫 매칭이 최저)
+  const minByProductId = new Map<string, (typeof allPrices)[number]>();
+  for (const p of allPrices) {
+    if (!minByProductId.has(p.productId)) minByProductId.set(p.productId, p);
+  }
+
+  for (const alert of eligible) {
+    const minRow = minByProductId.get(alert.productId);
     if (!minRow || (minRow.listPrice ?? Infinity) > alert.threshold) continue;
 
-    triggered++;
+    triggeredAlertIds.push(alert.id);
 
     // 사용자의 모든 구독에 발송
     for (const sub of alert.user.pushSubs) {
@@ -63,13 +77,16 @@ export async function POST(req: NextRequest) {
         if (r.gone) expiredEndpoints.push(sub.endpoint);
       }
     }
+  }
 
-    // 알린 시점 기록
-    await prisma.priceAlert.update({
-      where: { id: alert.id },
+  // 트리거된 알림의 lastNotifiedAt 일괄 갱신 (N개 update → 1회 updateMany)
+  if (triggeredAlertIds.length > 0) {
+    await prisma.priceAlert.updateMany({
+      where: { id: { in: triggeredAlertIds } },
       data: { lastNotifiedAt: new Date() },
     });
   }
+  const triggered = triggeredAlertIds.length;
 
   // 만료된 구독 정리
   if (expiredEndpoints.length > 0) {
