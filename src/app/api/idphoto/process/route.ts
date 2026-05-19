@@ -9,6 +9,7 @@ import {
   type BackgroundKey,
 } from "@/lib/idphoto/specs";
 import { callGeminiForIdPhoto } from "@/lib/idphoto/gemini";
+import { logError } from "@/lib/observability";
 
 // 큰 이미지 처리를 위해 body 크기 제한 명시.
 export const runtime = "nodejs";
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
     const safe = /API\s*키/.test(msg)
       ? "서버 설정 오류입니다. 관리자에게 문의해주세요."
       : msg;
-    console.error("[idphoto] Gemini 처리 실패:", msg);
+    logError("idphoto/process", e instanceof Error ? e : new Error(msg));
     return NextResponse.json({ error: safe }, { status: 500 });
   }
 }

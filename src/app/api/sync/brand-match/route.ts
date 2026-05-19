@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkSyncAuth } from "@/lib/auth";
 import { matchBrand, generateAliasCandidates } from "@/lib/brandRules";
+import { logError } from "@/lib/observability";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -110,7 +111,7 @@ async function handle(req: NextRequest) {
       durationMs: Date.now() - startedAt,
     });
   } catch (e) {
-    console.error("[sync/brand-match] 실패", e);
+    logError("sync/brand-match", e);
     return NextResponse.json(
       {
         ok: false,

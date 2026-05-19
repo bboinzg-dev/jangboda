@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkSyncAuth } from "@/lib/auth";
 import { sendPushNotification } from "@/lib/push";
+import { logError } from "@/lib/observability";
 
 // 제조사명 정규화 — "(주)농심" / "농심㈜" / "농심 주식회사" 동일하게.
 function normMfr(s: string | null | undefined): string {
@@ -307,7 +308,7 @@ async function handle(req: NextRequest) {
       durationMs: Date.now() - startedAt,
     });
   } catch (e) {
-    console.error("[cron/recall-check] 실패", e);
+    logError("cron/recall-check", e);
     return NextResponse.json(
       {
         ok: false,

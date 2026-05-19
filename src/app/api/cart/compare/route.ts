@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { logError } from "@/lib/observability";
 
 // POST /api/cart/compare — 장바구니 입력 → 마트별 합계 비교
 // body: { items: [{ productId, quantity }] }
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ comparisons: meaningful });
   } catch (e) {
-    console.error("[cart/compare] error:", e);
+    logError("cart/compare", e);
     return NextResponse.json(
       {
         error: "비교 실패",

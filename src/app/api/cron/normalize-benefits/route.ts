@@ -10,6 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { normalizeEligibility } from "@/lib/benefits/llm";
 import { isCronAuthorized } from "@/lib/cronAuth";
+import { logError } from "@/lib/observability";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -113,10 +114,10 @@ async function handler(req: NextRequest) {
       success++;
     } catch (e) {
       failed++;
-      console.error(
-        `[normalize-cron] 실패 id=${b.id} title="${b.title.slice(0, 30)}":`,
-        e instanceof Error ? e.message : e,
-      );
+      logError("cron/normalize-benefits", e, {
+        benefitId: b.id,
+        title: b.title.slice(0, 30),
+      });
     }
   }
 

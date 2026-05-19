@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { BenefitProfileSchema } from "@/lib/benefits/types";
 import { evaluateBenefit } from "@/lib/benefits/matcher";
+import { logError } from "@/lib/observability";
 
 export async function POST() {
   try {
@@ -27,7 +28,9 @@ export async function POST() {
     // Json 필드 검증/파싱 — 없는 필드는 기본값 채움
     const parsed = BenefitProfileSchema.safeParse(profileRow.data ?? {});
     if (!parsed.success) {
-      console.error("[benefits/match] 프로필 스키마 오류", parsed.error.issues);
+      logError("benefits/match", new Error("프로필 스키마 오류"), {
+        issues: parsed.error.issues,
+      });
       return NextResponse.json(
         { error: "프로필 데이터 형식 오류 — 다시 입력해주세요" },
         { status: 400 },
@@ -85,7 +88,7 @@ export async function POST() {
       } catch (e) {
         errors++;
         // 한 건 실패는 전체 매칭을 막지 않음
-        console.error("[benefits/match] evaluate failed", b.id, e);
+        logError("benefits/match", e, { benefitId: b.id, phase: "evaluate" });
       }
     }
 
@@ -126,7 +129,7 @@ export async function POST() {
     });
   } catch (e) {
     // 응답에는 제네릭 메시지만 — 내부 에러는 로그로
-    console.error("[benefits/match] fatal", e);
+    logError("benefits/match", e, { phase: "fatal" });
     return NextResponse.json(
       { error: "매칭 처리 중 오류가 발생했어요. 잠시 후 다시 시도해주세요." },
       { status: 500 },
