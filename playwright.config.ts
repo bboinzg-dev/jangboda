@@ -31,11 +31,14 @@ export default defineConfig({
     },
   ],
 
-  // CI에선 build + start, 로컬에선 dev 재사용
+  // CI에선 build + start, 로컬에선 dev 재사용.
+  // env.PORT를 전파해서 로컬 3000이 다른 도구(Prisma Studio 등)에 점유돼도
+  // PORT=3001 npm run test:e2e 같은 방식으로 우회 가능.
   webServer: {
     command: process.env.CI ? "npm run start" : "npm run dev",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: { PORT: String(PORT) },
   },
 });
