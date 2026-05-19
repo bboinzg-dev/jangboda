@@ -1055,11 +1055,15 @@ function evaluateNormalized(
 // ───────────────────────────────────────────────────
 // 메인 평가 함수
 // ───────────────────────────────────────────────────
+// Benefit.eligibilityRules / normalizedRules는 Prisma Json 컬럼이라
+// 런타임 형태가 자유텍스트(string) ~ 중첩 객체까지 다양함.
+// 매처는 (1) NormalizedRuleSchema로 zod 검증해서 정형 룰만 신뢰하고
+// (2) 키워드 fallback은 어떤 모양이든 collectText로 평탄화하므로 unknown으로 충분.
 export function evaluateBenefit(
   profile: BenefitProfile,
   benefit: {
-    eligibilityRules: any;
-    normalizedRules?: any;
+    eligibilityRules: unknown;
+    normalizedRules?: unknown;
     targetType: string;
     regionCodes: string[];
     applyEndAt: Date | null;
@@ -1220,11 +1224,14 @@ export function evaluateBenefit(
 }
 
 // eligibilityRules의 모든 문자열 값을 하나의 텍스트로 합치기
-function collectText(rules: any): string {
-  if (!rules) return "";
+// 입력은 Prisma Json (string | number | boolean | null | object | array) — unknown으로 받아 재귀.
+function collectText(rules: unknown): string {
+  if (rules == null) return "";
   if (typeof rules === "string") return rules;
   if (Array.isArray(rules)) return rules.map(collectText).join(" ");
-  if (typeof rules === "object") return Object.values(rules).map(collectText).join(" ");
+  if (typeof rules === "object") {
+    return Object.values(rules as Record<string, unknown>).map(collectText).join(" ");
+  }
   return String(rules);
 }
 
