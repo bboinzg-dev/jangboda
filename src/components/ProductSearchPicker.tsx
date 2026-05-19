@@ -133,7 +133,7 @@ export default function ProductSearchPicker({
           )}
           {open && filtered.length === 0 && query.length > 0 && (
             <div className="absolute z-20 mt-1 w-full bg-surface border border-border rounded-md shadow-lg p-3 text-xs text-ink-4 text-center">
-              "{query}"에 맞는 상품이 없습니다
+              &ldquo;{query}&rdquo;에 맞는 상품이 없습니다
             </div>
           )}
         </>

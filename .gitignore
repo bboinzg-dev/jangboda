@@ -11,3 +11,7 @@ prisma/migrations/dev*
 public/uploads
 
 .vercel
+
+# TypeScript incremental build info — 컴파일 캐시
+*.tsbuildinfo
+tsconfig.tsbuildinfo

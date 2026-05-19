@@ -38,7 +38,7 @@ export default function PrivacyPage() {
             <strong>푸시 토큰</strong>: 회수·혜택 마감 알림 발송용 (선택)
           </li>
           <li>
-            <strong>위치 정보</strong>: "내 주변 매장" 검색 시 단말 GPS 좌표
+            <strong>위치 정보</strong>: &ldquo;내 주변 매장&rdquo; 검색 시 단말 GPS 좌표
             (서버 저장 안 함)
           </li>
         </ul>
