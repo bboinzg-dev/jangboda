@@ -5,6 +5,32 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+// 같은 origin 판정용 화이트리스트 호스트 — host:port 형태로 정확 매칭.
+// `.includes()`로 부분 매칭하면 `jangboda.vercel.app.attacker.com` 같은
+// 서브도메인 트릭이 통과하므로 URL 파싱 후 host 비교가 안전.
+const ALLOWED_HOSTS = new Set<string>([
+  "jangboda.vercel.app",
+  "localhost:3000",
+  "127.0.0.1:3000",
+]);
+
+function hostOf(value: string): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).host;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedOrigin(req: NextRequest): boolean {
+  const originHost = hostOf(req.headers.get("origin") ?? "");
+  if (originHost && ALLOWED_HOSTS.has(originHost)) return true;
+  const refererHost = hostOf(req.headers.get("referer") ?? "");
+  if (refererHost && ALLOWED_HOSTS.has(refererHost)) return true;
+  return false;
+}
+
 export function checkSyncAuth(req: NextRequest): NextResponse | null {
   const expected = process.env.SYNC_TOKEN;
   if (!expected) {
@@ -33,16 +59,7 @@ export function checkSyncAuth(req: NextRequest): NextResponse | null {
 
   // 3. 우리 사이트 UI에서 직접 호출 (같은 origin) — 통과
   // 외부 봇/스크레이퍼는 origin 안 보내거나 다른 origin이라 차단됨
-  const origin = req.headers.get("origin") ?? "";
-  const referer = req.headers.get("referer") ?? "";
-  const allowedHosts = [
-    "jangboda.vercel.app",
-    "localhost:3000",
-    "127.0.0.1:3000",
-  ];
-  if (allowedHosts.some((h) => origin.includes(h) || referer.includes(h))) {
-    return null;
-  }
+  if (isAllowedOrigin(req)) return null;
 
   return NextResponse.json(
     { error: "권한 없음 — X-Sync-Token 헤더 필요 또는 사이트 내부 호출" },
@@ -55,20 +72,11 @@ export function checkSyncAuth(req: NextRequest): NextResponse | null {
 export function checkContribAuth(req: NextRequest): NextResponse | null {
   const origin = req.headers.get("origin") ?? "";
   const referer = req.headers.get("referer") ?? "";
-  const allowedHosts = [
-    "jangboda.vercel.app",
-    "localhost:3000",
-    "127.0.0.1:3000",
-  ];
-
-  const ok = allowedHosts.some(
-    (h) => origin.includes(h) || referer.includes(h)
-  );
 
   // 개발 환경에선 origin 비어있을 수 있음 — 허용
   if (!origin && !referer && process.env.NODE_ENV !== "production") return null;
 
-  if (!ok && process.env.NODE_ENV === "production") {
+  if (!isAllowedOrigin(req) && process.env.NODE_ENV === "production") {
     return NextResponse.json(
       { error: "허용되지 않은 origin" },
       { status: 403 }
