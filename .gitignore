@@ -15,3 +15,9 @@ public/uploads
 # TypeScript incremental build info — 컴파일 캐시
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Playwright E2E artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
