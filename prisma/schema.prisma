@@ -22,22 +22,22 @@ model Chain {
 
 // 개별 매장 (롯데마트 잠실점 등)
 model Store {
-  id        String   @id @default(cuid())
-  chainId   String
-  chain     Chain    @relation(fields: [chainId], references: [id])
-  name      String   // "롯데마트 잠실점"
-  address   String
-  lat       Float
-  lng       Float
-  phone     String?
-  hours     String?  // "10:00~24:00"
+  id         String          @id @default(cuid())
+  chainId    String
+  chain      Chain           @relation(fields: [chainId], references: [id])
+  name       String // "롯데마트 잠실점"
+  address    String
+  lat        Float
+  lng        Float
+  phone      String?
+  hours      String? // "10:00~24:00"
   // 외부 출처 식별자 (예: "parsa:786" = 한국소비자원 entpId 786)
   // 같은 출처 매장 재동기화 시 멱등 upsert 키로 사용
-  externalId String? @unique
-  createdAt DateTime @default(now())
-  prices    Price[]
-  receipts  Receipt[]
-  favorites FavoriteStore[]
+  externalId String?         @unique
+  createdAt  DateTime        @default(now())
+  prices     Price[]
+  receipts   Receipt[]
+  favorites  FavoriteStore[]
 
   @@index([chainId])
   @@index([lat, lng])
@@ -45,30 +45,30 @@ model Store {
 
 // 상품 (정규화된 SKU 단위)
 model Product {
-  id           String   @id @default(cuid())
-  name         String   // "농심 신라면 멀티팩"
-  brand        String?  // 짧은 브랜드 — "농심"
-  manufacturer String?  // 정식 제조사 — "(주)농심" / 농산물은 농가/공급자
-  origin       String?  // 원산지 — "국내산", "충북 청송", "호주산" 등
-  grade        String?  // 등급/품질 — "1++", "특품", "유기농", "친환경"
+  id             String         @id @default(cuid())
+  name           String // "농심 신라면 멀티팩"
+  brand          String? // 짧은 브랜드 — "농심"
+  manufacturer   String? // 정식 제조사 — "(주)농심" / 농산물은 농가/공급자
+  origin         String? // 원산지 — "국내산", "충북 청송", "호주산" 등
+  grade          String? // 등급/품질 — "1++", "특품", "유기농", "친환경"
   certifications String[] // 인증 리스트 — ["HACCP", "유기농", "친환경"]
-  category     String   // "라면/면류"
-  unit         String   // "120g x 5개"
-  barcode      String?  @unique  // GS1 바코드 (한국 880XXX...)
-  imageUrl     String?
-  description  String?  // 자유 메모 (제조국, 유통기한, 영양정보 등)
-  hasHaccp     Boolean  @default(false)         // HACCP 적용업소 여부 (sync 시 갱신)
-  haccpInfo    Json?                            // { licenseNo, appnDate, appnNo, bsshName } 캐시
+  category       String // "라면/면류"
+  unit           String // "120g x 5개"
+  barcode        String?        @unique // GS1 바코드 (한국 880XXX...)
+  imageUrl       String?
+  description    String? // 자유 메모 (제조국, 유통기한, 영양정보 등)
+  hasHaccp       Boolean        @default(false) // HACCP 적용업소 여부 (sync 시 갱신)
+  haccpInfo      Json? // { licenseNo, appnDate, appnNo, bsshName } 캐시
   // 외부 enrich 메타데이터 — 영양성분(food nutrition), foodCode, servingSize 등
   // 예: { nutrition: { energyKcal, proteinG, ... }, foodCode, servingSize }
-  metadata     Json?
+  metadata       Json?
   // 외부 출처 식별자 (예: "parsa:product:5478" = 한국소비자원 goodId 5478)
   // Store.externalId와 동일 패턴 — 같은 출처 상품 재동기화 시 멱등 upsert 키.
-  externalId   String?  @unique
-  createdAt    DateTime @default(now())
-  prices       Price[]
-  aliases      ProductAlias[]
-  priceAlerts  PriceAlert[]
+  externalId     String?        @unique
+  createdAt      DateTime       @default(now())
+  prices         Price[]
+  aliases        ProductAlias[]
+  priceAlerts    PriceAlert[]
 
   @@index([category])
   @@index([name])
@@ -89,11 +89,11 @@ model ProductAlias {
 
 // 가격 기록 (한 상품 × 한 매장 × 시점)
 model Price {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   productId     String
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   storeId       String
-  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   // 가격 — 정가 + 행사가 분리 보존
   // - listPrice: 정가/단가 (할인 없는 정상가). 가격비교·통계의 기준값.
   // - paidPrice: 행사/할인 적용 후 단가. NULL이면 할인 없음(=listPrice).
@@ -101,19 +101,19 @@ model Price {
   // 영수증 등록 시 paidPrice는 (할인 후 결제 합계 / 수량)으로 계산.
   // 가계부의 "내 지출"은 paidPrice ?? listPrice (실제 지불액).
   // 가격비교 통계·정렬은 listPrice 기준 (행사 만료를 추정 못하므로 통계 노이즈 방지).
-  listPrice     Int      // 정가 — 항상 채워짐
-  paidPrice     Int?     // 행사가 (할인 적용 후 단가). NULL이면 정상가.
-  promotionType String?  // "할인" | "1+1" | "2+1" | "번들 50%" 등
-  source        String   // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv" | "parsa" | "stats_official"
-  productUrl    String?  // 온라인 가격일 때 외부 구매 링크 (네이버 쇼핑 link 등)
+  listPrice     Int // 정가 — 항상 채워짐
+  paidPrice     Int? // 행사가 (할인 적용 후 단가). NULL이면 정상가.
+  promotionType String? // "할인" | "1+1" | "2+1" | "번들 50%" 등
+  source        String // "receipt" | "manual" | "seed" | "kamis" | "naver" | "csv" | "parsa" | "stats_official"
+  productUrl    String? // 온라인 가격일 때 외부 구매 링크 (네이버 쇼핑 link 등)
   contributorId String?
   // 사용자 탈퇴 시 contributorId만 NULL로 — 가격 데이터는 다른 사용자 비교용으로 익명 보존
-  contributor   User?    @relation(fields: [contributorId], references: [id], onDelete: SetNull)
+  contributor   User?         @relation(fields: [contributorId], references: [id], onDelete: SetNull)
   receiptId     String?
   // Receipt 삭제 시 Price 본체는 익명 유지 — 외부 가격(KAMIS·parsa)과 정책 통일
-  receipt       Receipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  receipt       Receipt?      @relation(fields: [receiptId], references: [id], onDelete: SetNull)
   reports       PriceReport[]
-  createdAt     DateTime @default(now())
+  createdAt     DateTime      @default(now())
   // 부가 메타데이터 — KAMIS 가격 변동(previousPrice/changeAmount/changePct), parsa 할인 기간 등
   metadata      Json?
 
@@ -121,50 +121,54 @@ model Price {
   @@index([storeId])
   // sync 출처별 집계/디버깅 쿼리용 (KAMIS만, naver만 등)
   @@index([source])
+  // 사용자 가계부 — contributor 본인 가격 이력 조회용
+  @@index([contributorId, createdAt])
 }
 
 // 영수증 (OCR 원본 + 파싱 결과)
 model Receipt {
-  id           String   @id @default(cuid())
-  imageUrl     String   // Supabase Storage 또는 data URL
-  storagePath  String?  // Supabase Storage 객체 경로 (있으면)
+  id          String   @id @default(cuid())
+  imageUrl    String // Supabase Storage 또는 data URL
+  storagePath String? // Supabase Storage 객체 경로 (있으면)
   // 첫 번째 이미지 base64의 SHA-256 hex (16진 64자리). 어뷰징 방지용 — 같은 사용자가
   // 같은 이미지를 24시간 내 다시 올리면 차단. 기존 row는 NULL.
-  imageHash    String?
-  storeId      String?
-  store        Store?   @relation(fields: [storeId], references: [id])
-  uploaderId   String?
+  imageHash   String?
+  storeId     String?
+  store       Store?   @relation(fields: [storeId], references: [id])
+  uploaderId  String?
   // 사용자 탈퇴 시 uploaderId만 NULL로 — 영수증 본문(이미지·OCR)은 별도로 즉시 파기
-  uploader     User?    @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
-  rawOcrText   String?
-  parsedJson   String?  // 파싱된 품목 리스트 JSON
-  status       String   @default("pending") // pending|parsed|verified
-  createdAt    DateTime @default(now())
-  prices       Price[]
+  uploader    User?    @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+  rawOcrText  String?
+  parsedJson  String? // 파싱된 품목 리스트 JSON
+  status      String   @default("pending") // pending|parsed|verified
+  createdAt   DateTime @default(now())
+  prices      Price[]
 
   @@index([uploaderId, imageHash])
   @@index([uploaderId, createdAt])
+  // 매장별 영수증 조회 — admin 대시보드/매장 상세 페이지
+  @@index([storeId, createdAt])
 }
 
 // 사용자 (Supabase Auth user.id를 그대로 사용)
 model User {
-  id            String         @id @default(cuid())
-  nickname      String         @unique
-  points        Int            @default(0)
+  id                      String             @id @default(cuid())
+  nickname                String             @unique
+  points                  Int                @default(0)
   // 권한: "user" (기본) | "admin" (관리자 페이지 접근 가능)
   // 관리자 게이팅은 src/lib/adminAuth.ts 참조
-  role          String         @default("user")
-  createdAt     DateTime       @default(now())
-  prices        Price[]
-  receipts      Receipt[]
-  priceAlerts   PriceAlert[]
-  pushSubs      PushSubscription[]
-  favorites     FavoriteStore[]
-  benefitProfile BenefitProfile?
-  budgetGoal    BudgetGoal?
+  role                    String             @default("user")
+  createdAt               DateTime           @default(now())
+  prices                  Price[]
+  receipts                Receipt[]
+  priceAlerts             PriceAlert[]
+  pushSubs                PushSubscription[]
+  favorites               FavoriteStore[]
+  benefitProfile          BenefitProfile?
+  budgetGoal              BudgetGoal?
   // 가계부 카테고리 사용자 override — { productId: BudgetCategory } 매핑
   // 자동 분류(budgetCategoryOf)가 잘못 분류한 케이스를 사용자가 수동 정정
-  budgetCategoryOverrides Json @default("{}")
+  budgetCategoryOverrides Json               @default("{}")
 }
 
 // 월 예산 — 사용자가 설정한 한 달 지출 목표 (가계부 진행률 표시)
@@ -173,7 +177,7 @@ model BudgetGoal {
   id            String   @id @default(cuid())
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  monthlyAmount Int      // 원 단위. 0이면 사실상 미설정과 동일
+  monthlyAmount Int // 원 단위. 0이면 사실상 미설정과 동일
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -182,25 +186,25 @@ model BudgetGoal {
 // 자체 광고 SDK 없이 단순 카드 1~2개를 홈/특정 페이지에 노출.
 // 어떤 슬롯이 잘 클릭되는지 TrackedLink가 측정해서 광고 단가 협상에 활용.
 model SponsorSlot {
-  id          String   @id @default(cuid())
+  id        String    @id @default(cuid())
   // 노출 위치 — "home_below_hero", "benefits_top" 등 코드에서 약속한 키
-  placement   String
-  title       String   // 카드 제목 (예: "전국 PC방 멤버십 30% 할인")
-  body        String?  // 부가 설명 1~2줄
-  imageUrl    String?  // 카드 좌측 이미지 (옵션)
-  ctaLabel    String   @default("자세히 보기")
-  href        String   // 외부 출구 (TrackedLink 추적됨)
+  placement String
+  title     String // 카드 제목 (예: "전국 PC방 멤버십 30% 할인")
+  body      String? // 부가 설명 1~2줄
+  imageUrl  String? // 카드 좌측 이미지 (옵션)
+  ctaLabel  String    @default("자세히 보기")
+  href      String // 외부 출구 (TrackedLink 추적됨)
   // 운영
-  active      Boolean  @default(true)
+  active    Boolean   @default(true)
   // 노출 기간 — null이면 무기한
-  startsAt    DateTime?
-  endsAt      DateTime?
+  startsAt  DateTime?
+  endsAt    DateTime?
   // 우선순위 — 같은 placement 내 정렬
-  weight      Int      @default(0)
+  weight    Int       @default(0)
   // 운영 메타 (광고주명, 단가 등 — 사용자에 노출 안 됨)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([placement, active])
 }
@@ -212,7 +216,7 @@ model FavoriteStore {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  group     String?  // "집 근처", "회사" 등 (Phase C)
+  group     String? // "집 근처", "회사" 등 (Phase C)
   createdAt DateTime @default(now())
 
   @@unique([userId, storeId])
@@ -221,29 +225,29 @@ model FavoriteStore {
 
 // 가격 신고 — 사용자가 잘못된 가격에 대해 정정 요청
 model PriceReport {
-  id          String   @id @default(cuid())
-  priceId     String
-  price       Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
-  reporterId  String?  // 익명 가능
-  reason      String   // "이 가격은 틀림", "더 싼 가격 봤음" 등
-  suggestedPrice Int?  // 제안 가격
-  status      String   @default("pending") // pending | reviewed | resolved
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  priceId        String
+  price          Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
+  reporterId     String? // 익명 가능
+  reason         String // "이 가격은 틀림", "더 싼 가격 봤음" 등
+  suggestedPrice Int? // 제안 가격
+  status         String   @default("pending") // pending | reviewed | resolved
+  createdAt      DateTime @default(now())
 
   @@index([priceId])
 }
 
 // 가격 알림 — 사용자가 특정 상품의 가격이 임계가 이하로 내려가면 푸시 받기
 model PriceAlert {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  threshold   Int      // 원 단위. 이 가격 이하 발견 시 알림
-  active      Boolean  @default(true)
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  threshold      Int // 원 단위. 이 가격 이하 발견 시 알림
+  active         Boolean   @default(true)
   lastNotifiedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   @@unique([userId, productId])
   @@index([productId, active])
@@ -271,53 +275,53 @@ model PushSubscription {
 // 11개 카테고리(인구학/소득재산/가구/수급자격/거주/고용/사업자/자녀/건강/교육/특수자격)는
 // data 필드(Json)에 저장. zod 스키마(src/lib/benefits/types.ts)로 검증.
 model BenefitProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data        Json     @default("{}")
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data         Json           @default("{}")
   // 매칭 빈도 높은 필드는 별도 컬럼으로 인덱스
-  birthYear   Int?
-  regionCode  String?  // 행정안전부 5자리 행정구역코드 (시군구)
-  hasBusiness Boolean  @default(false)
-  completeness Int     @default(0) // 0~100, 입력 완성도
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
-  matches     BenefitMatch[]
+  birthYear    Int?
+  regionCode   String? // 행정안전부 5자리 행정구역코드 (시군구)
+  hasBusiness  Boolean        @default(false)
+  completeness Int            @default(0) // 0~100, 입력 완성도
+  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime       @default(now())
+  matches      BenefitMatch[]
 
   @@index([regionCode])
 }
 
 // 혜택 마스터 카탈로그 (출처별 동기화)
 model Benefit {
-  id           String   @id @default(cuid())
+  id               String         @id @default(cuid())
   // 출처 식별 (sourceCode + sourceId 조합으로 멱등 upsert)
-  sourceCode   String   // GOV24 | MSS_BIZ | MSS_SUPPORT | BIZINFO | SEOUL | NTS | MANUAL
-  sourceId     String   // 출처의 원본 ID
+  sourceCode       String // GOV24 | MSS_BIZ | MSS_SUPPORT | BIZINFO | SEOUL | NTS | MANUAL
+  sourceId         String // 출처의 원본 ID
   // 핵심 메타
-  title        String
-  summary      String?
-  agency       String?  // 제공기관명
-  category     String?  // 일자리|교육|주거|건강|돌봄|문화|사업자|기타
+  title            String
+  summary          String?
+  agency           String? // 제공기관명
+  category         String? // 일자리|교육|주거|건강|돌봄|문화|사업자|기타
   // 대상/지역
-  targetType   String   @default("individual") // individual | household | business | mixed
-  regionCodes  String[] // ["00000"]=전국, ["11000"]=서울, ["11680"]=강남구
+  targetType       String         @default("individual") // individual | household | business | mixed
+  regionCodes      String[] // ["00000"]=전국, ["11000"]=서울, ["11680"]=강남구
   // 자격 조건 (matcher가 해석하는 룰 트리)
-  eligibilityRules Json @default("{}")
+  eligibilityRules Json           @default("{}")
   // LLM이 자유텍스트를 정형화한 NormalizedRule (src/lib/benefits/ruleSchema.ts)
   // 미정형화 상태에서는 NULL — db:normalize:benefits로 일괄 채움
-  normalizedRules Json?
+  normalizedRules  Json?
   // 신청 정보
-  applyUrl     String?
-  detailUrl    String?
-  applyStartAt DateTime?
-  applyEndAt   DateTime?
+  applyUrl         String?
+  detailUrl        String?
+  applyStartAt     DateTime?
+  applyEndAt       DateTime?
   // 원본 (디버깅/재처리용)
-  rawData      Json?
+  rawData          Json?
   // 운영
-  active       Boolean  @default(true)
-  lastSyncedAt DateTime @default(now())
-  createdAt    DateTime @default(now())
-  matches      BenefitMatch[]
+  active           Boolean        @default(true)
+  lastSyncedAt     DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  matches          BenefitMatch[]
 
   @@unique([sourceCode, sourceId])
   @@index([category, active])
@@ -328,18 +332,18 @@ model Benefit {
 // 매칭 결과 캐시 (Profile × Benefit)
 // matcher가 자격 룰 평가 후 저장. 사용자 행동(저장/숨김/신청)도 여기 기록.
 model BenefitMatch {
-  id             String          @id @default(cuid())
-  profileId      String
-  profile        BenefitProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  benefitId      String
-  benefit        Benefit         @relation(fields: [benefitId], references: [id], onDelete: Cascade)
-  score          Int             // 0~100, 자격 충족도
-  status         String          // matched | uncertain | notEligible
-  missingFields  String[]        // 정확도를 올리려면 추가로 입력해야 할 필드
-  userAction     String?         // saved | dismissed | applied
-  notifiedAt     DateTime?       // 마감 임박 푸시 발송 시각
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            String         @id @default(cuid())
+  profileId     String
+  profile       BenefitProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  benefitId     String
+  benefit       Benefit        @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  score         Int // 0~100, 자격 충족도
+  status        String // matched | uncertain | notEligible
+  missingFields String[] // 정확도를 올리려면 추가로 입력해야 할 필드
+  userAction    String? // saved | dismissed | applied
+  notifiedAt    DateTime? // 마감 임박 푸시 발송 시각
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@unique([profileId, benefitId])
   @@index([profileId, status, score])
@@ -350,27 +354,27 @@ model BenefitMatch {
 // 매 6시간 마다 외부 API → DB로 동기화. RTRVLDSUSE_SEQ로 dedup.
 // ═══════════════════════════════════════════════════
 model Recall {
-  id              String   @id @default(cuid())
-  externalSeq     String   @unique  // RTRVLDSUSE_SEQ — 식약처 고유 회수번호 (재실행 dedup용)
-  productName     String                    // PRDTNM
-  manufacturer    String?                   // BSSHNM
-  barcode         String?                   // BRCDNO
-  reason          String                    // RTRVLPRVNS
-  grade           String?                   // RTRVL_GRDCD_NM (1등급/2등급/3등급)
-  productType     String?                   // PRDLST_TYPE
-  foodTypeName    String?                   // PRDLST_CD_NM
-  packageUnit     String?                   // FRMLCUNIT
-  manufacturedAt  String?                   // MNFDT (그대로 string — "데이터없음" 케이스 있음)
-  expiryInfo      String?                   // DISTBTMLMT
-  recallMethod    String?                   // RTRVLPLANDOC_RTRVLMTHD
-  imageUrls       String[]                  // IMG_FILE_PATH 콤마분리 → 배열
-  manufacturerAddress String?               // ADDR
-  manufacturerTel String?                   // TELNO
-  licenseNo       String?                   // LCNS_NO
-  reportNo        String?                   // PRDLST_REPORT_NO
-  registeredAt    DateTime                  // CRET_DTM 파싱
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  externalSeq         String   @unique // RTRVLDSUSE_SEQ — 식약처 고유 회수번호 (재실행 dedup용)
+  productName         String // PRDTNM
+  manufacturer        String? // BSSHNM
+  barcode             String? // BRCDNO
+  reason              String // RTRVLPRVNS
+  grade               String? // RTRVL_GRDCD_NM (1등급/2등급/3등급)
+  productType         String? // PRDLST_TYPE
+  foodTypeName        String? // PRDLST_CD_NM
+  packageUnit         String? // FRMLCUNIT
+  manufacturedAt      String? // MNFDT (그대로 string — "데이터없음" 케이스 있음)
+  expiryInfo          String? // DISTBTMLMT
+  recallMethod        String? // RTRVLPLANDOC_RTRVLMTHD
+  imageUrls           String[] // IMG_FILE_PATH 콤마분리 → 배열
+  manufacturerAddress String? // ADDR
+  manufacturerTel     String? // TELNO
+  licenseNo           String? // LCNS_NO
+  reportNo            String? // PRDLST_REPORT_NO
+  registeredAt        DateTime // CRET_DTM 파싱
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@index([barcode])
   @@index([registeredAt])
@@ -383,17 +387,17 @@ model Recall {
 // ═══════════════════════════════════════════════════
 model HaccpFacility {
   id              String   @id @default(cuid())
-  licenseNo       String   @unique                 // LCNS_NO
-  bsshName        String                           // BSSH_NM
-  bsshNameNorm    String                           // 정규화 (lowercase, 공백/특수문자 제거) — Product 매칭용
-  industryName    String?                          // INDUTY_CD_NM
-  presidentName   String?                          // PRSDNT_NM
-  address         String?                          // SITE_ADDR
-  appnDate        String?                          // HACCP_APPN_DT (string — 형식 들쭉날쭉)
-  appnNo          String?                          // HACCP_APPN_NO
-  productListName String?                          // PRDLST_NM
-  bizStatus       String?                          // CLSBIZ_DVS_CD_NM
-  bizCloseDate    String?                          // CLSBIZ_DT
+  licenseNo       String   @unique // LCNS_NO
+  bsshName        String // BSSH_NM
+  bsshNameNorm    String // 정규화 (lowercase, 공백/특수문자 제거) — Product 매칭용
+  industryName    String? // INDUTY_CD_NM
+  presidentName   String? // PRSDNT_NM
+  address         String? // SITE_ADDR
+  appnDate        String? // HACCP_APPN_DT (string — 형식 들쭉날쭉)
+  appnNo          String? // HACCP_APPN_NO
+  productListName String? // PRDLST_NM
+  bizStatus       String? // CLSBIZ_DVS_CD_NM
+  bizCloseDate    String? // CLSBIZ_DT
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -404,14 +408,14 @@ model HaccpFacility {
 // 농산물이력추적 (식품안전나라 I1790 + I1800)
 model AgriTrace {
   id              String   @id @default(cuid())
-  histTraceRegNo  String   @unique             // HIST_TRACE_REG_NO
-  regInstName     String?                       // REG_INSTT_NM
-  rprsntPrdltName String                        // RPRSNT_PRDLST_NM (대표품목)
-  presidentName   String?                       // PRSDNT_NM
-  orgnName        String?                       // ORGN_NM (단체/농가명)
-  validBeginDate  String?                       // VALD_PRICE_BGN_DT
-  validEndDate    String?                       // VALD_PRICE_END_DT
-  partners        Json?                         // I1800 거래처 정보 [{grpName, presidentName, telno}]
+  histTraceRegNo  String   @unique // HIST_TRACE_REG_NO
+  regInstName     String? // REG_INSTT_NM
+  rprsntPrdltName String // RPRSNT_PRDLST_NM (대표품목)
+  presidentName   String? // PRSDNT_NM
+  orgnName        String? // ORGN_NM (단체/농가명)
+  validBeginDate  String? // VALD_PRICE_BGN_DT
+  validEndDate    String? // VALD_PRICE_END_DT
+  partners        Json? // I1800 거래처 정보 [{grpName, presidentName, telno}]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -421,23 +425,23 @@ model AgriTrace {
 // 조리식품 레시피 (식품안전나라 COOKRCP01)
 model Recipe {
   id              String   @id @default(cuid())
-  recipeSeq       String   @unique             // RCP_SEQ
-  name            String                        // RCP_NM
-  cookingMethod   String?                       // RCP_WAY2
-  category        String?                       // RCP_PAT2 (반찬/국/후식 등)
-  servingWeight   String?                       // INFO_WGT
-  caloriesKcal    Float?                        // INFO_ENG
-  carbsG          Float?                        // INFO_CAR
-  proteinG        Float?                        // INFO_PRO
-  fatG            Float?                        // INFO_FAT
-  sodiumMg        Float?                        // INFO_NA
-  hashtags        String?                       // HASH_TAG
-  imageMain       String?                       // ATT_FILE_NO_MAIN
-  imageBig        String?                       // ATT_FILE_NO_MK
-  ingredientsRaw  String?                       // RCP_PARTS_DTLS (원본 텍스트)
-  ingredientsList String[]                      // 파싱한 재료 토큰 (검색용)
-  steps           Json?                         // [{idx, text, image}]
-  tip             String?                       // RCP_NA_TIP
+  recipeSeq       String   @unique // RCP_SEQ
+  name            String // RCP_NM
+  cookingMethod   String? // RCP_WAY2
+  category        String? // RCP_PAT2 (반찬/국/후식 등)
+  servingWeight   String? // INFO_WGT
+  caloriesKcal    Float? // INFO_ENG
+  carbsG          Float? // INFO_CAR
+  proteinG        Float? // INFO_PRO
+  fatG            Float? // INFO_FAT
+  sodiumMg        Float? // INFO_NA
+  hashtags        String? // HASH_TAG
+  imageMain       String? // ATT_FILE_NO_MAIN
+  imageBig        String? // ATT_FILE_NO_MK
+  ingredientsRaw  String? // RCP_PARTS_DTLS (원본 텍스트)
+  ingredientsList String[] // 파싱한 재료 토큰 (검색용)
+  steps           Json? // [{idx, text, image}]
+  tip             String? // RCP_NA_TIP
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -447,17 +451,17 @@ model Recipe {
 
 // 건강기능식품 영양카테고리 (식품안전나라 I0760)
 model HealthFunctionalCategory {
-  id              String   @id @default(cuid())
-  groupCode       String   @unique             // HELT_ITM_GRP_CD
-  groupName       String                        // HELT_ITM_GRP_NM
-  largeCategoryCode String?                     // LCLAS_CD
-  largeCategoryName String?                     // LCLAS_NM
-  midCategoryCode   String?                     // MLSFC_CD
-  midCategoryName   String?                     // MLSFC_NM
-  smallCategoryCode String?                     // SCLAS_CD
-  smallCategoryName String?                     // SCLAS_NM
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  groupCode         String   @unique // HELT_ITM_GRP_CD
+  groupName         String // HELT_ITM_GRP_NM
+  largeCategoryCode String? // LCLAS_CD
+  largeCategoryName String? // LCLAS_NM
+  midCategoryCode   String? // MLSFC_CD
+  midCategoryName   String? // MLSFC_NM
+  smallCategoryCode String? // SCLAS_CD
+  smallCategoryName String? // SCLAS_NM
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([groupName])
 }
@@ -465,13 +469,13 @@ model HealthFunctionalCategory {
 // 건강기능식품 개별인정형 원료 (식품안전나라 I-0050)
 model HealthFunctionalRawMaterial {
   id              String   @id @default(cuid())
-  recognitionNo   String   @unique             // HF_FNCLTY_MTRAL_RCOGN_NO
-  rawMaterialName String                        // RAWMTRL_NM
-  weightUnit      String?                       // WT_UNIT
-  dailyIntakeMin  String?                       // DAY_INTK_LOWLIMIT
-  dailyIntakeMax  String?                       // DAY_INTK_HIGHLIMIT
-  primaryFunction String?                       // PRIMARY_FNCLTY (주된 기능성)
-  warning         String?                       // IFTKN_ATNT_MATR_CN (섭취 주의사항)
+  recognitionNo   String   @unique // HF_FNCLTY_MTRAL_RCOGN_NO
+  rawMaterialName String // RAWMTRL_NM
+  weightUnit      String? // WT_UNIT
+  dailyIntakeMin  String? // DAY_INTK_LOWLIMIT
+  dailyIntakeMax  String? // DAY_INTK_HIGHLIMIT
+  primaryFunction String? // PRIMARY_FNCLTY (주된 기능성)
+  warning         String? // IFTKN_ATNT_MATR_CN (섭취 주의사항)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -480,22 +484,22 @@ model HealthFunctionalRawMaterial {
 
 // 한국소비자원 참가격 — 매장 (getStoreInfoSvc)
 model ParsaStore {
-  id              String   @id @default(cuid())
-  entpId          String   @unique                  // 매장 고유 ID
-  entpName        String
-  entpTypeCode    String?                            // LM(대형마트), SM(SSM), 등
-  entpAreaCode    String?                            // 시도 코드
-  areaDetailCode  String?                            // 시군구 코드
-  entpTelno       String?
-  postNo          String?
-  addrBasic       String?                            // plmkAddrBasic (지번)
-  addrDetail      String?
-  roadAddrBasic   String?                            // 도로명 주소 (있을 수 있음)
+  id             String   @id @default(cuid())
+  entpId         String   @unique // 매장 고유 ID
+  entpName       String
+  entpTypeCode   String? // LM(대형마트), SM(SSM), 등
+  entpAreaCode   String? // 시도 코드
+  areaDetailCode String? // 시군구 코드
+  entpTelno      String?
+  postNo         String?
+  addrBasic      String? // plmkAddrBasic (지번)
+  addrDetail     String?
+  roadAddrBasic  String? // 도로명 주소 (있을 수 있음)
   // 좌표 (xMapCoord=위도, yMapCoord=경도) — 응답에서 문자열로 오므로 Float? 로 파싱 후 저장
-  lat             Float?                             // xMapCoord
-  lng             Float?                             // yMapCoord
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  lat            Float? // xMapCoord
+  lng            Float? // yMapCoord
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([entpTypeCode])
   @@index([entpAreaCode])
@@ -503,18 +507,18 @@ model ParsaStore {
 
 // 한국소비자원 참가격 — 상품 (getProductInfoSvc)
 model ParsaProduct {
-  id                String   @id @default(cuid())
-  goodId            String   @unique                // 상품 고유 ID
-  goodName          String
-  productEntpCode   String?                          // 제조사 코드
-  goodUnitDivCode   String?                          // 단위 구분 코드 (G, ML 등)
-  goodBaseCnt       String?                          // 기준 수량
-  goodSmlclsCode    String?                          // 소분류 코드
-  goodTotalCnt      String?                          // 전체 수량
-  goodTotalDivCode  String?                          // 전체 구분 코드
-  detailMean        String?                          // 상세 의미
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  goodId           String   @unique // 상품 고유 ID
+  goodName         String
+  productEntpCode  String? // 제조사 코드
+  goodUnitDivCode  String? // 단위 구분 코드 (G, ML 등)
+  goodBaseCnt      String? // 기준 수량
+  goodSmlclsCode   String? // 소분류 코드
+  goodTotalCnt     String? // 전체 수량
+  goodTotalDivCode String? // 전체 구분 코드
+  detailMean       String? // 상세 의미
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([goodSmlclsCode])
   @@index([goodName])
@@ -523,13 +527,13 @@ model ParsaProduct {
 // 한국소비자원 참가격 — 기준 데이터 (getStandardInfoSvc)
 // classCode: AL(소분류), BU(업태), AR(지역), UT(단위/용량)
 model ParsaCategory {
-  id         String   @id @default(cuid())
-  classCode  String   // AL/BU/AR/UT
-  code       String   // 코드값 (예: 030101001=계란, LM=대형마트, 020100000=서울특별시)
-  codeName   String   // 코드명 (예: 계란, 대형마트, 서울특별시)
-  highCode   String?  // 상위 코드 (트리 구조)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  classCode String // AL/BU/AR/UT
+  code      String // 코드값 (예: 030101001=계란, LM=대형마트, 020100000=서울특별시)
+  codeName  String // 코드명 (예: 계란, 대형마트, 서울특별시)
+  highCode  String? // 상위 코드 (트리 구조)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([classCode, code])
   @@index([classCode])
@@ -539,18 +543,18 @@ model ParsaCategory {
 // 한국소비자원 참가격 — 가격 (getProductPriceInfoSvc)
 // goodInspectDay별 매장별 상품별 가격 1행
 model ParsaPrice {
-  id              String   @id @default(cuid())
-  entpId          String                            // 매장 ID
-  goodId          String                            // 상품 ID
-  inspectDay      String                            // YYYYMMDD (조사일)
-  price           Int                               // 원
-  plusoneYn       Boolean  @default(false)          // 1+1 여부
-  discountYn      Boolean  @default(false)          // 할인 여부
-  discountStart   String?                           // 할인 시작일 YYYYMMDD
-  discountEnd     String?                           // 할인 종료일 YYYYMMDD
-  inputDttm       String?                           // 입력 일시
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  entpId        String // 매장 ID
+  goodId        String // 상품 ID
+  inspectDay    String // YYYYMMDD (조사일)
+  price         Int // 원
+  plusoneYn     Boolean  @default(false) // 1+1 여부
+  discountYn    Boolean  @default(false) // 할인 여부
+  discountStart String? // 할인 시작일 YYYYMMDD
+  discountEnd   String? // 할인 종료일 YYYYMMDD
+  inputDttm     String? // 입력 일시
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([entpId, goodId, inspectDay])
   @@index([entpId, inspectDay])
