@@ -15,16 +15,42 @@ import * as Sentry from "@sentry/nextjs";
 
 type Context = Record<string, unknown>;
 
+type SeverityLevel = "warning" | "error" | "fatal";
+
+type LogErrorOptions = {
+  /**
+   * Sentry severity. cron 실패 등 우선순위 높은 알림은 "fatal" 권장 —
+   * Sentry 알림 룰에서 fatal만 필터링하면 페이지 호출 등 강한 액션 연결 가능.
+   * default: "error"
+   */
+  level?: SeverityLevel;
+  /** Sentry 추가 태그 (kind, region 등 알림 룰 분기에 사용) */
+  tags?: Record<string, string>;
+};
+
 const isProd = process.env.NODE_ENV === "production";
 
-/** 에러 보고. Sentry가 init돼 있으면 자동 전송, 아니면 콘솔만. */
-export function logError(scope: string, err: unknown, ctx?: Context): void {
+/**
+ * 에러 보고. Sentry가 init돼 있으면 자동 전송, 아니면 콘솔만.
+ * 3번째 인자는 hybrid — 단순 context 객체 또는 { level, tags, ... } 옵션.
+ * 기존 호출자 (`logError("x", e, { foo: 1 })`)는 그대로 동작.
+ */
+export function logError(
+  scope: string,
+  err: unknown,
+  ctxOrOpts?: Context,
+  opts?: LogErrorOptions,
+): void {
   const message = err instanceof Error ? err.message : String(err);
+  const ctx = ctxOrOpts;
+  const level = opts?.level ?? "error";
+  const extraTags = opts?.tags ?? {};
 
   // Sentry — init 안 됐으면 내부적으로 no-op
   try {
     Sentry.captureException(err, {
-      tags: { scope },
+      level,
+      tags: { scope, ...extraTags },
       extra: ctx,
     });
   } catch {
@@ -40,12 +66,29 @@ export function logError(scope: string, err: unknown, ctx?: Context): void {
       "[error]",
       JSON.stringify({
         scope,
+        level,
         message,
         context: ctx ?? {},
+        tags: extraTags,
         ts: new Date().toISOString(),
       }),
     );
   }
+}
+
+/**
+ * Cron 실패 전용 에러 보고 — level=fatal + tags.kind=cron 자동 부여.
+ * Sentry 알림 룰에서 `kind:cron AND level:fatal` 필터로 cron 장애만 추출 가능.
+ */
+export function logCronFailure(
+  scope: string,
+  err: unknown,
+  metrics?: Context,
+): void {
+  logError(scope, err, metrics, {
+    level: "fatal",
+    tags: { kind: "cron" },
+  });
 }
 
 /** 사용자/시스템 이벤트 보고. 클라이언트에서는 PostHog로 자동 전송. */

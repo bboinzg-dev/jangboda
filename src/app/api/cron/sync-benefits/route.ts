@@ -12,6 +12,7 @@ import { fetchMssSupport } from "@/lib/benefits/sources/mssSupport";
 import { fetchBizinfo } from "@/lib/benefits/sources/bizinfo";
 import type { BenefitRaw } from "@/lib/benefits/types";
 import { isCronAuthorized } from "@/lib/cronAuth";
+import { logError } from "@/lib/observability";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -81,6 +82,8 @@ async function runOne(
     const stats = await upsertMany(items);
     return { source, ok: true, fetched: items.length, ...stats };
   } catch (e) {
+    // 한 출처 실패는 다른 출처 진행을 막지 않음 — Sentry에는 warning으로 기록
+    logError("cron/sync-benefits", e, { source }, { level: "warning" });
     return {
       source,
       ok: false,

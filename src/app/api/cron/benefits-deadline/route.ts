@@ -15,7 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkSyncAuth } from "@/lib/auth";
 import { notifyUpcomingDeadlines } from "@/lib/benefits/notifyDeadline";
-import { logError } from "@/lib/observability";
+import { logCronFailure } from "@/lib/observability";
 
 // web-push가 Node API에 의존 (Edge runtime 불가)
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ async function handle(req: NextRequest) {
       ...result,
     });
   } catch (e) {
-    logError("cron/benefits-deadline", e);
+    logCronFailure("cron/benefits-deadline", e);
     return NextResponse.json(
       {
         ok: false,

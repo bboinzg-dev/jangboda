@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkSyncAuth } from "@/lib/auth";
 import { sendPushNotification } from "@/lib/push";
-import { logError } from "@/lib/observability";
+import { logError, logCronFailure } from "@/lib/observability";
 import {
   buildRecallPushPayload,
   indexRecalls,
@@ -191,7 +191,9 @@ async function handle(req: NextRequest) {
       durationMs: Date.now() - startedAt,
     });
   } catch (e) {
-    logError("cron/recall-check", e);
+    logCronFailure("cron/recall-check", e, {
+      durationMs: Date.now() - startedAt,
+    });
     return NextResponse.json(
       {
         ok: false,
