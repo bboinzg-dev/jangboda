@@ -3,6 +3,7 @@
 // JSON 응답 강제(responseJsonSchema) + thinkingLevel="minimal" (정형화는 추론 거의 불필요).
 // implicit caching: systemInstruction 동일 prefix는 Gemini가 자동 캐시.
 import { AVAILABLE_FLAGS, NormalizedRuleSchema, type NormalizedRule } from "./ruleSchema";
+import { logEvent } from "@/lib/observability";
 
 const MODEL = "gemini-3-flash-preview";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
@@ -167,12 +168,16 @@ async function callOnce(userText: string, apiKey: string): Promise<string> {
     };
   };
 
-  // 토큰 사용량 로그 — implicit cache 적중률 추적
+  // 토큰 사용량 이벤트 — implicit cache 적중률 추적 (PostHog로 집계)
   if (data.usageMetadata) {
     const u = data.usageMetadata;
-    console.log(
-      `[llm] tokens in=${u.promptTokenCount ?? 0} out=${u.candidatesTokenCount ?? 0} cached=${u.cachedContentTokenCount ?? 0} total=${u.totalTokenCount ?? 0}`,
-    );
+    logEvent("benefits.llm.tokens", {
+      in: u.promptTokenCount ?? 0,
+      out: u.candidatesTokenCount ?? 0,
+      cached: u.cachedContentTokenCount ?? 0,
+      total: u.totalTokenCount ?? 0,
+      model: MODEL,
+    });
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";

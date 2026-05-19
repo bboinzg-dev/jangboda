@@ -14,6 +14,7 @@
 import { prisma } from "@/lib/db";
 import { sendPushNotification } from "@/lib/push";
 import { kstStartOfDay } from "@/lib/kst";
+import { logError } from "@/lib/observability";
 
 export interface NotifyDeadlineResult {
   scanned: number;
@@ -189,10 +190,7 @@ export async function notifyUpcomingDeadlines(): Promise<NotifyDeadlineResult> {
       } catch (e) {
         failed++;
         // 한 건 실패해도 다음 단말로 계속
-        console.error(
-          `[benefits/notifyDeadline] push 실패 user=${userId}`,
-          e instanceof Error ? e.message : String(e)
-        );
+        logError("benefits/notifyDeadline.push", e, { userId, endpoint: sub.endpoint });
       }
     }
 
@@ -205,10 +203,7 @@ export async function notifyUpcomingDeadlines(): Promise<NotifyDeadlineResult> {
           data: { notifiedAt: new Date() },
         });
       } catch (e) {
-        console.error(
-          `[benefits/notifyDeadline] notifiedAt 갱신 실패 user=${userId}`,
-          e instanceof Error ? e.message : String(e)
-        );
+        logError("benefits/notifyDeadline.updateNotifiedAt", e, { userId });
       }
     }
   }
@@ -220,10 +215,9 @@ export async function notifyUpcomingDeadlines(): Promise<NotifyDeadlineResult> {
         where: { endpoint: { in: expiredEndpoints } },
       });
     } catch (e) {
-      console.error(
-        "[benefits/notifyDeadline] 만료 구독 정리 실패",
-        e instanceof Error ? e.message : String(e)
-      );
+      logError("benefits/notifyDeadline.cleanExpired", e, {
+        count: expiredEndpoints.length,
+      });
     }
   }
 
