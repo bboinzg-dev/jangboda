@@ -12,9 +12,20 @@ const nextConfig = {
     // CSP는 인라인 스크립트(Next.js inline runtime, PostHog snippet, 다크모드 FOUC 방지)·
     // 카카오/네이버/Supabase/Sentry 호스트를 허용해야 해서 상대적으로 느슨함.
     // 외부 폼 액션·iframe 차단으로 클릭재킹·폼하이재킹은 막힘.
+    // 'unsafe-eval'은 Next.js dev runtime(HMR, React Refresh)만 필요 → production은 제외.
+    const isDev = process.env.NODE_ENV !== "production";
+    const scriptSrc = [
+      "script-src",
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDev ? ["'unsafe-eval'"] : []),
+      "https://dapi.kakao.com",
+      "https://*.posthog.com",
+      "https://*.sentry.io",
+    ].join(" ");
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://dapi.kakao.com https://*.posthog.com https://*.sentry.io",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://cdn.jsdelivr.net",
