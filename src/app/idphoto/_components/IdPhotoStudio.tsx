@@ -270,7 +270,7 @@ export default function IdPhotoStudio({
         <div className="font-semibold text-sm text-danger mb-2">
           🎯 본인답게 나오는 비결 — 거리·렌즈·각도가 가장 중요해요
         </div>
-        <p className="text-[11px] text-danger/80 mb-2 leading-relaxed">
+        <p className="text-2xs text-danger/80 mb-2 leading-relaxed">
           AI는 입력 사진의 얼굴 비례를 그대로 본인의 실제 얼굴로 보고 작업합니다.
           가까이서 찍은 셀카는 광각 왜곡으로 코·이마가 커지고 귀·턱이 작아지므로,
           결과물도 그대로 왜곡돼요.
@@ -351,7 +351,7 @@ export default function IdPhotoStudio({
           onChange={handleFileChange}
           className="hidden"
         />
-        <p className="text-[11px] text-ink-4 mt-2">
+        <p className="text-2xs text-ink-4 mt-2">
           JPEG / PNG / WEBP · 정면 얼굴이 선명한 사진이 좋아요.
         </p>
       </section>
@@ -380,7 +380,7 @@ export default function IdPhotoStudio({
           ))}
         </select>
         <p className="text-xs text-ink-4 mt-2">{spec.desc}</p>
-        <div className="mt-3 text-[11px] text-warning-text bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 leading-relaxed">
+        <div className="mt-3 text-2xs text-warning-text bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 leading-relaxed">
           📜 <b>배경 규정:</b> {spec.regulationNote}
         </div>
       </section>
@@ -421,7 +421,7 @@ export default function IdPhotoStudio({
                   className="aspect-square rounded w-full border border-line"
                   style={{ background: opt.swatch }}
                 />
-                <div className="text-[10px] mt-1 text-ink-2 truncate">
+                <div className="text-3xs mt-1 text-ink-2 truncate">
                   {opt.label}
                 </div>
                 {opt.style === "gradient" && (
@@ -433,7 +433,7 @@ export default function IdPhotoStudio({
             );
           })}
         </div>
-        <p className="text-[11px] text-ink-4 mt-3 leading-relaxed">
+        <p className="text-2xs text-ink-4 mt-3 leading-relaxed">
           <b>현재 선택:</b>{" "}
           {backgroundOptions.find((o) => o.key === bgKey)?.label} —{" "}
           {backgroundOptions.find((o) => o.key === bgKey)?.blurb}
@@ -502,7 +502,7 @@ export default function IdPhotoStudio({
         </button>
       </div>
 
-      <p className="text-[11px] text-ink-4 text-center leading-relaxed">
+      <p className="text-2xs text-ink-4 text-center leading-relaxed">
         ⚠️ 변환 시 외부 AI API가 호출되며 비용이 발생합니다.
         <br />
         한 번에 한 장씩, 사진을 신중히 선택해 주세요.

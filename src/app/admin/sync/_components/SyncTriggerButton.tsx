@@ -58,7 +58,7 @@ export default function SyncTriggerButton({
         {running ? "실행 중…" : "실행"}
       </button>
       {result && (
-        <details className="text-[10px] max-w-[280px]">
+        <details className="text-3xs max-w-[280px]">
           <summary
             className={`cursor-pointer font-medium ${
               result.ok ? "text-success-text" : "text-danger-text"
@@ -66,7 +66,7 @@ export default function SyncTriggerButton({
           >
             {result.ok ? `✓ 성공 (${result.ms}ms)` : "✗ 실패"}
           </summary>
-          <pre className="mt-1 bg-surface-muted p-2 rounded overflow-auto max-h-40 text-[10px] leading-relaxed">
+          <pre className="mt-1 bg-surface-muted p-2 rounded overflow-auto max-h-40 text-3xs leading-relaxed">
             {result.ok
               ? JSON.stringify(result.data, null, 2)
               : result.error}

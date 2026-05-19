@@ -456,7 +456,7 @@ export default function UploadPage() {
                           alt={`이어찍은 ${idx + 2}번째 사진`}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-1 left-1 bg-ink-1/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        <div className="absolute top-1 left-1 bg-ink-1/70 text-white text-3xs px-1.5 py-0.5 rounded">
                           #{idx + 2}
                         </div>
                         <button
@@ -809,7 +809,7 @@ function ReceiptRow({
             <div className="text-ink-3 space-y-0.5">
               <div>x{item.quantity}</div>
               {item.barcode && (
-                <div className="font-mono text-[10px]" title="바코드 (EAN-13)">
+                <div className="font-mono text-3xs" title="바코드 (EAN-13)">
                   {item.barcode}
                 </div>
               )}
@@ -817,14 +817,14 @@ function ReceiptRow({
             <div className="text-right">
               {item.paidPrice != null && item.paidPrice < item.listPrice ? (
                 <>
-                  <div className="text-[10px] text-ink-3 line-through tabular-nums">
+                  <div className="text-3xs text-ink-3 line-through tabular-nums">
                     {formatWon(item.listPrice)}
                   </div>
                   <div className="font-semibold tabular-nums text-danger">
                     {formatWon(item.paidPrice)}
                   </div>
                   {item.promotionType && (
-                    <div className="text-[10px] text-danger">{item.promotionType}</div>
+                    <div className="text-3xs text-danger">{item.promotionType}</div>
                   )}
                 </>
               ) : (
@@ -938,12 +938,12 @@ function RewardPanel({
         {next && (
           <div className="mt-2">
             <Progress value={Math.max(2, progressPct)} tone="brand" height={6} />
-            <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-3 tabular-nums">
+            <div className="mt-1.5 flex items-center justify-between text-2xs text-ink-3 tabular-nums">
               <span>다음 단계까지 {next - total}점</span>
               <span className="font-semibold">{next}점</span>
             </div>
             {next === 10 && (
-              <div className="text-[11px] text-brand-ink mt-2 font-semibold">
+              <div className="text-2xs text-brand-ink mt-2 font-semibold">
                 💡 10점 달성 시 <Link href="/benefits" className="underline">정부 혜택 추천</Link>이 열려요
               </div>
             )}
@@ -988,7 +988,7 @@ function StepIndicator({ current }: { current: number }) {
     { label: "등록 완료", icon: "✅" },
   ];
   return (
-    <ol className="flex items-center gap-1 md:gap-2 text-[11px] md:text-xs" aria-label="진행 단계">
+    <ol className="flex items-center gap-1 md:gap-2 text-2xs md:text-xs" aria-label="진행 단계">
       {steps.map((s, i) => {
         const done = i < current;
         const active = i === current;
@@ -1067,7 +1067,7 @@ function SummaryCard({
       ].join(" ")}
     >
       {/* 한국어 라벨엔 uppercase/tracking-wider/mono가 시각적으로 어색 — 평범한 한글 캡션 */}
-      <div className="text-[11px] text-ink-3 font-medium">{label}</div>
+      <div className="text-2xs text-ink-3 font-medium">{label}</div>
       <div
         className={[
           "mt-1 text-sm font-semibold truncate",

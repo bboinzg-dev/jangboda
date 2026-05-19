@@ -105,7 +105,7 @@ export default async function RewardsPage() {
                 <div className="font-semibold text-ink-1">{t.label}</div>
                 <div className="text-xs tabular-nums shrink-0">
                   {reached && (
-                    <span className="bg-success text-white px-2 py-0.5 rounded mr-2 text-[10px] font-bold">
+                    <span className="bg-success text-white px-2 py-0.5 rounded mr-2 text-3xs font-bold">
                       달성
                     </span>
                   )}

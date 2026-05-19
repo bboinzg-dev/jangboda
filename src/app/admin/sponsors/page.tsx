@@ -82,11 +82,11 @@ export default async function AdminSponsorsPage() {
                             {s.body}
                           </div>
                         )}
-                        <div className="text-[11px] text-ink-3 mt-1 break-all">
+                        <div className="text-2xs text-ink-3 mt-1 break-all">
                           → {s.href}
                         </div>
                         {s.notes && (
-                          <div className="text-[11px] text-ink-2 mt-1 italic">
+                          <div className="text-2xs text-ink-2 mt-1 italic">
                             메모: {s.notes}
                           </div>
                         )}

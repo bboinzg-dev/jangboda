@@ -127,7 +127,7 @@ export default async function AdminBenefitsPage({
                       {b.agency ?? "-"} · {b.sourceCode}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0 text-[11px]">
+                  <div className="flex flex-col items-end gap-1 shrink-0 text-2xs">
                     {!b.active && (
                       <span className="bg-surface-sunken text-ink-2 px-2 py-0.5 rounded font-bold">
                         비활성

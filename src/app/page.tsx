@@ -351,25 +351,25 @@ export default async function HomePage() {
                       c.hasHaccp) && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {c.origin && (
-                          <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-2xs bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             🌾 {c.origin}
                           </span>
                         )}
                         {c.grade && (
-                          <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-2xs bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                             {c.grade}
                           </span>
                         )}
                         {c.certifications?.slice(0, 2).map((cert) => (
                           <span
                             key={cert}
-                            className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
+                            className="inline-flex items-center text-2xs bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                           >
                             {cert}
                           </span>
                         ))}
                         {c.hasHaccp && (
-                          <span className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
+                          <span className="inline-flex items-center text-2xs bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                             🏅 HACCP
                           </span>
                         )}
@@ -381,7 +381,7 @@ export default async function HomePage() {
                         {c.chains.map((ch) => (
                           <span
                             key={ch.name}
-                            className="inline-flex items-center text-[11px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
+                            className="inline-flex items-center text-2xs bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                             title={`${ch.name} ${ch.count}매장`}
                           >
                             {ch.name}
@@ -395,14 +395,14 @@ export default async function HomePage() {
                   </div>
                   <div className="text-right shrink-0 ml-2 md:ml-4">
                     {/* 실판매가가 메인. 라벨/가격/단가/절약을 일정한 수직 호흡으로 정렬 */}
-                    <div className="text-[11px] text-ink-3 font-medium leading-tight mb-0.5">
+                    <div className="text-2xs text-ink-3 font-medium leading-tight mb-0.5">
                       최저
                     </div>
                     <div className="text-[20px] font-extrabold tabular-nums text-ink-1 leading-none">
                       {formatWon(c.min)}
                     </div>
                     {uparts && (
-                      <div className="text-[11px] text-ink-3 tabular-nums font-mono leading-tight mt-1">
+                      <div className="text-2xs text-ink-3 tabular-nums font-mono leading-tight mt-1">
                         {uparts.basis} {uparts.amount}
                       </div>
                     )}
@@ -437,7 +437,7 @@ export default async function HomePage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-brand-600 mb-1">
+                <div className="text-2xs font-medium text-brand-600 mb-1">
                   정부 혜택 추천
                 </div>
                 <h3 className="text-base font-bold text-ink-1 mb-1">
@@ -459,7 +459,7 @@ export default async function HomePage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-brand-600 mb-1">
+                <div className="text-2xs font-medium text-brand-600 mb-1">
                   AI 증명사진 · 비밀번호 필요
                 </div>
                 <h3 className="text-base font-bold text-ink-1 mb-1">

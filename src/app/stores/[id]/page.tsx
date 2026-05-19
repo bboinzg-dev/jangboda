@@ -115,7 +115,7 @@ export default async function StoreDetailPage({
             size={80}
           />
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 text-[11px] text-brand-700 bg-brand-soft px-2 py-0.5 rounded-full font-medium">
+            <div className="inline-flex items-center gap-1.5 text-2xs text-brand-700 bg-brand-soft px-2 py-0.5 rounded-full font-medium">
               <span>{icon}</span>
               <span>{label}</span>
               <span className="text-brand-300">·</span>
@@ -145,7 +145,7 @@ export default async function StoreDetailPage({
                   </div>
                 )}
                 {nextClosed && !closedToday && (
-                  <div className="text-[11px] text-warning-text">
+                  <div className="text-2xs text-warning-text">
                     📅 다음 정기 휴무:{" "}
                     {nextClosed.toLocaleDateString("ko-KR", {
                       month: "numeric",
@@ -160,7 +160,7 @@ export default async function StoreDetailPage({
                   </div>
                 )}
                 {resolvedHours.source === "chain" && (
-                  <div className="text-[10px] text-ink-3">
+                  <div className="text-3xs text-ink-3">
                     체인 평균 영업시간{resolvedHours.note ? ` · ${resolvedHours.note}` : ""}
                   </div>
                 )}
@@ -168,7 +168,7 @@ export default async function StoreDetailPage({
             )}
           </div>
           <div className="hidden sm:flex flex-col items-end shrink-0 border-l border-line pl-5">
-            <div className="text-[11px] text-ink-3">
+            <div className="text-2xs text-ink-3">
               {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
             </div>
             <div className="text-3xl font-extrabold text-brand-600 tabular-nums leading-none mt-0.5">
@@ -180,7 +180,7 @@ export default async function StoreDetailPage({
 
         <div className="mt-4 flex items-center gap-3">
           <div className="sm:hidden">
-            <div className="text-[11px] text-ink-3">
+            <div className="text-2xs text-ink-3">
               {isFallback ? `${store.chain.name} 가격` : "등록 가격"}
             </div>
             <div className="text-2xl font-extrabold text-brand-600 tabular-nums">
@@ -249,7 +249,7 @@ export default async function StoreDetailPage({
                         {p.product.brand ? ` · ${p.product.brand}` : ""}
                       </div>
                       {p.product.barcode && (
-                        <div className="text-[10px] text-ink-3/70 font-mono mt-0.5 truncate">
+                        <div className="text-3xs text-ink-3/70 font-mono mt-0.5 truncate">
                           📦 {p.product.barcode}
                         </div>
                       )}
@@ -258,13 +258,13 @@ export default async function StoreDetailPage({
                   <div className="text-right shrink-0">
                     <div className="font-bold tabular-nums text-ink-1">{formatWon(lp)}</div>
                     {upl && (
-                      <div className="text-[11px] text-ink-3 tabular-nums">{upl}</div>
+                      <div className="text-2xs text-ink-3 tabular-nums">{upl}</div>
                     )}
                     {p.paidPrice != null &&
                       p.paidPrice < lp &&
                       Date.now() - p.createdAt.getTime() <
                         14 * 24 * 60 * 60 * 1000 && (
-                        <div className="mt-1 text-[11px] text-danger-text font-medium">
+                        <div className="mt-1 text-2xs text-danger-text font-medium">
                           💰 행사가 {formatWon(p.paidPrice)}
                           {p.promotionType ? ` (${p.promotionType})` : ""}
                         </div>
@@ -272,12 +272,12 @@ export default async function StoreDetailPage({
                     <div className="flex gap-1 justify-end items-center mt-0.5 flex-wrap">
                       <SourceBadge source={p.source} />
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
+                        className={`text-3xs px-1.5 py-0.5 rounded ${tag.color}`}
                       >
                         {tag.label}
                       </span>
                     </div>
-                    <div className="text-[11px] text-ink-3 mt-0.5">
+                    <div className="text-2xs text-ink-3 mt-0.5">
                       {isReceipt ? "🧾 영수증 거래일 " : ""}
                       <span className="font-medium tabular-nums">{dateStr}</span>
                       <span className="text-ink-3/70 ml-1">

@@ -477,7 +477,7 @@ export default async function ProfilePage() {
                   </div>
                   <div className="flex gap-1 justify-end mt-0.5">
                     <SourceBadge source={p.source} />
-                    <span className="text-[10px] text-ink-3">
+                    <span className="text-3xs text-ink-3">
                       {formatRelativeDate(p.createdAt)}
                     </span>
                   </div>
@@ -706,7 +706,7 @@ function PointsCard({ points }: { points: number }) {
     >
       <div className="flex items-center justify-between">
         <div className="text-xs text-ink-3">포인트</div>
-        <div className="text-[10px] text-brand-600 font-medium">혜택 보기 →</div>
+        <div className="text-3xs text-brand-600 font-medium">혜택 보기 →</div>
       </div>
       <div className="text-xl md:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
         {points.toLocaleString()}
@@ -719,12 +719,12 @@ function PointsCard({ points }: { points: number }) {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="text-[10px] text-ink-3 mt-1 tabular-nums">
+          <div className="text-3xs text-ink-3 mt-1 tabular-nums">
             다음 {next}점까지 {next - points}점
           </div>
         </>
       ) : (
-        <div className="text-[10px] text-success-text font-medium mt-1.5">
+        <div className="text-3xs text-success-text font-medium mt-1.5">
           🏆 마스터 등급
         </div>
       )}

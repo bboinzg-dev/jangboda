@@ -108,7 +108,7 @@ export default async function BenefitsOnboardingPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{cat.label}</span>
                             {isComplete && (
-                              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                              <span className="text-3xs font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
                                 완료
                               </span>
                             )}

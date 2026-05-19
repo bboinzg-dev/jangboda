@@ -48,7 +48,7 @@ export default async function RecallBanner() {
                 </span>
                 {r.grade && (
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded ${gradeBadgeClass(
+                    className={`text-3xs font-bold px-2 py-0.5 rounded ${gradeBadgeClass(
                       r.grade
                     )}`}
                   >
@@ -68,7 +68,7 @@ export default async function RecallBanner() {
           </li>
         ))}
       </ul>
-      <div className="text-[10px] text-ink-4 mt-3">
+      <div className="text-3xs text-ink-4 mt-3">
         출처: 식약처 식품안전나라 (회수·판매중지 정보, 최근 7일)
       </div>
     </section>

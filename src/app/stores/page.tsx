@@ -484,16 +484,16 @@ export default function StoresPage() {
                                 2) 영업 중/종료 + 시간
                                 3) 체인 default(평균)면 라벨 명시 */}
                           {closedToday ? (
-                            <div className="text-[11px] mt-0.5 font-medium text-danger-text">
+                            <div className="text-2xs mt-0.5 font-medium text-danger-text">
                               🛑 오늘 정기 휴무
-                              <span className="ml-1 text-[10px] text-ink-3 font-normal">
+                              <span className="ml-1 text-3xs text-ink-3 font-normal">
                                 (대형마트 의무휴업)
                               </span>
                             </div>
                           ) : (
                             openStatus.rawHours && (
                               <div
-                                className={`text-[11px] mt-0.5 font-medium ${
+                                className={`text-2xs mt-0.5 font-medium ${
                                   openStatus.isOpen === true
                                     ? "text-success-text"
                                     : openStatus.isOpen === false
@@ -503,7 +503,7 @@ export default function StoresPage() {
                               >
                                 {openStatus.label}
                                 {s.hoursSource === "chain" && (
-                                  <span className="ml-1 text-[10px] text-ink-3 font-normal">
+                                  <span className="ml-1 text-3xs text-ink-3 font-normal">
                                     (체인 평균)
                                   </span>
                                 )}

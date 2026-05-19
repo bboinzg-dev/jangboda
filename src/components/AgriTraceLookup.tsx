@@ -71,7 +71,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
         <div className="text-xs text-ink-4">
           등록된 농가 이력 없음
         </div>
-        <div className="text-[11px] text-ink-4 mt-1">
+        <div className="text-2xs text-ink-4 mt-1">
           출처: 식품안전나라 (국립농산물품질관리원)
         </div>
       </section>
@@ -82,11 +82,11 @@ export default function AgriTraceLookup({ productName }: { productName: string }
     <section className="bg-surface border border-border rounded-xl p-4">
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🌱 농산물이력추적
-        <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
+        <span className="text-3xs font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
           {data.items.length}건
         </span>
       </h2>
-      <div className="text-[11px] text-ink-4 mb-2">
+      <div className="text-2xs text-ink-4 mb-2">
         출처: 식품안전나라 (국립농산물품질관리원)
       </div>
 
@@ -106,7 +106,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
                   {item.presidentName ? ` · 대표 ${item.presidentName}` : ""}
                 </div>
               </div>
-              <div className="text-[10px] text-ink-4 shrink-0 text-right">
+              <div className="text-3xs text-ink-4 shrink-0 text-right">
                 <div className="font-mono">{item.histTraceRegNo}</div>
                 {item.validEndDate && (
                   <div className="mt-0.5">~{item.validEndDate}</div>
@@ -114,7 +114,7 @@ export default function AgriTraceLookup({ productName }: { productName: string }
               </div>
             </div>
             {item.regInstName && (
-              <div className="text-[11px] text-ink-4 mt-1">
+              <div className="text-2xs text-ink-4 mt-1">
                 등록기관: {item.regInstName}
               </div>
             )}

@@ -640,7 +640,7 @@ export default async function BudgetPage() {
               <span className="text-xs text-ink-3 tabular-nums">{data.frequentProducts.length}건</span>
             </div>
             {/* 헤더 행 — 데스크톱에서만 표시. 모바일은 카드 형태로 흐름 */}
-            <div className="hidden md:grid md:grid-cols-[1fr_90px_100px_110px] px-4 py-2 bg-surface-sunken text-[11px] uppercase tracking-wider text-ink-3 font-semibold border-y border-line">
+            <div className="hidden md:grid md:grid-cols-[1fr_90px_100px_110px] px-4 py-2 bg-surface-sunken text-2xs uppercase tracking-wider text-ink-3 font-semibold border-y border-line">
               <span>상품</span>
               <span>다음 구매</span>
               <span>구매 횟수</span>
@@ -660,7 +660,7 @@ export default async function BudgetPage() {
                   <div className="text-sm md:text-[13.5px] font-semibold text-ink-1 truncate">
                     {fp.productName}
                   </div>
-                  <div className="text-[11px] text-ink-3 mt-0.5 tabular-nums">
+                  <div className="text-2xs text-ink-3 mt-0.5 tabular-nums">
                     {fp.count}회 · 마지막 {fp.daysSinceLast}일 전
                   </div>
                 </div>
@@ -707,7 +707,7 @@ export default async function BudgetPage() {
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
                           className={[
-                            "w-[22px] h-[22px] rounded-md text-[11px] font-bold flex items-center justify-center font-mono shrink-0",
+                            "w-[22px] h-[22px] rounded-md text-2xs font-bold flex items-center justify-center font-mono shrink-0",
                             i === 0 ? "bg-brand-500 text-white" : "bg-surface-muted text-ink-3",
                           ].join(" ")}
                         >
@@ -718,7 +718,7 @@ export default async function BudgetPage() {
                           <span className="text-sm font-semibold text-ink-1 truncate block">
                             {s.chainName}
                           </span>
-                          <span className="text-[11px] text-ink-3 truncate block">
+                          <span className="text-2xs text-ink-3 truncate block">
                             {s.storeName}
                           </span>
                         </Link>
@@ -733,7 +733,7 @@ export default async function BudgetPage() {
                           height={4}
                         />
                       </div>
-                      <span className="text-[11px] text-ink-3 font-mono w-12 text-right tabular-nums">
+                      <span className="text-2xs text-ink-3 font-mono w-12 text-right tabular-nums">
                         {pct}%
                       </span>
                     </div>
@@ -783,7 +783,7 @@ export default async function BudgetPage() {
                   <span className="min-w-0">
                     <span className="block text-ink-1 font-semibold tracking-tight">{c.category}</span>
                     {c.unitAvgLabel && (
-                      <span className="text-[11px] text-ink-3 tabular-nums">
+                      <span className="text-2xs text-ink-3 tabular-nums">
                         평균 {c.unitAvgLabel}
                       </span>
                     )}
@@ -824,7 +824,7 @@ export default async function BudgetPage() {
                   <details className="group">
                     <summary className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-surface-muted list-none transition">
                       <div className="min-w-0 flex-1">
-                        <div className="text-[11px] text-ink-3 font-mono tabular-nums">{dateStr}</div>
+                        <div className="text-2xs text-ink-3 font-mono tabular-nums">{dateStr}</div>
                         <div className="font-semibold text-ink-1 truncate">
                           {r.chainName ? `${r.chainName} · ` : ""}
                           {r.storeName}
@@ -833,8 +833,8 @@ export default async function BudgetPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <Num value={r.total} size={15} weight={700} />
-                        <div className="text-[10px] text-ink-3 group-open:hidden">펼치기 ▾</div>
-                        <div className="text-[10px] text-ink-3 hidden group-open:block">접기 ▴</div>
+                        <div className="text-3xs text-ink-3 group-open:hidden">펼치기 ▾</div>
+                        <div className="text-3xs text-ink-3 hidden group-open:block">접기 ▴</div>
                       </div>
                     </summary>
                     <ul className="border-t border-line bg-surface-sunken/30">
@@ -863,7 +863,7 @@ export default async function BudgetPage() {
                                 isOverride={it.isOverride}
                               />
                               {it.quantity > 1 ? (
-                                <span className="text-[11px] tabular-nums text-ink-3 shrink-0">
+                                <span className="text-2xs tabular-nums text-ink-3 shrink-0">
                                   {formatWon(it.price)} × {it.quantity}
                                 </span>
                               ) : null}

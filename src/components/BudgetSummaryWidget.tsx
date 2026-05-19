@@ -78,7 +78,7 @@ export default function BudgetSummaryWidget() {
           <div className="text-xs text-brand-700 font-medium">
             📊 내 가계부
           </div>
-          <div className="text-[10px] text-brand-600/70 mt-0.5">
+          <div className="text-3xs text-brand-600/70 mt-0.5">
             영수증 {summary.totalCount}건 누적
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function BudgetSummaryWidget() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <div className="text-[10px] text-brand-700 font-medium">
+          <div className="text-3xs text-brand-700 font-medium">
             이번 달 지출
           </div>
           <div className="text-lg font-extrabold text-brand-700 tabular-nums">
@@ -95,7 +95,7 @@ export default function BudgetSummaryWidget() {
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-success-text font-medium">
+          <div className="text-3xs text-success-text font-medium">
             🎉 누적 절약
           </div>
           <div className="text-lg font-extrabold text-success-text tabular-nums">
@@ -105,7 +105,7 @@ export default function BudgetSummaryWidget() {
       </div>
 
       {summary.topCategory && (
-        <div className="mt-2 text-[11px] text-brand-700/80">
+        <div className="mt-2 text-2xs text-brand-700/80">
           이번 달 1위 카테고리:{" "}
           <span className="font-medium">{summary.topCategory.category}</span>
           {" "}({summary.topCategory.pct}%)

@@ -159,13 +159,13 @@ export default function NutritionPanel({
         <h2 className="font-bold text-sm flex items-center gap-2">
           🥗 영양 정보
           {data.servingSize && (
-            <span className="text-[11px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
+            <span className="text-2xs font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
               1회 제공량 {data.servingSize}
             </span>
           )}
         </h2>
         {data.foodName && (
-          <span className="text-[11px] text-ink-4 truncate max-w-[60%]">
+          <span className="text-2xs text-ink-4 truncate max-w-[60%]">
             매칭: {data.foodName}
           </span>
         )}
@@ -176,7 +176,7 @@ export default function NutritionPanel({
           {flags.map((f) => (
             <span
               key={f.label}
-              className={`text-[11px] border rounded-full px-2 py-0.5 ${f.cls}`}
+              className={`text-2xs border rounded-full px-2 py-0.5 ${f.cls}`}
             >
               ⚠️ {f.label}
             </span>
@@ -200,7 +200,7 @@ export default function NutritionPanel({
                 <dt className="text-ink-3">{r.label}</dt>
                 <dd className="font-medium text-ink-1">
                   {formatVal(val, r.decimals ?? 1)}
-                  <span className="text-[11px] text-ink-4 ml-0.5">
+                  <span className="text-2xs text-ink-4 ml-0.5">
                     {r.unit}
                   </span>
                 </dd>
@@ -210,9 +210,9 @@ export default function NutritionPanel({
         </dl>
       )}
 
-      <div className="mt-3 text-[11px] text-ink-4">출처: {sourceLabel}</div>
+      <div className="mt-3 text-2xs text-ink-4">출처: {sourceLabel}</div>
       {flags.length > 0 && (
-        <div className="mt-1 text-[10px] italic text-ink-4">
+        <div className="mt-1 text-3xs italic text-ink-4">
           1회 제공량 기준 일반적 권고치 — 정확한 기준은 식약처 가이드 참조
         </div>
       )}

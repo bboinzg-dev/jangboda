@@ -266,7 +266,7 @@ export default function PriceListClient({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {isLowest && (
-                    <span className="bg-brand-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                    <span className="bg-brand-500 text-white text-2xs font-semibold px-2 py-0.5 rounded-full shrink-0">
                       최저가
                     </span>
                   )}
@@ -302,7 +302,7 @@ export default function PriceListClient({
                             href={p.productUrl}
                             kind="product_buy"
                             id={p.priceId}
-                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-success/30 bg-success-soft hover:bg-success-soft text-success-text font-medium"
+                            className="inline-flex items-center gap-1 text-2xs px-2 py-1 rounded-md border border-success/30 bg-success-soft hover:bg-success-soft text-success-text font-medium"
                           >
                             <span aria-hidden>🛒</span>
                             <span>구매하러 가기</span>
@@ -310,7 +310,7 @@ export default function PriceListClient({
                           </TrackedLink>
                         )}
                         <span
-                          className="text-[10px] text-ink-3"
+                          className="text-3xs text-ink-3"
                           title="온라인 가격은 배송비/묶음 수량에 따라 실제 부담이 다를 수 있어요"
                         >
                           📦 배송비 별도
@@ -330,7 +330,7 @@ export default function PriceListClient({
                           {formatWon(p.price)}
                         </div>
                         {uparts && (
-                          <div className="text-[11px] text-ink-3 tabular-nums leading-tight mt-1">
+                          <div className="text-2xs text-ink-3 tabular-nums leading-tight mt-1">
                             {uparts.basis} {uparts.amount}
                           </div>
                         )}
@@ -343,7 +343,7 @@ export default function PriceListClient({
                   {p.paidPrice != null &&
                     p.paidPrice < p.price &&
                     isPromoFresh(p.updatedAt) && (
-                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-danger-text bg-danger-soft border border-danger/30 rounded px-1.5 py-0.5 font-medium">
+                      <div className="mt-1 inline-flex items-center gap-1 text-2xs text-danger-text bg-danger-soft border border-danger/30 rounded px-1.5 py-0.5 font-medium">
                         🎉 최근 행사가 {formatWon(p.paidPrice)}
                         {p.promotionType ? ` · ${p.promotionType}` : ""}
                       </div>
@@ -358,7 +358,7 @@ export default function PriceListClient({
                       />
                     )}
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${tag.color}`}
+                      className={`text-3xs px-1.5 py-0.5 rounded ${tag.color}`}
                     >
                       {tag.label}
                     </span>
@@ -379,7 +379,7 @@ export default function PriceListClient({
       )}
 
       {hiddenOutlierCount > 0 && outliers.length === 0 && (
-        <div className="mt-2 text-[11px] text-ink-3 text-center">
+        <div className="mt-2 text-2xs text-ink-3 text-center">
           온라인몰 호가성 {hiddenOutlierCount}건은 자동 제외됨
         </div>
       )}
@@ -393,7 +393,7 @@ export default function PriceListClient({
               </span>
             )}
           </summary>
-          <div className="px-3 pb-3 text-[11px] text-warning-text/80 mb-1">
+          <div className="px-3 pb-3 text-2xs text-warning-text/80 mb-1">
             같은 상품으로 등록됐지만 단가가 다른 매장과 크게 다릅니다.
             대용량/소포장 등 포장 단위 차이일 수 있어 비교 목록에서 분리했습니다.
           </div>
@@ -416,7 +416,7 @@ export default function PriceListClient({
                         {p.chainName} · {p.storeName}
                       </span>
                     </div>
-                    <div className="text-[10px] text-ink-3 mt-0.5">
+                    <div className="text-3xs text-ink-3 mt-0.5">
                       {unitPriceLabel(p.price, unit) ?? "단가 계산 불가"}
                       {" · "}
                       {tag.label} · {formatRelativeDate(p.updatedAt)}

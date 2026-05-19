@@ -126,12 +126,12 @@ export default function IngredientsPanel({
       <h2 className="font-bold text-sm mb-1 flex items-center gap-2">
         🧪 원재료 정보
         {data.productType && (
-          <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
+          <span className="text-3xs font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
             {data.productType}
           </span>
         )}
       </h2>
-      <div className="text-[11px] text-ink-4 mb-2">
+      <div className="text-2xs text-ink-4 mb-2">
         출처: {sourceLabel}
       </div>
 
@@ -142,7 +142,7 @@ export default function IngredientsPanel({
           {allergens.map((a) => (
             <span
               key={a}
-              className="text-[11px] bg-orange-100 text-orange-700 border border-orange-200 rounded-full px-2 py-0.5"
+              className="text-2xs bg-orange-100 text-orange-700 border border-orange-200 rounded-full px-2 py-0.5"
             >
               알레르기: {a}
             </span>

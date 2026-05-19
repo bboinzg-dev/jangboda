@@ -16,7 +16,7 @@ export default function DirectionsButton({ name, lat, lng }: Props) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-border bg-surface hover:bg-surface-muted active:bg-surface-muted text-ink-2"
+      className="inline-flex items-center gap-1 text-2xs px-2 py-1 rounded-md border border-border bg-surface hover:bg-surface-muted active:bg-surface-muted text-ink-2"
       aria-label={`${name} 길찾기`}
     >
       <span aria-hidden>🚶</span>

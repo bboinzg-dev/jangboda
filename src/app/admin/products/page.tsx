@@ -111,7 +111,7 @@ export default async function AdminProductsPage({
                     <div className="text-xs text-ink-3">{p.brand}</div>
                   )}
                   {p.hasHaccp && (
-                    <span className="inline-block text-[10px] px-1.5 py-0.5 mt-1 rounded bg-success-soft text-success-text">
+                    <span className="inline-block text-3xs px-1.5 py-0.5 mt-1 rounded bg-success-soft text-success-text">
                       HACCP
                     </span>
                   )}

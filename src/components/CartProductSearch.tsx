@@ -176,18 +176,18 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                   <div className="font-medium text-sm truncate flex items-center gap-1.5 text-ink-1">
                     <span className="truncate">{p.name}</span>
                     {p.hasHaccp && (
-                      <span className="inline-flex items-center rounded bg-success-soft text-success-text px-1.5 py-0.5 text-[10px] font-medium shrink-0">
+                      <span className="inline-flex items-center rounded bg-success-soft text-success-text px-1.5 py-0.5 text-3xs font-medium shrink-0">
                         HACCP
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-ink-3 truncate">
+                  <div className="text-2xs text-ink-3 truncate">
                     {p.category}
                     {p.brand ? ` · ${p.brand}` : ""}
                     {p.unit ? ` · ${p.unit}` : ""}
                   </div>
                   {minPrice > 0 && (
-                    <div className="text-[11px] text-ink-2 mt-0.5">
+                    <div className="text-2xs text-ink-2 mt-0.5">
                       최저 <span className="font-semibold">{formatWon(minPrice)}</span>
                     </div>
                   )}
@@ -201,7 +201,7 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
                         return (
                           <span
                             key={name}
-                            className="inline-flex items-center text-[10px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
+                            className="inline-flex items-center text-3xs bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                             title={count ? `${name} ${count}매장` : name}
                           >
                             {name}

@@ -157,7 +157,7 @@ export default async function KamisPage({
                       </span>
                     </div>
                   )}
-                  <div className="text-[10px] text-ink-4 mt-1">
+                  <div className="text-3xs text-ink-4 mt-1">
                     {p.source === "kamis" ? "KAMIS" : "통계청"} ·{" "}
                     {formatRelativeDate(p.createdAt)}
                   </div>

@@ -49,7 +49,7 @@ function ScoreBadge({
   return (
     <div className={`shrink-0 text-center rounded px-2 py-1 ${color}`}>
       <div className="text-base font-bold leading-none">{score}</div>
-      <div className="text-[10px] mt-0.5">{label}</div>
+      <div className="text-3xs mt-0.5">{label}</div>
     </div>
   );
 }

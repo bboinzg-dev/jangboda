@@ -237,14 +237,14 @@ export default function CattleTracePanel({
           )}
 
           {data.source === "mock" && (
-            <div className="text-[11px] text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
+            <div className="text-2xs text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
               개발 모드: 샘플 데이터 (실제 API 키 미설정)
             </div>
           )}
         </div>
       )}
 
-      <p className="text-[11px] text-ink-4">
+      <p className="text-2xs text-ink-4">
         출처: 식품의약품안전처 쇠고기이력추적 API
       </p>
     </section>
@@ -262,7 +262,7 @@ function Field({
 }) {
   return (
     <div className={full ? "col-span-2" : ""}>
-      <dt className="text-[10px] text-ink-4">{label}</dt>
+      <dt className="text-3xs text-ink-4">{label}</dt>
       <dd className="text-ink-1 font-medium truncate">{value}</dd>
     </div>
   );

@@ -121,11 +121,11 @@ export default function RecipeRecommendations({ productNames }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 flex-wrap">
                     {r.category && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
+                      <span className="text-3xs font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
                         {r.category}
                       </span>
                     )}
-                    <span className="text-[10px] bg-success-soft text-success-text px-1.5 py-0.5 rounded font-bold">
+                    <span className="text-3xs bg-success-soft text-success-text px-1.5 py-0.5 rounded font-bold">
                       주재료 {r.totalIngredients}종 중 {r.matchCount}종 보유
                     </span>
                   </div>
@@ -133,12 +133,12 @@ export default function RecipeRecommendations({ productNames }: Props) {
                     {r.name}
                   </div>
                   {r.matchedIngredients.length > 0 && (
-                    <div className="text-[11px] text-ink-4 truncate mt-0.5">
+                    <div className="text-2xs text-ink-4 truncate mt-0.5">
                       ✓ {r.matchedIngredients.slice(0, 5).join(", ")}
                     </div>
                   )}
                   {r.caloriesKcal !== null && (
-                    <div className="text-[11px] text-ink-4 mt-0.5">
+                    <div className="text-2xs text-ink-4 mt-0.5">
                       🔥 {Math.round(r.caloriesKcal)}kcal
                     </div>
                   )}

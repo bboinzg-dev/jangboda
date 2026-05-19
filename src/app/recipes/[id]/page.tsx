@@ -88,7 +88,7 @@ export default async function RecipeDetailPage({
             {tags.map((t, i) => (
               <span
                 key={`${t}-${i}`}
-                className="text-[11px] text-ink-4 bg-surface-muted rounded-full px-2 py-0.5"
+                className="text-2xs text-ink-4 bg-surface-muted rounded-full px-2 py-0.5"
               >
                 #{t}
               </span>
@@ -123,7 +123,7 @@ export default async function RecipeDetailPage({
                   <Link
                     key={ing}
                     href={`/recipes?q=${encodeURIComponent(ing)}`}
-                    className="text-[11px] bg-surface-muted hover:bg-surface-sunken rounded px-2 py-0.5 text-ink-2"
+                    className="text-2xs bg-surface-muted hover:bg-surface-sunken rounded px-2 py-0.5 text-ink-2"
                   >
                     {ing}
                   </Link>
@@ -178,7 +178,7 @@ export default async function RecipeDetailPage({
         </section>
       )}
 
-      <footer className="text-[11px] text-ink-4 pt-2">
+      <footer className="text-2xs text-ink-4 pt-2">
         출처: 식품의약품안전처 식품안전나라 · 조리식품 레시피 DB (COOKRCP01)
       </footer>
     </div>
@@ -196,11 +196,11 @@ function NutritionItem({
 }) {
   return (
     <div className="text-center">
-      <div className="text-[10px] text-ink-4">{label}</div>
+      <div className="text-3xs text-ink-4">{label}</div>
       <div className="text-sm md:text-base font-bold text-ink-1 mt-0.5">
         {value !== null ? Math.round(value * 10) / 10 : "—"}
       </div>
-      <div className="text-[10px] text-ink-4">{unit}</div>
+      <div className="text-3xs text-ink-4">{unit}</div>
     </div>
   );
 }

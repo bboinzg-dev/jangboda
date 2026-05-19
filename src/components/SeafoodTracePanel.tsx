@@ -234,7 +234,7 @@ export default function SeafoodTracePanel({
             <div className="border border-border rounded-lg p-3">
               <div className="text-xs font-semibold text-ink-2 mb-2 flex items-center gap-2">
                 생산이력
-                <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
+                <span className="text-3xs font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
                   {result.productions.length}건
                 </span>
               </div>
@@ -270,7 +270,7 @@ export default function SeafoodTracePanel({
             <div className="border border-border rounded-lg p-3">
               <div className="text-xs font-semibold text-ink-2 mb-2 flex items-center gap-2">
                 출하이력
-                <span className="text-[10px] font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
+                <span className="text-3xs font-normal text-ink-4 bg-surface-muted rounded px-1.5 py-0.5">
                   {result.releases.length}건
                 </span>
               </div>
@@ -287,7 +287,7 @@ export default function SeafoodTracePanel({
                           {fmtDate(r.releaseDate)}
                         </span>
                         {r.releaseDvsName && (
-                          <span className="ml-2 text-[11px] bg-brand-soft text-brand-700 rounded px-1.5 py-0.5">
+                          <span className="ml-2 text-2xs bg-brand-soft text-brand-700 rounded px-1.5 py-0.5">
                             {r.releaseDvsName}
                           </span>
                         )}
@@ -307,14 +307,14 @@ export default function SeafoodTracePanel({
           )}
 
           {result.source === "mock" && (
-            <div className="text-[11px] text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
+            <div className="text-2xs text-warning-text bg-warning-soft border border-warning-soft rounded px-2 py-1">
               ⚠ 개발 환경: 샘플(mock) 데이터입니다
             </div>
           )}
         </div>
       )}
 
-      <div className="text-[11px] text-ink-4 mt-3">
+      <div className="text-2xs text-ink-4 mt-3">
         출처: 식품의약품안전처 수산물이력 API
       </div>
     </section>

@@ -399,7 +399,7 @@ export default async function ProductDetailPage({
                     </span>
                     {top.grade && (
                       <span
-                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${
+                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-3xs font-medium text-white ${
                           isFuzzy ? "bg-warning" : "bg-danger"
                         }`}
                       >
@@ -407,11 +407,11 @@ export default async function ProductDetailPage({
                       </span>
                     )}
                     {isFuzzy && top.score !== undefined && (
-                      <span className={`text-[11px] ${subTone}`}>
+                      <span className={`text-2xs ${subTone}`}>
                         매칭 정확도 {Math.round(top.score * 100)}%
                       </span>
                     )}
-                    <span className={`text-[11px] ${subTone}`}>
+                    <span className={`text-2xs ${subTone}`}>
                       {top.registeredAt.toLocaleDateString("ko-KR", {
                         year: "numeric",
                         month: "2-digit",
@@ -458,7 +458,7 @@ export default async function ProductDetailPage({
                       </ul>
                     </details>
                   )}
-                  <div className={`mt-2 text-[11px] ${subTone}`}>
+                  <div className={`mt-2 text-2xs ${subTone}`}>
                     {isFuzzy
                       ? "바코드가 없는 회수 — 제조사·제품명 매칭으로 추정한 결과입니다. 확인이 필요합니다."
                       : "같은 바코드(EAN)로 매칭된 회수 정보입니다."}{" "}
@@ -478,7 +478,7 @@ export default async function ProductDetailPage({
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             {product.manufacturer && (
               <div className="bg-surface-muted rounded px-2 py-1.5">
-                <div className="text-[10px] text-ink-3">제조</div>
+                <div className="text-3xs text-ink-3">제조</div>
                 <div className="font-medium text-ink-2 truncate">
                   {product.manufacturer}
                 </div>
@@ -486,7 +486,7 @@ export default async function ProductDetailPage({
             )}
             {product.origin && (
               <div className="bg-surface-muted rounded px-2 py-1.5">
-                <div className="text-[10px] text-ink-3">원산지</div>
+                <div className="text-3xs text-ink-3">원산지</div>
                 <div className="font-medium text-ink-2 truncate">
                   {product.origin}
                 </div>
@@ -494,7 +494,7 @@ export default async function ProductDetailPage({
             )}
             {product.grade && (
               <div className="bg-warning-soft rounded px-2 py-1.5">
-                <div className="text-[10px] text-warning-text">등급</div>
+                <div className="text-3xs text-warning-text">등급</div>
                 <div className="font-medium text-warning-text truncate">
                   {product.grade}
                 </div>
@@ -502,7 +502,7 @@ export default async function ProductDetailPage({
             )}
             {product.certifications && product.certifications.length > 0 && (
               <div className="bg-success-soft rounded px-2 py-1.5">
-                <div className="text-[10px] text-success-text">인증</div>
+                <div className="text-3xs text-success-text">인증</div>
                 <div className="font-medium text-success-text truncate">
                   {product.certifications.join(", ")}
                 </div>
@@ -536,7 +536,7 @@ export default async function ProductDetailPage({
               />
             </div>
             {excludedCount > 0 && (
-              <div className="mt-2 text-[11px] text-ink-3">
+              <div className="mt-2 text-2xs text-ink-3">
                 {headlinePrices.length}건 비교 · 시세/이상치 {excludedCount}건 제외
               </div>
             )}
@@ -583,7 +583,7 @@ export default async function ProductDetailPage({
         <section className="bg-success-soft border border-success/30 rounded-xl p-4">
           <h2 className="font-bold text-success mb-1 flex items-center gap-2 text-sm">
             📊 공공 시세 (참고)
-            <span className="text-[11px] text-success-text font-normal">
+            <span className="text-2xs text-success-text font-normal">
               KAMIS 전국 평균 — 매장 가격 아님
             </span>
           </h2>
@@ -609,13 +609,13 @@ export default async function ProductDetailPage({
                     <span className="text-success">{r.chainName}</span>
                     <span className="font-bold tabular-nums text-success">
                       {formatWon(r.price)}
-                      <span className="text-[11px] text-success-text font-normal ml-1">
+                      <span className="text-2xs text-success-text font-normal ml-1">
                         {unitPriceLabel(r.price, product.unit)}
                       </span>
                     </span>
                   </div>
                   {/* 전일대비 변동·주간평균·조사일 — metadata 있으면 노출 */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-success-text">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-2xs text-success-text">
                     {changePct != null && (
                       <span
                         className={`tabular-nums font-medium ${
@@ -722,7 +722,7 @@ export default async function ProductDetailPage({
                   <>
                     온라인몰 가격 {onlineHiddenCount}건이 자동 제외됐어요.
                     <br />
-                    <span className="text-[11px] text-ink-3">
+                    <span className="text-2xs text-ink-3">
                       옥션·G마켓 호가성 가격 + 마이너 셀러(단위 검증 안 됨)는 비교 신뢰도가 낮아 제외
                     </span>
                   </>
@@ -810,7 +810,7 @@ function PriceStat({
         highlight ? "bg-brand-soft border border-line-strong" : "bg-surface-muted"
       }`}
     >
-      <div className="text-[11px] sm:text-xs text-ink-3">{label}</div>
+      <div className="text-2xs sm:text-xs text-ink-3">{label}</div>
       {/* 모바일은 좁은 3-col이라 lg, sm↑은 2xl로 시각 강조 */}
       <div
         className={`text-lg sm:text-2xl font-extrabold tabular-nums tracking-tight ${
@@ -821,7 +821,7 @@ function PriceStat({
       </div>
       {subValue && (
         <div
-          className={`text-[10px] mt-0.5 tabular-nums ${
+          className={`text-3xs mt-0.5 tabular-nums ${
             highlight ? "text-brand-600/70" : "text-ink-3"
           }`}
         >

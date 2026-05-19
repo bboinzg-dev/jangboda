@@ -54,7 +54,7 @@ export default function CategorySelect({
       value={value}
       onChange={(e) => change(e.target.value)}
       disabled={saving}
-      className={`text-[10px] px-1.5 py-0.5 rounded border ${
+      className={`text-3xs px-1.5 py-0.5 rounded border ${
         isOverride
           ? "border-line-strong bg-brand-soft text-brand-700"
           : "border-line bg-surface-muted text-ink-3"

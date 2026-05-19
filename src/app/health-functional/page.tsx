@@ -188,7 +188,7 @@ export default async function HealthFunctionalBrowsePage({
         buildHref={buildHref}
       />
 
-      <p className="text-[11px] text-ink-4 leading-relaxed">
+      <p className="text-2xs text-ink-4 leading-relaxed">
         출처: 식약처 건강기능식품 DB(I0760·I-0050). 본 정보는 참고용이며 실제 제품
         표시와 다를 수 있습니다.
       </p>
@@ -225,12 +225,12 @@ function CategoryList({
           className="border border-line rounded-lg p-3 bg-surface"
         >
           <div className="font-medium text-ink-1 text-sm">{c.groupName}</div>
-          <div className="text-[11px] text-ink-4 mt-0.5">
+          <div className="text-2xs text-ink-4 mt-0.5">
             {[c.largeCategoryName, c.midCategoryName, c.smallCategoryName]
               .filter(Boolean)
               .join(" › ") || "-"}
           </div>
-          <div className="text-[10px] text-ink-4 mt-1">
+          <div className="text-3xs text-ink-4 mt-1">
             그룹코드: {c.groupCode}
           </div>
         </li>
@@ -287,11 +287,11 @@ function RawMaterialList({
               </div>
             )}
             {intake && (
-              <div className="text-[11px] text-ink-4 mt-1">
+              <div className="text-2xs text-ink-4 mt-1">
                 일일 섭취량: {intake}
               </div>
             )}
-            <div className="text-[10px] text-ink-4 mt-1">
+            <div className="text-3xs text-ink-4 mt-1">
               인정번호: {rm.recognitionNo}
             </div>
           </li>

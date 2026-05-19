@@ -159,7 +159,7 @@ export default async function BenefitDetailPage({
         )}
 
         {/* 면책 — 잘못된 매칭으로 인한 신청·미신청 책임 회피 */}
-        <p className="mt-5 text-[11px] text-ink-4 leading-relaxed border-t border-line pt-3">
+        <p className="mt-5 text-2xs text-ink-4 leading-relaxed border-t border-line pt-3">
           본 정보는 {sourceLabel(benefit.sourceCode)} 등 공공 데이터에서 자동 수집·정형화한 참고 자료입니다.
           최신·정확한 자격 요건과 신청 방법은 반드시 해당 기관에서 직접 확인하세요.
           매칭 결과는 입력하신 정보를 기반으로 한 추정이며, 실제 자격 판정과 다를 수 있습니다.

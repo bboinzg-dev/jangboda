@@ -77,19 +77,19 @@ function ItemCard({ item }: { item: RecallItem }) {
           </span>
           {item.grade && (
             <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${gradeClass}`}
+              className={`text-3xs font-bold px-1.5 py-0.5 rounded shrink-0 ${gradeClass}`}
             >
               {item.grade}
             </span>
           )}
         </div>
         {item.manufacturer && (
-          <div className="text-[11px] text-ink-3 truncate">
+          <div className="text-2xs text-ink-3 truncate">
             {item.manufacturer}
           </div>
         )}
         {item.reason && (
-          <div className="text-[11px] text-danger-text line-clamp-1">
+          <div className="text-2xs text-danger-text line-clamp-1">
             {item.reason}
           </div>
         )}

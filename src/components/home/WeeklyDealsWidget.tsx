@@ -113,7 +113,7 @@ export default async function WeeklyDealsWidget() {
                   {d.productName}
                 </div>
                 {d.chainName && (
-                  <div className="text-[10px] text-ink-3 truncate mt-0.5">
+                  <div className="text-3xs text-ink-3 truncate mt-0.5">
                     {d.chainName}
                   </div>
                 )}
@@ -121,7 +121,7 @@ export default async function WeeklyDealsWidget() {
             </div>
             {/* 원가(작은 글씨) ↔ 할인가(큰 글씨) — baseline은 작은 글씨가 위로 떠 보임 → items-center */}
             <div className="flex items-center justify-between gap-1 mt-auto pt-1">
-              <div className="text-[10px] text-ink-3 line-through tabular-nums">
+              <div className="text-3xs text-ink-3 line-through tabular-nums">
                 {formatWon(d.list)}
               </div>
               <div className="text-sm font-bold tabular-nums text-danger-text">
@@ -129,11 +129,11 @@ export default async function WeeklyDealsWidget() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <span className="bg-danger-soft text-danger-text text-[10px] font-bold px-1.5 py-0.5 rounded">
+              <span className="bg-danger-soft text-danger-text text-3xs font-bold px-1.5 py-0.5 rounded">
                 -{d.savingsPct}%
               </span>
               {d.promotionType && (
-                <span className="text-[10px] text-ink-3">{d.promotionType}</span>
+                <span className="text-3xs text-ink-3">{d.promotionType}</span>
               )}
             </div>
           </Link>

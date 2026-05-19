@@ -181,12 +181,12 @@ export default async function RecipesPage({
               <div className="p-3 flex-1 flex flex-col gap-1">
                 <div className="flex items-center gap-1 flex-wrap">
                   {r.category && (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
+                    <span className="text-3xs font-medium px-1.5 py-0.5 rounded bg-brand-soft text-brand-700">
                       {r.category}
                     </span>
                   )}
                   {r.cookingMethod && (
-                    <span className="text-[10px] text-ink-4">
+                    <span className="text-3xs text-ink-4">
                       {r.cookingMethod}
                     </span>
                   )}
@@ -195,7 +195,7 @@ export default async function RecipesPage({
                   {r.name}
                 </div>
                 {r.caloriesKcal !== null && (
-                  <div className="text-[11px] text-ink-4 mt-auto">
+                  <div className="text-2xs text-ink-4 mt-auto">
                     🔥 {Math.round(r.caloriesKcal)}kcal
                   </div>
                 )}
@@ -230,7 +230,7 @@ export default async function RecipesPage({
         </nav>
       )}
 
-      <footer className="text-[11px] text-ink-4 pt-2">
+      <footer className="text-2xs text-ink-4 pt-2">
         출처: 식품의약품안전처 식품안전나라 · 조리식품 레시피 DB (COOKRCP01)
       </footer>
     </div>

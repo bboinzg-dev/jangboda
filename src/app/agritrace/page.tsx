@@ -166,7 +166,7 @@ export default async function AgriTracePage({
                       </div>
                     )}
                   </div>
-                  <div className="text-[11px] text-ink-4 shrink-0 text-right">
+                  <div className="text-2xs text-ink-4 shrink-0 text-right">
                     <div className="font-mono">{item.histTraceRegNo}</div>
                     {item.validBeginDate && item.validEndDate && (
                       <div className="mt-0.5">

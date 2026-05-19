@@ -134,7 +134,7 @@ export default async function AdminDashboard() {
                   </div>
                 </div>
                 <span
-                  className={`text-[11px] px-2 py-0.5 rounded font-medium ${
+                  className={`text-2xs px-2 py-0.5 rounded font-medium ${
                     r.status === "verified"
                       ? "bg-success-soft text-success-text"
                       : r.status === "failed"

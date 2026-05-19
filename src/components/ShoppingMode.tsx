@@ -213,7 +213,7 @@ export default function ShoppingMode({ items, onClose }: Props) {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="mt-1 text-right text-[11px] text-white/50 tabular-nums">
+          <div className="mt-1 text-right text-2xs text-white/50 tabular-nums">
             {progressPct}%
           </div>
         </div>

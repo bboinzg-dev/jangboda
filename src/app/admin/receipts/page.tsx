@@ -93,7 +93,7 @@ export default async function AdminReceiptsPage({
                 </div>
               )}
               <span
-                className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded font-bold ${
+                className={`absolute top-2 right-2 text-3xs px-2 py-0.5 rounded font-bold ${
                   r.status === "verified"
                     ? "bg-success-soft text-success-text"
                     : r.status === "parsed"

@@ -46,7 +46,7 @@ export default function SponsorToggle({
         type="button"
         onClick={toggle}
         disabled={busy}
-        className={`text-[11px] px-2 py-1 rounded font-bold ${
+        className={`text-2xs px-2 py-1 rounded font-bold ${
           active
             ? "bg-success-soft text-success-text"
             : "bg-surface-sunken text-ink-3"
@@ -58,7 +58,7 @@ export default function SponsorToggle({
         type="button"
         onClick={remove}
         disabled={busy}
-        className="text-[11px] text-ink-3 hover:text-danger-text"
+        className="text-2xs text-ink-3 hover:text-danger-text"
       >
         삭제
       </button>

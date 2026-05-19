@@ -24,7 +24,7 @@ export default function TrustBadge({ count, latestDate, source }: Props) {
   void source;
 
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded ${className}`}>
+    <span className={`text-3xs px-1.5 py-0.5 rounded ${className}`}>
       {label}
     </span>
   );

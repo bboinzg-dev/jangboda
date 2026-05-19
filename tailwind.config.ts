@@ -95,6 +95,10 @@ const config: Config = {
         "3xl": "1.25rem",
       },
       fontSize: {
+        // 마이크로 라벨·메타 — 배지/캡션/타임스탬프에 통용
+        // Tailwind 기본은 xs:12px가 최소라 10/11px 자리가 없어 추가 토큰으로 정의.
+        "3xs": ["10px", { lineHeight: "14px" }],
+        "2xs": ["11px", { lineHeight: "15px" }],
         "kpi-hero": ["38px", { lineHeight: "1", letterSpacing: "-1px", fontWeight: "800" }],
         "kpi": ["26px", { lineHeight: "1.1", letterSpacing: "-0.5px", fontWeight: "700" }],
       },

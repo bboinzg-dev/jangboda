@@ -210,7 +210,7 @@ export default async function ParsaProductDetailPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       {isLowest && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-500 text-white">
+                        <span className="text-3xs font-bold px-1.5 py-0.5 rounded bg-brand-500 text-white">
                           최저가
                         </span>
                       )}
@@ -235,12 +235,12 @@ export default async function ParsaProductDetailPage({
                     </div>
                     <div className="flex gap-1 justify-end mt-0.5">
                       {p.plusoneYn && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-danger-soft text-danger-text">
+                        <span className="text-3xs font-bold px-1.5 py-0.5 rounded bg-danger-soft text-danger-text">
                           1+1
                         </span>
                       )}
                       {p.discountYn && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning-soft text-warning-text">
+                        <span className="text-3xs font-bold px-1.5 py-0.5 rounded bg-warning-soft text-warning-text">
                           할인
                         </span>
                       )}
@@ -253,7 +253,7 @@ export default async function ParsaProductDetailPage({
         </section>
       )}
 
-      <footer className="text-[11px] text-ink-4 pt-2">
+      <footer className="text-2xs text-ink-4 pt-2">
         출처: 한국소비자원 참가격(price.go.kr). 표시 가격은 조사 시점의 정보로
         실제 매장 가격과 다를 수 있습니다.
       </footer>

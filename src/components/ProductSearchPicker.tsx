@@ -82,7 +82,7 @@ export default function ProductSearchPicker({
           <div className="min-w-0">
             <div className="font-medium truncate">{selected.name}</div>
             {selected.unit && (
-              <div className="text-[10px] text-ink-4 truncate">
+              <div className="text-3xs text-ink-4 truncate">
                 {selected.unit}
               </div>
             )}
@@ -122,7 +122,7 @@ export default function ProductSearchPicker({
                   aria-selected="false"
                 >
                   <div className="font-medium truncate">{p.name}</div>
-                  <div className="text-[10px] text-ink-4 truncate">
+                  <div className="text-3xs text-ink-4 truncate">
                     {p.category}
                     {p.brand ? ` · ${p.brand}` : ""}
                     {p.unit ? ` · ${p.unit}` : ""}

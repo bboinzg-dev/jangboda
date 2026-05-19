@@ -56,7 +56,7 @@ export default async function AdSlot({ placement, limit = 1 }: Props) {
             />
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-[10px] text-ink-3 mb-0.5">
+            <div className="flex items-center gap-1.5 text-3xs text-ink-3 mb-0.5">
               <span className="bg-surface-muted px-1.5 py-0.5 rounded">협찬</span>
             </div>
             <div className="font-semibold text-sm text-ink-1 truncate">

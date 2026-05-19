@@ -145,7 +145,7 @@ export default function HealthFunctionalPanel({
                   >
                     <span className="font-medium">{c.groupName}</span>
                     {c.largeCategoryName && (
-                      <span className="text-[10px] text-success">
+                      <span className="text-3xs text-success">
                         · {c.largeCategoryName}
                       </span>
                     )}
@@ -193,7 +193,7 @@ export default function HealthFunctionalPanel({
                           <button
                             type="button"
                             onClick={() => toggleWarning(rm.id)}
-                            className="text-[11px] text-warning-text hover:opacity-80 underline-offset-2 hover:underline"
+                            className="text-2xs text-warning-text hover:opacity-80 underline-offset-2 hover:underline"
                           >
                             {warningOpen
                               ? "▾ 주의사항 닫기"
@@ -215,7 +215,7 @@ export default function HealthFunctionalPanel({
         </>
       )}
 
-      <p className="text-[11px] text-ink-4 leading-relaxed">
+      <p className="text-2xs text-ink-4 leading-relaxed">
         출처: 식약처 건강기능식품 DB. 본 정보는 참고용이며 실제 제품 표시와 다를 수
         있습니다.
       </p>

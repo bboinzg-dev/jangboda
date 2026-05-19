@@ -299,7 +299,7 @@ export default async function ParsaPage({
         </div>
       </section>
 
-      <footer className="text-[11px] text-ink-4 pt-2">
+      <footer className="text-2xs text-ink-4 pt-2">
         출처: 한국소비자원 참가격(price.go.kr). 매주 금요일 갱신.
       </footer>
     </div>

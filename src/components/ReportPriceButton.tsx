@@ -52,7 +52,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
   if (done) {
     return (
       <span
-        className="text-[10px] text-ink-4 px-1.5 py-0.5"
+        className="text-3xs text-ink-4 px-1.5 py-0.5"
         title="신고 접수됨"
       >
         🚩 신고됨
@@ -65,7 +65,7 @@ export default function ReportPriceButton({ priceId, currentPrice }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[10px] text-ink-4 hover:text-danger px-1.5 py-0.5"
+        className="text-3xs text-ink-4 hover:text-danger px-1.5 py-0.5"
         title="가격 신고"
         aria-label="가격 신고"
       >

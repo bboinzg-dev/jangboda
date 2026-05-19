@@ -18,7 +18,7 @@ export default function SourceBadge({ source }: Props) {
     className: "bg-surface-muted text-ink-3",
   };
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded ${meta.className}`}>
+    <span className={`text-3xs px-1.5 py-0.5 rounded ${meta.className}`}>
       {meta.text}
     </span>
   );

@@ -100,7 +100,7 @@ export default async function RecallsPage({
           식약처가 회수·판매중지 처분한 식품 목록입니다. 같은 제품을
           가지고 계시면 즉시 사용을 중지하세요.
         </p>
-        <p className="text-[11px] text-ink-4 leading-relaxed">
+        <p className="text-2xs text-ink-4 leading-relaxed">
           본 정보는 식품의약품안전처 공공데이터에서 자동 수집한 참고 자료이며,
           최신·정확한 회수 처분 내용은 식약처 공식 공고를 확인하세요.
           제품 매칭은 바코드·제조사·제품명 기반 자동 추정이며 동명의 다른 제품일 수 있습니다.
@@ -172,7 +172,7 @@ export default async function RecallsPage({
                     </h3>
                     {r.grade && (
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${gradeBadgeClass(
+                        className={`text-3xs font-bold px-2 py-0.5 rounded ${gradeBadgeClass(
                           r.grade
                         )}`}
                       >
@@ -188,7 +188,7 @@ export default async function RecallsPage({
                   <div className="text-xs text-danger-text mt-1 line-clamp-2">
                     {r.reason}
                   </div>
-                  <div className="text-[10px] text-ink-4 mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                  <div className="text-3xs text-ink-4 mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
                     <span>등록: {formatDate(r.registeredAt)}</span>
                     {r.barcode && <span>바코드: {r.barcode}</span>}
                     {r.foodTypeName && <span>유형: {r.foodTypeName}</span>}
@@ -206,7 +206,7 @@ export default async function RecallsPage({
         buildHref={buildHref}
       />
 
-      <footer className="text-[11px] text-ink-4 pt-2">
+      <footer className="text-2xs text-ink-4 pt-2">
         출처: 식품의약품안전처 식품안전나라 (회수·판매중지 정보 I0490).
       </footer>
     </div>

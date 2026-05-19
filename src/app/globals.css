@@ -168,18 +168,18 @@ html body {
     @apply absolute inset-x-0 top-0 h-0.5 bg-current opacity-70;
   }
   .badge-success {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-success-soft text-success-text rounded text-[11px] font-medium;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-success-soft text-success-text rounded text-2xs font-medium;
   }
   .badge-warning {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning-soft text-warning-text rounded text-[11px] font-medium;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning-soft text-warning-text rounded text-2xs font-medium;
   }
   .badge-danger {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-danger-soft text-danger-text rounded text-[11px] font-medium;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-danger-soft text-danger-text rounded text-2xs font-medium;
   }
   .badge-info {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-info-soft text-info-text rounded text-[11px] font-medium;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 bg-info-soft text-info-text rounded text-2xs font-medium;
   }
   .caption-mono {
-    @apply font-mono text-[11px] uppercase tracking-[0.08em] text-ink-3;
+    @apply font-mono text-2xs uppercase tracking-[0.08em] text-ink-3;
   }
 }

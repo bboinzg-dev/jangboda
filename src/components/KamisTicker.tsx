@@ -89,7 +89,7 @@ function ItemCard({ item }: { item: TickerItem }) {
         <div className="text-sm font-medium text-ink-1 truncate">
           {item.productName}
         </div>
-        <div className="text-[10px] text-ink-4 truncate">
+        <div className="text-3xs text-ink-4 truncate">
           {item.productUnit}
         </div>
       </div>
@@ -103,13 +103,13 @@ function ItemCard({ item }: { item: TickerItem }) {
           const upl = unitPriceLabel(item.price, item.productUnit);
           if (!upl) return null;
           return (
-            <div className="text-[11px] text-ink-4 tabular-nums">
+            <div className="text-2xs text-ink-4 tabular-nums">
               {upl}
             </div>
           );
         })()}
         {change !== null && pct !== null && (
-          <div className={`text-[10px] font-medium ${colorClass}`}>
+          <div className={`text-3xs font-medium ${colorClass}`}>
             {isUp ? "▲" : isDown ? "▼" : "—"}{" "}
             {Math.abs(change).toLocaleString("ko-KR")}원
             <span className="ml-1 opacity-80">

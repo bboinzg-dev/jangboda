@@ -34,7 +34,7 @@ export function Progress({
         />
       </div>
       {showLabel && (
-        <div className="text-[11px] text-ink-3 font-mono text-right tabular-nums">
+        <div className="text-2xs text-ink-3 font-mono text-right tabular-nums">
           {clamped}%
         </div>
       )}

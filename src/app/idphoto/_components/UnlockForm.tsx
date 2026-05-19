@@ -72,7 +72,7 @@ export default function UnlockForm({ onUnlock }: { onUnlock: () => void }) {
         </button>
       </form>
 
-      <p className="text-[11px] text-ink-4 text-center mt-4 leading-relaxed">
+      <p className="text-2xs text-ink-4 text-center mt-4 leading-relaxed">
         인증은 12시간 동안 유지됩니다.
       </p>
     </section>

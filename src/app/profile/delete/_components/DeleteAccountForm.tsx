@@ -73,7 +73,7 @@ export default function DeleteAccountForm({ nickname }: Props) {
       >
         {busy ? "탈퇴 처리 중…" : "탈퇴하기 (되돌릴 수 없음)"}
       </button>
-      <p className="text-[11px] text-ink-3">
+      <p className="text-2xs text-ink-3">
         탈퇴 후 같은 이메일로 다시 가입하면 새 계정이 만들어지며, 이전 데이터는
         복구되지 않습니다.
       </p>

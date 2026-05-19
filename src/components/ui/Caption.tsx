@@ -11,7 +11,7 @@ export function Caption({
   return (
     <span
       className={[
-        "font-mono text-[11px] uppercase tracking-[0.08em] text-ink-3",
+        "font-mono text-2xs uppercase tracking-[0.08em] text-ink-3",
         className,
       ].join(" ")}
     >

@@ -39,7 +39,7 @@ export default function FoodSafetyPanel({ data }: { data: unknown }) {
     <div className="card p-4">
       <h3 className="font-semibold text-ink-1 mb-3 flex items-center gap-2">
         🏛️ 식약처 등록 정보
-        <span className="text-[10px] text-ink-3 font-normal">
+        <span className="text-3xs text-ink-3 font-normal">
           (바코드 매칭)
         </span>
       </h3>
@@ -67,7 +67,7 @@ export default function FoodSafetyPanel({ data }: { data: unknown }) {
           />
         )}
       </dl>
-      <div className="mt-3 text-[10px] text-ink-3">
+      <div className="mt-3 text-3xs text-ink-3">
         출처: 식품안전나라 OpenAPI (C005·I2570)
       </div>
     </div>
@@ -85,7 +85,7 @@ function Field({
 }) {
   return (
     <div className={`bg-surface-muted rounded p-2 ${wide ? "col-span-2 sm:col-span-3" : ""}`}>
-      <dt className="text-[10px] text-ink-3">{label}</dt>
+      <dt className="text-3xs text-ink-3">{label}</dt>
       <dd className="font-medium text-ink-1 mt-0.5 break-words">{value}</dd>
     </div>
   );

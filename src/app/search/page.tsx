@@ -308,25 +308,25 @@ export default function SearchPage() {
                       {(p.origin || p.grade || (p.certifications && p.certifications.length > 0) || p.hasHaccp) && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {p.origin && (
-                            <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-2xs bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               🌾 {p.origin}
                             </span>
                           )}
                           {p.grade && (
-                            <span className="inline-flex items-center text-[11px] bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-2xs bg-warning-soft text-warning-text rounded px-1.5 py-0.5 font-medium">
                               {p.grade}
                             </span>
                           )}
                           {p.certifications?.slice(0, 2).map((c) => (
                             <span
                               key={c}
-                              className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
+                              className="inline-flex items-center text-2xs bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium"
                             >
                               {c}
                             </span>
                           ))}
                           {p.hasHaccp && (
-                            <span className="inline-flex items-center text-[11px] bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
+                            <span className="inline-flex items-center text-2xs bg-success-soft text-success-text rounded px-1.5 py-0.5 font-medium">
                               🏅 HACCP
                             </span>
                           )}
@@ -338,7 +338,7 @@ export default function SearchPage() {
                           {p.chains.map((c) => (
                             <span
                               key={c.name}
-                              className="inline-flex items-center text-[11px] bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
+                              className="inline-flex items-center text-2xs bg-surface-muted text-ink-2 rounded px-1.5 py-0.5"
                               title={`${c.name} ${c.count}매장`}
                             >
                               {c.name}
@@ -354,18 +354,18 @@ export default function SearchPage() {
                       {p.stats && p.stats.count > 0 ? (
                         <>
                           {/* 실판매가가 메인 — 사용자가 실제로 지불할 금액. 단가는 보조 비교용 */}
-                          <div className="text-[10px] text-ink-3 font-medium">
+                          <div className="text-3xs text-ink-3 font-medium">
                             최저가
                           </div>
                           <div className="text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight text-brand-600">
                             {formatWon(p.stats.min)}
                           </div>
                           {uparts && (
-                            <div className="text-[11px] text-ink-3 tabular-nums font-mono mt-0.5">
+                            <div className="text-2xs text-ink-3 tabular-nums font-mono mt-0.5">
                               {uparts.basis} {uparts.amount}
                             </div>
                           )}
-                          <div className="text-[10px] text-ink-3 mt-0.5">
+                          <div className="text-3xs text-ink-3 mt-0.5">
                             {p.stats.count}개 매장
                           </div>
                         </>
@@ -426,7 +426,7 @@ function CategoryChip({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap text-[11px] md:text-xs px-3 py-1.5 rounded-full border transition-colors ${
+      className={`shrink-0 whitespace-nowrap text-2xs md:text-xs px-3 py-1.5 rounded-full border transition-colors ${
         active
           ? "bg-ink-1 text-white border-ink-1"
           : "bg-surface text-ink-2 border-line hover:border-line-strong"

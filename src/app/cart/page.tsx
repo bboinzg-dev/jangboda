@@ -387,7 +387,7 @@ export default function CartPage() {
               "linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%)",
           }}
         >
-          <div className="font-mono text-[11px] tracking-wider text-white/85 uppercase">
+          <div className="font-mono text-2xs tracking-wider text-white/85 uppercase">
             최저 합계 · {heroData.cheapest.chainName}
           </div>
           <div className="mt-1 text-[42px] md:text-[48px] font-extrabold tabular-nums tracking-[-1.5px] leading-none">
@@ -472,7 +472,7 @@ export default function CartPage() {
                 ].join(" ")}
               >
                 {i === 0 && (
-                  <span className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-bl-lg">
+                  <span className="absolute top-0 right-0 bg-brand-500 text-white text-3xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-bl-lg">
                     최저가
                   </span>
                 )}
@@ -831,7 +831,7 @@ function ComparisonCard({
       className={["relative p-0 overflow-hidden", isCheapest ? "border-2 border-brand-500" : ""].join(" ")}
     >
       {isCheapest && (
-        <span className="absolute top-0 right-0 bg-brand-500 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-xl">
+        <span className="absolute top-0 right-0 bg-brand-500 text-white text-2xs font-bold uppercase tracking-wider px-3 py-1 rounded-bl-xl">
           최저가
         </span>
       )}
@@ -844,9 +844,9 @@ function ComparisonCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-bold text-ink-1 tracking-tight">{r.chainName}</span>
-              {isFavorite && <Badge tone="warning" className="text-[10px]">★ 즐겨찾기</Badge>}
+              {isFavorite && <Badge tone="warning" className="text-3xs">★ 즐겨찾기</Badge>}
               {distanceKm !== null && (
-                <span className="text-[11px] text-ink-3 bg-surface-muted px-1.5 py-0.5 rounded font-mono">
+                <span className="text-2xs text-ink-3 bg-surface-muted px-1.5 py-0.5 rounded font-mono">
                   {distanceKm < 10 ? distanceKm.toFixed(1) : distanceKm.toFixed(0)}km
                 </span>
               )}
@@ -867,9 +867,9 @@ function ComparisonCard({
               />
             </div>
             {isCheapest ? (
-              <div className="text-[11px] text-success-text font-mono mt-0.5">기준</div>
+              <div className="text-2xs text-success-text font-mono mt-0.5">기준</div>
             ) : diff > 0 ? (
-              <div className="text-[11px] text-danger font-mono mt-0.5 tabular-nums">
+              <div className="text-2xs text-danger font-mono mt-0.5 tabular-nums">
                 +{diff.toLocaleString("ko-KR")}원
               </div>
             ) : null}
