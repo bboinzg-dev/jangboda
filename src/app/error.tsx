@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logError } from "@/lib/observability";
 
 export default function ErrorPage({
   error,
@@ -10,7 +11,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[error.tsx]", error);
+    logError("app/error.tsx", error, { digest: error.digest });
   }, [error]);
 
   return (
@@ -27,7 +28,7 @@ export default function ErrorPage({
       </p>
       <button
         onClick={reset}
-        className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg"
+        className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
       >
         다시 시도
       </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const CATEGORIES = [
@@ -42,6 +42,21 @@ export default function ManualEntryDialog() {
     setOpen(false);
     reset();
   }
+
+  // 모달이 열린 동안 ESC 닫기 + 배경 스크롤 락
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,11 +109,14 @@ export default function ManualEntryDialog() {
           onClick={close}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manual-entry-title"
             className="bg-surface rounded-xl p-5 w-full max-w-md max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">✍️ 거래 직접 입력</h2>
+              <h2 id="manual-entry-title" className="text-lg font-bold">✍️ 거래 직접 입력</h2>
               <button
                 onClick={close}
                 className="text-ink-4 hover:text-ink-1 text-xl leading-none"

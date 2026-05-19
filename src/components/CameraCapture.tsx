@@ -76,6 +76,15 @@ export default function CameraCapture({
     };
   }, []);
 
+  // ESC 키로 카메라 닫기 — 모바일에선 시스템 백버튼이 효과 동일
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
   function capture() {
     const video = videoRef.current;
     const canvas = canvasRef.current;

@@ -50,7 +50,7 @@ export default async function AdSlot({ placement, limit = 1 }: Props) {
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={s.imageUrl}
-              alt=""
+              alt={`${s.title} 협찬 이미지`}
               loading="lazy"
               className="w-14 h-14 rounded-xl object-cover bg-surface-muted shrink-0"
             />
