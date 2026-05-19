@@ -6,7 +6,7 @@
 //   <AdSlot placement="benefits_top" />
 //
 // 운영:
-//   /admin/sponsors (TODO 별도 페이지) 또는 prisma studio로 SponsorSlot 직접 등록
+//   /admin/sponsors 페이지에서 등록·토글 (prisma studio 대체 불필요)
 //   - placement: 위 코드와 약속한 키
 //   - active=true, startsAt/endsAt 또는 무기한
 //   - href: 외부 출구 (TrackedLink가 자동 적용됨)
