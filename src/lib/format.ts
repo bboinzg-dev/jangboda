@@ -19,7 +19,8 @@ export function freshnessTag(date: Date | string): {
 } {
   const d = typeof date === "string" ? new Date(date) : date;
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
-  if (days <= 7) return { label: "최신", color: "bg-emerald-100 text-emerald-700" };
-  if (days <= 30) return { label: "1개월 내", color: "bg-amber-100 text-amber-700" };
-  return { label: "오래됨", color: "bg-rose-100 text-rose-700" };
+  // 시맨틱 토큰 사용 — 다크모드 자동 보정 (tailwind.config.ts + globals.css CSS 변수)
+  if (days <= 7) return { label: "최신", color: "bg-success-soft text-success-text" };
+  if (days <= 30) return { label: "1개월 내", color: "bg-warning-soft text-warning-text" };
+  return { label: "오래됨", color: "bg-danger-soft text-danger-text" };
 }

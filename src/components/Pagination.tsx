@@ -33,7 +33,7 @@ export default function Pagination({
         </Link>
       ) : (
         <span
-          className="px-3 py-1.5 border border-border rounded text-stone-300 cursor-not-allowed"
+          className="px-3 py-1.5 border border-border rounded text-ink-4 opacity-50 cursor-not-allowed"
           aria-disabled="true"
         >
           ← 이전
@@ -55,7 +55,7 @@ export default function Pagination({
         </Link>
       ) : (
         <span
-          className="px-3 py-1.5 border border-border rounded text-stone-300 cursor-not-allowed"
+          className="px-3 py-1.5 border border-border rounded text-ink-4 opacity-50 cursor-not-allowed"
           aria-disabled="true"
         >
           다음 →
