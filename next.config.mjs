@@ -19,6 +19,11 @@ const nextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://cdn.jsdelivr.net",
       "connect-src 'self' https: wss:",
+      // PWA Service Worker + Web Manifest 모두 self
+      "worker-src 'self' blob:",
+      "manifest-src 'self'",
+      // <video>, <audio>는 거의 없지만 OCR 미리보기 blob에 대비
+      "media-src 'self' blob: data:",
       "frame-ancestors 'none'",
       "form-action 'self'",
       "base-uri 'self'",
