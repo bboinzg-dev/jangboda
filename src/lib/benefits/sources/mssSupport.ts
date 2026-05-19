@@ -2,6 +2,7 @@
 // 데이터셋 ID: 15157820. 기업마당 최신 지원사업 공고를 중앙부처/지자체/유관기관 통합 제공.
 // JSON/XML 모두 지원 (produces=application/json,application/xml). JSON 우선, 실패 시 XML 폴백.
 import { SOURCE_CODES, type BenefitRaw } from "../types";
+import { dataGoKrKey } from "@/lib/env";
 
 const BASE_URL = "https://apis.data.go.kr/1421000/bizinfo/pblancBsnsService";
 
@@ -44,7 +45,7 @@ function parsePeriod(period?: string): [Date | undefined, Date | undefined] {
 export async function fetchMssSupport(
   opts: { page?: number; perPage?: number } = {},
 ): Promise<BenefitRaw[]> {
-  const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
+  const serviceKey = dataGoKrKey();
   if (!serviceKey) {
     throw new Error("DATA_GO_KR_SERVICE_KEY 환경변수가 설정되지 않았습니다.");
   }

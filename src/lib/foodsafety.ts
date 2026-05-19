@@ -4,6 +4,7 @@
 //   - I2570: 가공식품 바코드정보 (136번) — 53,242건, 카테고리 대/중/소 분류 (검색용)
 
 import { logError } from "./observability";
+import { foodSafetyKey } from "./env";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
@@ -78,7 +79,7 @@ function rowI2570(r: I2570Row): FoodSafetyItem {
 }
 
 function getKey(): string | null {
-  return process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY ?? null;
+  return foodSafetyKey();
 }
 
 // 바코드 → 정확한 1건 lookup. C005 메인 + I2570로 카테고리 보강

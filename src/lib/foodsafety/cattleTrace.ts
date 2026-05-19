@@ -10,7 +10,7 @@
 // 식약처 API는 path filter로 임의의 출력 필드를 받아주는 경향이 있어
 // `ENTTY_IDNTFC_NO=값`을 일관되게 시도. 실패 시 결과는 0건으로 처리.
 
-import { readFileSync } from "node:fs";
+import { foodSafetyKey } from "@/lib/env";
 import { logError } from "@/lib/observability";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
@@ -78,17 +78,7 @@ type ApiResponse = {
 };
 
 function loadKey(): string | null {
-  const fromEnv =
-    process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const txt = readFileSync(".env", "utf8");
-    const m = txt.match(/KOREANNET_API_KEY\s*=\s*"?([^"\n\r]+)"?/);
-    if (m) return m[1].trim();
-  } catch {
-    // .env 없을 수 있음
-  }
-  return null;
+  return foodSafetyKey();
 }
 
 // 12자리 숫자 검증

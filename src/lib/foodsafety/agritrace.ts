@@ -6,7 +6,7 @@
 // 다른 foodsafety 모듈과 동일한 KOREANNET_API_KEY를 쓰지만,
 // 독립적으로 진화할 수 있게 self-contained로 작성 (haccp.ts 패턴 미러).
 
-import { readFileSync } from "node:fs";
+import { foodSafetyKey } from "@/lib/env";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 
@@ -46,16 +46,7 @@ type RawAgriDistRow = {
 
 // .env에서 KOREANNET_API_KEY 읽기 — process.env가 비어 있는 환경(스크립트 등)을 위해 fallback.
 function loadKey(): string | null {
-  const fromEnv = process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const txt = readFileSync(".env", "utf8");
-    const m = txt.match(/KOREANNET_API_KEY\s*=\s*"?([^"\n\r]+)"?/);
-    if (m) return m[1].trim();
-  } catch {
-    // .env 없을 수 있음
-  }
-  return null;
+  return foodSafetyKey();
 }
 
 function toAgriTraceRow(r: RawAgriTraceRow): AgriTraceRow | null {

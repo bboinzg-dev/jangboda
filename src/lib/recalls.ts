@@ -2,6 +2,8 @@
 // 엔드포인트: http://openapi.foodsafetykorea.go.kr/api/{KEY}/I0490/json/{startIdx}/{endIdx}
 // 인증키: KOREANNET_API_KEY (foodsafety.ts와 동일하게 재사용)
 
+import { foodSafetyKey } from "./env";
+
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
 const SERVICE_CODE = "I0490";
 const PAGE_SIZE = 1000;
@@ -67,8 +69,7 @@ type I0490Response = {
 };
 
 function loadKey(): string | null {
-  // foodsafety.ts와 동일한 패턴 — KOREANNET_API_KEY 우선
-  return process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY ?? null;
+  return foodSafetyKey();
 }
 
 // "YYYY-MM-DD HH:MM:SS.ffffff" → Date. 실패 시 현재 시각 반환.

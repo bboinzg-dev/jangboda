@@ -8,7 +8,7 @@
 // Food Safety Korea API는 미문서화 필드도 path filter로 대체로 허용.
 // 응답 받은 후 한 번 더 클라이언트단 필터(case-insensitive)로 안전성 확보.
 
-import { readFileSync } from "node:fs";
+import { foodSafetyKey } from "@/lib/env";
 import { logError } from "@/lib/observability";
 
 const BASE = "http://openapi.foodsafetykorea.go.kr/api";
@@ -62,16 +62,7 @@ export type SeafoodTraceResult = {
 
 // .env에서 KOREANNET_API_KEY 읽기 — process.env가 비어 있는 환경(스크립트 등) 대비 fallback.
 function loadKey(): string | null {
-  const fromEnv = process.env.KOREANNET_API_KEY ?? process.env.FOODSAFETY_API_KEY;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const txt = readFileSync(".env", "utf8");
-    const m = txt.match(/KOREANNET_API_KEY\s*=\s*"?([^"\n\r]+)"?/);
-    if (m) return m[1].trim();
-  } catch {
-    // .env 없을 수 있음
-  }
-  return null;
+  return foodSafetyKey();
 }
 
 // 이력추적등록번호 형식: 영숫자 10~15자 (식약처 통상 길이)

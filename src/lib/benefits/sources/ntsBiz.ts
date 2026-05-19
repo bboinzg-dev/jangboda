@@ -1,6 +1,8 @@
 // 출처: 국세청 사업자등록정보 진위확인/상태조회 / 엔드포인트: https://api.odcloud.kr/api/nts-businessman/v1/status / 갱신주기: 실시간
 // 카탈로그가 아니라 자격 검증용. 사업자등록번호로 휴/폐업 여부를 조회.
 
+import { dataGoKrKey } from "@/lib/env";
+
 const BASE_URL = "https://api.odcloud.kr/api/nts-businessman/v1/status";
 
 interface NtsStatusItem {
@@ -29,7 +31,7 @@ function normalizeBNo(bNo: string): string {
 export async function verifyBusinessRegistration(
   bNo: string,
 ): Promise<{ valid: boolean; status?: string; raw?: unknown }> {
-  const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
+  const serviceKey = dataGoKrKey();
   if (!serviceKey) {
     throw new Error("DATA_GO_KR_SERVICE_KEY 환경변수가 설정되지 않았습니다.");
   }

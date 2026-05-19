@@ -4,6 +4,8 @@
 // 인증: serviceKey (DATA_GO_KR_SERVICE_KEY 공통)
 // 데이터: 약 120개 카테고리 × 일별 N개 SKU (라면만 2,800건)
 
+import { dataGoKrKey } from "@/lib/env";
+
 const BASE = "http://apis.data.go.kr/1240000/bpp_openapi";
 
 export type StatsItem = {
@@ -22,7 +24,7 @@ export type StatsPriceRow = {
 };
 
 function getKey(): string | null {
-  return process.env.DATA_GO_KR_SERVICE_KEY ?? null;
+  return dataGoKrKey();
 }
 
 // XML → 간단 파서 (외부 의존성 없이)

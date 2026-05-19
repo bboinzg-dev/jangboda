@@ -6,7 +6,7 @@
 // 주의: foodsafety/ingredients.ts와는 별개 모듈. 다른 에이전트가 동시 작업 중이므로
 // foodsafety 경로는 건드리지 않음.
 
-import { readFileSync } from "node:fs";
+import { dataGoKrKey } from "@/lib/env";
 
 const ENDPOINT =
   "https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02";
@@ -62,18 +62,8 @@ type ApiResponse = {
   };
 };
 
-// .env에서 DATA_GO_KR_SERVICE_KEY 읽기 — process.env가 비어 있는 환경(스크립트 등)을 위해 fallback.
 function loadKey(): string | null {
-  const fromEnv = process.env.DATA_GO_KR_SERVICE_KEY;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const txt = readFileSync(".env", "utf8");
-    const m = txt.match(/DATA_GO_KR_SERVICE_KEY\s*=\s*"?([^"\n\r]+)"?/);
-    if (m) return m[1].trim();
-  } catch {
-    // .env 없을 수 있음
-  }
-  return null;
+  return dataGoKrKey();
 }
 
 // AMT_NUM* 문자열을 number | null로 파싱

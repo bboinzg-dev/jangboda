@@ -2,6 +2,7 @@
 // 데이터셋 ID: 15113297. 응답은 XML 표준 공공데이터 포맷(produces=application/xml).
 // 외부 의존성 없이 정규식으로 <item> 블록을 파싱.
 import { SOURCE_CODES, type BenefitRaw } from "../types";
+import { dataGoKrKey } from "@/lib/env";
 
 const BASE_URL = "https://apis.data.go.kr/1421000/mssBizService_v2/getbizList_v2";
 
@@ -42,7 +43,7 @@ function parseDate(value?: string): Date | undefined {
 export async function fetchMssBiz(
   opts: { page?: number; perPage?: number } = {},
 ): Promise<BenefitRaw[]> {
-  const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
+  const serviceKey = dataGoKrKey();
   if (!serviceKey) {
     throw new Error("DATA_GO_KR_SERVICE_KEY 환경변수가 설정되지 않았습니다.");
   }

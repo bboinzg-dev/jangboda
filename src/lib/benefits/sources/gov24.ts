@@ -1,6 +1,7 @@
 // 출처: 행정안전부 공공서비스(혜택)정보 / 엔드포인트: https://api.odcloud.kr/api/gov24/v3/serviceList / 갱신주기: 일 1회
 import { SOURCE_CODES, type BenefitRaw } from "../types";
 import { regionFromAgency } from "../regions";
+import { dataGoKrKey } from "@/lib/env";
 
 const BASE_URL = "https://api.odcloud.kr/api/gov24/v3/serviceList";
 
@@ -57,7 +58,7 @@ function parseDate(value?: string): Date | undefined {
 export async function fetchGov24(
   opts: { page?: number; perPage?: number } = {},
 ): Promise<BenefitRaw[]> {
-  const serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
+  const serviceKey = dataGoKrKey();
   if (!serviceKey) {
     throw new Error("DATA_GO_KR_SERVICE_KEY 환경변수가 설정되지 않았습니다.");
   }
