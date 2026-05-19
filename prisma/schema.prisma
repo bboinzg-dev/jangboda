@@ -110,7 +110,8 @@ model Price {
   // 사용자 탈퇴 시 contributorId만 NULL로 — 가격 데이터는 다른 사용자 비교용으로 익명 보존
   contributor   User?    @relation(fields: [contributorId], references: [id], onDelete: SetNull)
   receiptId     String?
-  receipt       Receipt? @relation(fields: [receiptId], references: [id])
+  // Receipt 삭제 시 Price 본체는 익명 유지 — 외부 가격(KAMIS·parsa)과 정책 통일
+  receipt       Receipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
   reports       PriceReport[]
   createdAt     DateTime @default(now())
   // 부가 메타데이터 — KAMIS 가격 변동(previousPrice/changeAmount/changePct), parsa 할인 기간 등
@@ -118,6 +119,8 @@ model Price {
 
   @@index([productId, storeId, createdAt])
   @@index([storeId])
+  // sync 출처별 집계/디버깅 쿼리용 (KAMIS만, naver만 등)
+  @@index([source])
 }
 
 // 영수증 (OCR 원본 + 파싱 결과)
@@ -244,6 +247,8 @@ model PriceAlert {
 
   @@unique([userId, productId])
   @@index([productId, active])
+  // 사용자별 활성 알림 스캔용 (cron 알림 체크 시 user 단위 full scan 방지)
+  @@index([userId, active])
 }
 
 // Web Push 구독 정보 (브라우저별로 1건씩)

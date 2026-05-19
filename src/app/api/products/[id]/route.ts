@@ -14,35 +14,31 @@ export async function GET(
     return NextResponse.json({ error: "상품을 찾을 수 없습니다" }, { status: 404 });
   }
 
-  // 매장별로 가장 최근 가격 1건씩 추출
-  const stores = await prisma.store.findMany({ include: { chain: true } });
-  const latestByStore = await Promise.all(
-    stores.map(async (s) => {
-      const latest = await prisma.price.findFirst({
-        where: { productId: product.id, storeId: s.id },
-        orderBy: { createdAt: "desc" },
-      });
-      return latest
-        ? {
-            storeId: s.id,
-            storeName: s.name,
-            chainName: s.chain.name,
-            address: s.address,
-            lat: s.lat,
-            lng: s.lng,
-            price: latest.listPrice ?? 0,
-            listPrice: latest.listPrice ?? 0,
-            paidPrice: latest.paidPrice,
-            promotionType: latest.promotionType,
-            source: latest.source,
-            updatedAt: latest.createdAt,
-          }
-        : null;
-    })
-  );
+  // 매장별 최신 가격 — distinct + orderBy로 N+1 회피
+  // Prisma는 PostgreSQL DISTINCT ON 지원: (storeId, createdAt DESC)로
+  // 매장당 최신 row 1건만 select. 매장 수가 100개여도 쿼리 1회.
+  const latestPrices = await prisma.price.findMany({
+    where: { productId: product.id },
+    distinct: ["storeId"],
+    orderBy: [{ storeId: "asc" }, { createdAt: "desc" }],
+    include: { store: { include: { chain: true } } },
+  });
 
-  const filtered = latestByStore
-    .filter((x): x is NonNullable<typeof x> => x !== null)
+  const filtered = latestPrices
+    .map((p) => ({
+      storeId: p.store.id,
+      storeName: p.store.name,
+      chainName: p.store.chain.name,
+      address: p.store.address,
+      lat: p.store.lat,
+      lng: p.store.lng,
+      price: p.listPrice ?? 0,
+      listPrice: p.listPrice ?? 0,
+      paidPrice: p.paidPrice,
+      promotionType: p.promotionType,
+      source: p.source,
+      updatedAt: p.createdAt,
+    }))
     .sort((a, b) => a.price - b.price);
 
   // 가격 추이 (최근 30일)
