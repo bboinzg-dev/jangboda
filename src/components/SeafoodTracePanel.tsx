@@ -190,7 +190,7 @@ export default function SeafoodTracePanel({
 
       {/* Error */}
       {!loading && error && (
-        <div className="text-sm text-red-600 bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
+        <div className="text-sm text-danger-text bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
