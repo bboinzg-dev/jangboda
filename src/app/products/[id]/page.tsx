@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatWon } from "@/lib/format";
 import { unitPriceLabel, unitPriceValue } from "@/lib/units";
 import { notFound } from "next/navigation";
+import { logError } from "@/lib/observability";
 import { isOnlineStore } from "@/components/SourceBadge";
 import { isOnlineOnlyChain } from "@/lib/onlineMalls";
 import PriceAlertButton from "@/components/PriceAlertButton";
@@ -20,6 +22,27 @@ import ProductImage from "@/components/ProductImage";
 
 // 가격은 보통 매시간 cron으로만 갱신 → 5분 ISR + 30분 SWR로 캐시 적중률 ↑
 export const revalidate = 300;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { name: true, brand: true, unit: true },
+  });
+  if (!product) return { title: "상품을 찾을 수 없어요 | 장보다" };
+  const fullName = `${product.brand ? `${product.brand} ` : ""}${product.name}`;
+  const title = `${fullName} 가격비교 | 장보다`;
+  const description = `${fullName}${product.unit ? ` (${product.unit})` : ""}의 마트별 최저가를 확인하세요.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+  };
+}
 
 type PriceRow = PriceRowData;
 
@@ -211,10 +234,7 @@ async function getProductDetail(id: string) {
 
     return { product, prices: valid, history, recalls };
   } catch (e) {
-    console.error("[products/[id]] getProductDetail error:", {
-      productId: id,
-      error: e instanceof Error ? { message: e.message, stack: e.stack } : e,
-    });
+    logError("products/[id]", e, { productId: id });
     throw e; // 에러 가시화 위해 다시 throw — error.tsx가 잡음
   }
 }

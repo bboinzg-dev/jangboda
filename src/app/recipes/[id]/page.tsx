@@ -1,9 +1,37 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import type { RecipeStep } from "@/lib/foodsafety/recipes";
 
 export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const recipe = await prisma.recipe.findUnique({
+    where: { id },
+    select: { name: true, hashtags: true },
+  });
+  if (!recipe) return { title: "레시피를 찾을 수 없어요 | 장보다" };
+  const tags = recipe.hashtags
+    ? recipe.hashtags
+        .split(/[#,\s]+/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+  const title = `${recipe.name} 레시피 | 장보다`;
+  const description = `${recipe.name} 만드는 법${tags.length > 0 ? ` — #${tags.join(" #")}` : ""}.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "article" },
+  };
+}
 
 export default async function RecipeDetailPage({
   params,

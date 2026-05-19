@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -15,6 +16,31 @@ import {
 import { evaluateOpenStatus } from "@/lib/storeHours";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const store = await prisma.store.findUnique({
+    where: { id },
+    select: {
+      name: true,
+      address: true,
+      chain: { select: { name: true } },
+    },
+  });
+  if (!store) return { title: "매장을 찾을 수 없어요 | 장보다" };
+  const chainName = store.chain?.name ?? "";
+  const title = `${chainName} ${store.name} 가격 | 장보다`;
+  const description = `${store.name} (${store.address})의 최신 가격 정보를 확인하세요.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+  };
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   mart: "🛒",

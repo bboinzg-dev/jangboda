@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -11,6 +12,28 @@ import BackButton from "@/components/benefits/BackButton";
 import TrackedLink from "@/components/TrackedLink";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const benefit = await prisma.benefit.findUnique({
+    where: { id },
+    select: { title: true, agency: true, summary: true },
+  });
+  if (!benefit) return { title: "혜택을 찾을 수 없어요 | 장보다" };
+  const title = `${benefit.title} | 장보다 정부혜택`;
+  const description = benefit.summary
+    ? stripHtml(benefit.summary).slice(0, 150)
+    : `${benefit.agency ?? "정부"} 지원 혜택 정보`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "article" },
+  };
+}
 
 // eligibilityRules에서 사람이 읽을 자유텍스트 키들
 // matcher가 해석하는 룰 외에 원본 안내문이 들어 있는 키들
