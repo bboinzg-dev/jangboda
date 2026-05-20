@@ -86,9 +86,10 @@ function daysUntil(end: Date | null | undefined): number | null {
 export default async function BenefitDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const benefit = await getBenefitDetail(params.id);
+  const { id } = await params;
+  const benefit = await getBenefitDetail(id);
   if (!benefit) return notFound();
 
   const { authed, match } = await getMatchForCurrentUser(benefit.id);

@@ -86,9 +86,10 @@ const STATUS_TABS: Array<{ key: StatusFilter; label: string }> = [
 export default async function BenefitsMatchesPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const f = parseSearchParams(searchParams);
+  const sp = await searchParams;
+  const f = parseSearchParams(sp);
   const user = await getCurrentUser();
 
   // 로그인 안 된 상태

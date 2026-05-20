@@ -108,9 +108,10 @@ async function getStoreDetail(id: string) {
 export default async function StoreDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const data = await getStoreDetail(params.id);
+  const { id } = await params;
+  const data = await getStoreDetail(id);
   if (!data) return notFound();
   const { store, items, isFallback } = data;
 

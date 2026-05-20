@@ -242,9 +242,10 @@ async function getProductDetail(id: string) {
 export default async function ProductDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const data = await getProductDetail(params.id);
+  const { id } = await params;
+  const data = await getProductDetail(id);
   if (!data) return notFound();
   const { product, prices, history, recalls } = data;
 

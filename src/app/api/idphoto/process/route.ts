@@ -32,7 +32,8 @@ const VALID_BG_KEYS = new Set<string>(BACKGROUND_OPTIONS.map((b) => b.key));
 // 응답: { imageBase64, mimeType, spec, backgroundKey }
 export async function POST(req: NextRequest) {
   // 1) 쿠키 게이트 — 통과해야만 Gemini API(유료) 호출
-  const cookie = cookies().get(IDPHOTO_COOKIE.name)?.value;
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(IDPHOTO_COOKIE.name)?.value;
   if (!isCookieValid(cookie)) {
     return NextResponse.json(
       { error: "비밀번호 인증이 필요합니다." },

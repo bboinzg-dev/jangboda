@@ -4,10 +4,11 @@ import { prisma } from "@/lib/db";
 // GET /api/products/[id] — 상품 상세 + 매장별 최신 가격
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { aliases: true },
   });
   if (!product) {

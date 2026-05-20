@@ -8,10 +8,10 @@ import CategoryForm from "@/components/benefits/CategoryForm";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: { category: string } };
+type Params = { params: Promise<{ category: string }> };
 
 export default async function CategoryOnboardingPage({ params }: Params) {
-  const categoryParam = params.category;
+  const { category: categoryParam } = await params;
 
   // 유효한 카테고리인지 확인
   const meta = CATEGORIES.find((c) => c.key === categoryParam);

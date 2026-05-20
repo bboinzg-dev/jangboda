@@ -11,8 +11,9 @@ export const metadata = {
   description: "Gemini로 증명사진을 한 번에 만들어드립니다.",
 };
 
-export default function IdPhotoPage() {
-  const cookie = cookies().get(IDPHOTO_COOKIE.name)?.value;
+export default async function IdPhotoPage() {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(IDPHOTO_COOKIE.name)?.value;
   const unlocked = isCookieValid(cookie);
 
   return (

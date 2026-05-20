@@ -15,9 +15,10 @@ const PatchSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   await requireAdmin();
+  const { id } = await params;
   const raw = await req.json().catch(() => ({}));
   const parsed = PatchSchema.safeParse(raw);
   if (!parsed.success) {
@@ -26,7 +27,7 @@ export async function PATCH(
 
   try {
     await prisma.sponsorSlot.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...parsed.data,
         endsAt:
@@ -39,21 +40,22 @@ export async function PATCH(
     });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    logError("api/admin/sponsors PATCH", e, { id: params.id });
+    logError("api/admin/sponsors PATCH", e, { id });
     return NextResponse.json({ error: "수정 실패" }, { status: 500 });
   }
 }
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   await requireAdmin();
+  const { id } = await params;
   try {
-    await prisma.sponsorSlot.delete({ where: { id: params.id } });
+    await prisma.sponsorSlot.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    logError("api/admin/sponsors DELETE", e, { id: params.id });
+    logError("api/admin/sponsors DELETE", e, { id });
     return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
   }
 }

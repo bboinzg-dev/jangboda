@@ -34,7 +34,7 @@ export async function uploadReceiptImage(
     throw new Error("Supabase 환경변수 미설정");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // 사용자 식별 — 로그인 사용자면 user.id, 아니면 "anon"
   let userDir = "anon";

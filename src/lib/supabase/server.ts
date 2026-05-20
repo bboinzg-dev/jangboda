@@ -2,8 +2,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export function createClient() {
-  const cookieStore = cookies();
+// Next 15+에서 cookies()는 async — createClient도 async 함수로 전환.
+// 모든 server-side 호출자는 await createClient() 패턴 사용해야 함.
+export async function createClient() {
+  const cookieStore = await cookies();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
@@ -31,7 +33,7 @@ export function createClient() {
 export async function getCurrentUser() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     return data.user ?? null;
   } catch {

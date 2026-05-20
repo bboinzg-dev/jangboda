@@ -11,11 +11,12 @@ const PAGE_SIZE = 30;
 export default async function AdminBenefitsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; source?: string; q?: string };
+  searchParams: Promise<{ page?: string; source?: string; q?: string }>;
 }) {
-  const page = Math.max(1, Number(searchParams.page ?? "1"));
-  const source = (searchParams.source ?? "").trim();
-  const q = (searchParams.q ?? "").trim();
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page ?? "1"));
+  const source = (sp.source ?? "").trim();
+  const q = (sp.q ?? "").trim();
   const skip = (page - 1) * PAGE_SIZE;
 
   const where = {

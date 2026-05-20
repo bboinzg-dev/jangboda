@@ -7,10 +7,11 @@ import { lookupIngredients } from "@/lib/foodsafety/ingredients";
 // 자주 변하지 않으므로 CDN에서 1시간 캐시 + 24시간 SWR.
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { name: true, manufacturer: true, brand: true },
   });
   if (!product) {

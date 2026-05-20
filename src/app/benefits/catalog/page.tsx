@@ -125,9 +125,10 @@ function buildQuery(
 export default async function BenefitsCatalogPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const f = parseSearchParams(searchParams);
+  const sp = await searchParams;
+  const f = parseSearchParams(sp);
   const { total, items } = await getBenefits(f);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 

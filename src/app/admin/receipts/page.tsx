@@ -17,10 +17,11 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
 export default async function AdminReceiptsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; status?: StatusFilter };
+  searchParams: Promise<{ page?: string; status?: StatusFilter }>;
 }) {
-  const page = Math.max(1, Number(searchParams.page ?? "1"));
-  const status = (searchParams.status ?? "all") as StatusFilter;
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page ?? "1"));
+  const status = (sp.status ?? "all") as StatusFilter;
   const skip = (page - 1) * PAGE_SIZE;
 
   const where = status === "all" ? {} : { status };

@@ -22,9 +22,9 @@ function getRequestIp(req: NextRequest): string {
 // body: { reason: string, suggestedPrice?: number }
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const priceId = params.id;
+  const { id: priceId } = await params;
   const body = await req.json().catch(() => ({}));
   const parsed = ReportSchema.safeParse(body);
   if (!parsed.success) {

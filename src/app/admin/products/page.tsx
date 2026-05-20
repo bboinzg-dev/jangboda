@@ -9,10 +9,11 @@ const PAGE_SIZE = 50;
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; q?: string };
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
-  const page = Math.max(1, Number(searchParams.page ?? "1"));
-  const q = (searchParams.q ?? "").trim();
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page ?? "1"));
+  const q = (sp.q ?? "").trim();
   const skip = (page - 1) * PAGE_SIZE;
 
   const where = q

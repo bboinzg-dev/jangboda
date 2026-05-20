@@ -13,15 +13,16 @@ export const dynamic = "force-dynamic";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
   }
+  const { id } = await params;
 
   const price = await prisma.price.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       productId: true,

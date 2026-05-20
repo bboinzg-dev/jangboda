@@ -46,10 +46,11 @@ function nutritionLooksWrong(n: NutritionLookupResult["nutrition"]): boolean {
 // CDN: 1일 s-maxage + 7일 SWR
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { name: true, brand: true, category: true, metadata: true },
   });
   if (!product) {
@@ -137,7 +138,7 @@ export async function GET(
   if (result.found && result.nutrition) {
     try {
       await prisma.product.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           metadata: {
             ...(meta ?? {}),
