@@ -133,8 +133,16 @@ html body {
 .ticker-track {
   animation: ticker-up var(--ticker-duration, 30s) linear infinite;
 }
-.ticker-container:hover .ticker-track {
+/* 호버 + 키보드 포커스 진입 시 일시정지 (WCAG 2.2.2 — 터치/키보드 사용자도 정지 가능) */
+.ticker-container:hover .ticker-track,
+.ticker-container:focus-within .ticker-track {
   animation-play-state: paused;
+}
+/* 모션 민감 사용자 — 자동 스크롤 비활성화 (정적 상단 항목만 노출, 컨테이너가 나머지 clip) */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
 }
 
 /* 레거시 유틸리티 — 새 코드는 src/components/ui/* 사용 */

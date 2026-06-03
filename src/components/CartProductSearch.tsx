@@ -132,6 +132,14 @@ export default function CartProductSearch({ products, onAdd, cartIds, loading }:
 
       {/* 결과 또는 인기 상품 */}
       <div>
+        {/* 검색 결과 개수/빈 상태를 스크린리더에 안내 (시각적으로는 숨김) */}
+        <div className="sr-only" aria-live="polite" role="status">
+          {loading || showingPopular
+            ? ""
+            : results.length === 0
+              ? `'${query || activeCategory}'에 맞는 상품이 없습니다`
+              : `${results.length}개 상품 검색됨`}
+        </div>
         {showingPopular && popular.length > 0 && (
           <div className="text-xs text-ink-3 mb-2">인기 상품</div>
         )}

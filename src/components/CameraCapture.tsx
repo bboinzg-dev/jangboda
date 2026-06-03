@@ -150,8 +150,8 @@ export default function CameraCapture({
 
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
         {error ? (
-          <div className="text-white text-center p-6">
-            <div className="text-3xl mb-2">📵</div>
+          <div role="alert" className="text-white text-center p-6">
+            <div className="text-3xl mb-2" aria-hidden="true">📵</div>
             <div className="text-sm mb-4">{error}</div>
             <button
               onClick={onCancel}

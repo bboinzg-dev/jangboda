@@ -106,7 +106,9 @@ export default function MatchActions({ benefitId, initialAction }: Props) {
         </button>
       </div>
       {error && (
-        <div className="mt-2 text-xs text-danger">{error}</div>
+        <div role="alert" aria-live="assertive" className="mt-2 text-xs text-danger">
+          {error}
+        </div>
       )}
     </div>
   );

@@ -163,6 +163,7 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
             <button
               onClick={register}
               disabled={busy}
+              aria-busy={busy}
               className="bg-brand-500 hover:bg-brand-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
             >
               {busy ? "등록 중..." : "알림 켜기"}
@@ -174,7 +175,11 @@ export default function PriceAlertButton({ productId, productName, currentMinPri
               취소
             </button>
           </div>
-          {msg && <div className="text-xs text-danger-text">{msg}</div>}
+          {msg && (
+            <div role="alert" aria-live="assertive" className="text-xs text-danger-text">
+              {msg}
+            </div>
+          )}
         </div>
       )}
     </div>

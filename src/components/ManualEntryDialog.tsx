@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const CATEGORIES = [
   "신선식품",
@@ -28,6 +29,7 @@ export default function ManualEntryDialog() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>(open);
 
   function reset() {
     setStoreName("");
@@ -109,9 +111,11 @@ export default function ManualEntryDialog() {
           onClick={close}
         >
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="manual-entry-title"
+            tabIndex={-1}
             className="bg-surface rounded-xl p-5 w-full max-w-md max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -200,7 +204,11 @@ export default function ManualEntryDialog() {
               </div>
 
               {error && (
-                <div className="text-sm text-danger bg-danger-soft border border-danger/30 rounded p-2">
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-sm text-danger bg-danger-soft border border-danger/30 rounded p-2"
+                >
                   {error}
                 </div>
               )}
