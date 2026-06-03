@@ -48,4 +48,12 @@ export default [
     files: ["src/lib/observability.ts"],
     rules: { "no-console": "off" },
   },
+
+  // prisma/scripts — tsx/node로 직접 실행하는 일회성 시드·유지보수 CLI 스크립트.
+  // console.log이 의도된 출력 메커니즘이라 no-console은 노이즈 → 끔.
+  // (앱 런타임 코드 src/app·src/lib는 여전히 observability 경유 강제)
+  {
+    files: ["prisma/**", "scripts/**"],
+    rules: { "no-console": "off" },
+  },
 ];

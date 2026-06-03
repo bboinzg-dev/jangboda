@@ -77,7 +77,6 @@ export default function SearchPage() {
       run(q, category);
     }, 300);
     return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, category]);
 
   const sorted = useMemo(() => {

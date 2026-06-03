@@ -126,7 +126,6 @@ export default function ScanPage() {
   // mount/unmount 정리
   useEffect(() => {
     return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function runDetectLoop() {
