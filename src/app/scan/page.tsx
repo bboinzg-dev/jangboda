@@ -63,6 +63,9 @@ export default function ScanPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<{ detect: (s: HTMLVideoElement) => Promise<BarcodeDetectorResult[]> } | null>(null);
   const scanLoopRef = useRef<number | null>(null);
+  // rAF 콜백은 호출 시점 렌더의 scanning state를 클로저로 고정(stale closure)하므로
+  // 루프 게이팅은 state가 아닌 ref로 해야 한다. scanning state는 UI 표시 전용.
+  const scanningRef = useRef(false);
 
   const [supported, setSupported] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -98,7 +101,8 @@ export default function ScanPage() {
       detectorRef.current = new w.BarcodeDetector({
         formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
       });
-      setScanning(true);
+      scanningRef.current = true;
+      setScanning(true); // UI 표시용
       runDetectLoop();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -115,6 +119,7 @@ export default function ScanPage() {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+    scanningRef.current = false;
     setScanning(false);
   }
 
@@ -126,7 +131,7 @@ export default function ScanPage() {
 
   function runDetectLoop() {
     const tick = async () => {
-      if (!videoRef.current || !detectorRef.current || !scanning) {
+      if (!videoRef.current || !detectorRef.current || !scanningRef.current) {
         return;
       }
       try {
