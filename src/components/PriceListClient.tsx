@@ -43,10 +43,10 @@ export type PriceRowData = {
 // 행사가 freshness — 영수증 등록 후 14일 이내만 "최근 행사" 표시
 // 행사 만료일을 알 수 없는 데이터의 신선도 한계 (정책 결정)
 const PROMO_FRESH_DAYS = 14;
-function isPromoFresh(updatedAt: Date | string): boolean {
+function isPromoFresh(updatedAt: Date | string, now: number): boolean {
   const t = typeof updatedAt === "string" ? new Date(updatedAt).getTime() : updatedAt.getTime();
   if (!Number.isFinite(t)) return false;
-  return Date.now() - t < PROMO_FRESH_DAYS * 24 * 60 * 60 * 1000;
+  return now - t < PROMO_FRESH_DAYS * 24 * 60 * 60 * 1000;
 }
 
 type Props = {
@@ -55,6 +55,8 @@ type Props = {
   emptyHint: React.ReactNode;
   /** 즐겨찾기 필터 토글 표시 여부 */
   showFavoriteFilter?: boolean;
+  /** 서버가 주입하는 렌더 시각(ms) — SSR/CSR 하이드레이션 일관성용 */
+  now: number;
 };
 
 type StoreSortBy = "unit" | "price" | "promo";
@@ -64,6 +66,7 @@ export default function PriceListClient({
   unit,
   emptyHint,
   showFavoriteFilter = true,
+  now,
 }: Props) {
   const { authed, ids: favoriteIds } = useFavorites();
   const [favoriteOnly, setFavoriteOnly] = useState(false);
@@ -78,7 +81,7 @@ export default function PriceListClient({
     if (
       p.paidPrice != null &&
       p.paidPrice < p.price &&
-      isPromoFresh(p.updatedAt)
+      isPromoFresh(p.updatedAt, now)
     ) {
       return p.paidPrice;
     }
@@ -244,7 +247,7 @@ export default function PriceListClient({
       ) : (
         <CollapsibleList initialCount={5} as="ul" innerClassName="space-y-2">
           {sorted.map((p, i) => {
-            const tag = freshnessTag(p.updatedAt);
+            const tag = freshnessTag(p.updatedAt, now);
             const savingsPct =
               p.price > minPrice
                 ? Math.round(((p.price - minPrice) / minPrice) * 100)
@@ -342,7 +345,7 @@ export default function PriceListClient({
                       행사 만료를 알 수 없어 14일 freshness 컷오프 적용. 통계에는 미포함. */}
                   {p.paidPrice != null &&
                     p.paidPrice < p.price &&
-                    isPromoFresh(p.updatedAt) && (
+                    isPromoFresh(p.updatedAt, now) && (
                       <div className="mt-1 inline-flex items-center gap-1 text-2xs text-danger-text bg-danger-soft border border-danger/30 rounded px-1.5 py-0.5 font-medium">
                         🎉 최근 행사가 {formatWon(p.paidPrice)}
                         {p.promotionType ? ` · ${p.promotionType}` : ""}
@@ -355,6 +358,7 @@ export default function PriceListClient({
                         count={p.trust.count}
                         latestDate={p.trust.latestDate}
                         source={p.source}
+                        now={now}
                       />
                     )}
                     <span
@@ -363,7 +367,7 @@ export default function PriceListClient({
                       {tag.label}
                     </span>
                     <span className="text-xs text-ink-3">
-                      {formatRelativeDate(p.updatedAt)}
+                      {formatRelativeDate(p.updatedAt, now)}
                     </span>
                     {savingsPct > 0 && (
                       <span className="text-xs text-danger">
@@ -399,7 +403,7 @@ export default function PriceListClient({
           </div>
           <ul className="space-y-1.5 px-3 pb-3 opacity-75">
             {outliers.map((p) => {
-              const tag = freshnessTag(p.updatedAt);
+              const tag = freshnessTag(p.updatedAt, now);
               return (
                 <li
                   key={p.priceId}
@@ -419,7 +423,7 @@ export default function PriceListClient({
                     <div className="text-3xs text-ink-3 mt-0.5">
                       {unitPriceLabel(p.price, unit) ?? "단가 계산 불가"}
                       {" · "}
-                      {tag.label} · {formatRelativeDate(p.updatedAt)}
+                      {tag.label} · {formatRelativeDate(p.updatedAt, now)}
                     </div>
                   </div>
                   <div className="text-base font-bold text-ink-2 shrink-0">

@@ -217,7 +217,9 @@ async function getProductDetail(id: string) {
     // 가격 추이용 history — 최근 60일, source != 'naver'.
     // outlier·시세·기타 온라인몰 컷은 ProductDetailPage 본체에서 (median 기준이
     // valid prices에 의존하므로 컴포넌트 단계에서 적용해야 헤더 통계와 기준 일치).
-    const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    // now: PriceListClient(클라이언트 컴포넌트)에 주입해 SSR/CSR 시각 일관성 확보
+    const now = Date.now();
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
     const history: HistoryPoint[] = allPrices
       .filter(
         (p) =>
@@ -232,7 +234,7 @@ async function getProductDetail(id: string) {
         source: p.source,
       }));
 
-    return { product, prices: valid, history, recalls };
+    return { product, prices: valid, history, recalls, now };
   } catch (e) {
     logError("products/[id]", e, { productId: id });
     throw e; // 에러 가시화 위해 다시 throw — error.tsx가 잡음
@@ -247,7 +249,7 @@ export default async function ProductDetailPage({
   const { id } = await params;
   const data = await getProductDetail(id);
   if (!data) return notFound();
-  const { product, prices, history, recalls } = data;
+  const { product, prices, history, recalls, now } = data;
 
   // 시세(KAMIS) + 통계청 데이터는 매장 가격이 아니라 시세 정보 → 헤더 통계 오염 방지 위해 제외
   const isMarketRate = (s: string) => s === "kamis" || s === "stats_official";
@@ -709,6 +711,7 @@ export default async function ProductDetailPage({
               </span>
             </h2>
             <PriceListClient
+              now={now}
               unit={product.unit}
               rows={offlineRows}
               emptyHint={
@@ -735,6 +738,7 @@ export default async function ProductDetailPage({
               </span>
             </h2>
             <PriceListClient
+              now={now}
               showFavoriteFilter={false}
               unit={product.unit}
               rows={onlineRows}
