@@ -241,7 +241,14 @@ function pickBestEnrichItem(
     if (isMultiPack(it.title)) continue;
     const score = tokenOverlapRatio(cleanedQuery, it.title);
     if (score < 0.65) continue; // 너무 낮으면 skip — 엉뚱한 매칭 방지
-    if (!best || score > best.score || (score === best.score && it.lprice > 0 && it.lprice < best.item.lprice)) {
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score &&
+        it.lprice > 0 &&
+        // 현재 best가 가격없음(0)이면 가격 있는 동점 후보로 교체 — 정상 등록 상품의 메타 우선
+        (best.item.lprice <= 0 || it.lprice < best.item.lprice))
+    ) {
       best = { item: it, score };
     }
   }

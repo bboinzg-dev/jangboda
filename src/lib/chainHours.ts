@@ -225,8 +225,10 @@ export function nextClosedDate(
       (closedDays === "2,4-sun" && (ordinal === 2 || ordinal === 4)) ||
       (closedDays === "1,3-sun" && (ordinal === 1 || ordinal === 3))
     ) {
-      // 호출자가 toLocaleDateString 등으로 표시하기 때문에 KST 날짜를 가진 Date 반환
-      return d;
+      // 실제 UTC instant로 되돌려 반환 — 호출자는 timeZone: "Asia/Seoul"로 표시해야
+      // 호스트 타임존과 무관하게 KST 날짜가 정확히 나온다. (이전: +9h 선시프트된 Date를
+      // timeZone 없이 렌더해 UTC 호스트에서만 맞고 KST 호스트에선 오후 시간대에 하루 어긋났음)
+      return new Date(d.getTime() - 9 * 60 * 60 * 1000);
     }
   }
   return null;

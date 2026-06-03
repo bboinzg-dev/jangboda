@@ -19,7 +19,7 @@ import ChainLogo from "@/components/ChainLogo";
 import { IconPin } from "@/components/icons";
 import { haversineKm } from "@/lib/distance";
 import { evaluateOpenStatus } from "@/lib/storeHours";
-import { isClosedToday, nextClosedDate } from "@/lib/chainHours";
+import { isClosedToday } from "@/lib/chainHours";
 
 // 카카오맵 키가 있으면 카카오, 없으면 Leaflet (OpenStreetMap)으로 자동 전환
 const HAS_KAKAO = !!process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY;

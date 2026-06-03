@@ -115,6 +115,31 @@ describe("matchUserItems", () => {
     expect(matches).toHaveLength(0);
   });
 
+  it("단일 일반 토큰(2자) 회수명은 같은 제조사 무관 제품에 fuzzy 매칭 안 됨", () => {
+    // 회수 "우유"(단일 2자 토큰)가 같은 제조사 "딸기 우유 1L"에 100% 과잉 매칭되던 케이스 방지
+    const item = mkItem({ barcode: null, manufacturer: "서울우유", name: "딸기 우유 1L" });
+    const recall = mkRecall({
+      barcode: null,
+      manufacturer: "서울우유",
+      productName: "우유",
+    });
+    const { byBarcode, byMfrNorm } = indexRecalls(
+      [recall],
+      new Set([normMfr("서울우유")]),
+    );
+    const matches = matchUserItems([item], byBarcode, byMfrNorm);
+    expect(matches).toHaveLength(0);
+  });
+
+  it("단일 브랜드성 토큰(3자↑)은 fuzzy 매칭 유지", () => {
+    const item = mkItem({ barcode: null, manufacturer: "농심", name: "신라면 멀티팩" });
+    const recall = mkRecall({ barcode: null, manufacturer: "농심", productName: "신라면" });
+    const { byBarcode, byMfrNorm } = indexRecalls([recall], new Set(["농심"]));
+    const matches = matchUserItems([item], byBarcode, byMfrNorm);
+    expect(matches).toHaveLength(1);
+    expect(matches[0].matchType).toBe("fuzzy");
+  });
+
   it("토큰 overlap 60% 미만이면 fallback 매칭 안 됨", () => {
     const item = mkItem({ barcode: null, manufacturer: "농심", name: "햇반 컵반" });
     const recall = mkRecall({

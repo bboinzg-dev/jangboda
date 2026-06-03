@@ -175,6 +175,7 @@ export default async function StoreDetailPage({
                   <div className="text-2xs text-warning-text">
                     📅 다음 정기 휴무:{" "}
                     {nextClosed.toLocaleDateString("ko-KR", {
+                      timeZone: "Asia/Seoul",
                       month: "numeric",
                       day: "numeric",
                       weekday: "short",

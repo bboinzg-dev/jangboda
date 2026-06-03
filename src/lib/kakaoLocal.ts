@@ -13,10 +13,16 @@ export type GeocodeResult = {
 // 주소/지명 검색 → 좌표 (예: "강남역" → 37.498, 127.027)
 export async function geocodeAddress(query: string): Promise<GeocodeResult | null> {
   return new Promise((resolve) => {
+    // SSR 가드를 window 접근보다 먼저 — 서버에서 window 참조 시 ReferenceError로
+    // Promise가 reject되어 가드가 무력화(dead guard)되던 문제 수정.
+    if (typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
     const maps = (window as unknown as {
       kakao?: { maps?: Record<string, unknown> & { services?: unknown } };
     }).kakao?.maps;
-    if (typeof window === "undefined" || !maps?.services) {
+    if (!maps?.services) {
       resolve(null);
       return;
     }

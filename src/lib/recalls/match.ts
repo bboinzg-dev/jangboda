@@ -126,6 +126,12 @@ export function matchUserItems(
     let best: { recall: RecallRow; score: number } | null = null;
     for (const r of candidates) {
       if (matchedRecallIds.has(r.id)) continue;
+      // 단일 토큰 회수명은 같은 제조사의 무관 제품을 과잉 매칭하기 쉽다
+      // (예: 회수 "우유"가 같은 제조사 "딸기 우유 1L"에 100% 매칭). 토큰이 1개뿐이면
+      // 그 토큰이 3자 이상(브랜드성: 신라면/초코파이 등)일 때만 fuzzy 허용해
+      // 2자 일반 카테고리(우유/만두/라면/김치 등)의 오탐을 차단한다.
+      const rTokens = nameTokens(r.productName);
+      if (rTokens.length <= 1 && (rTokens[0]?.length ?? 0) < 3) continue;
       const score = tokenOverlap(r.productName, item.name);
       if (score >= NAME_OVERLAP_THRESHOLD) {
         if (!best || score > best.score) best = { recall: r, score };

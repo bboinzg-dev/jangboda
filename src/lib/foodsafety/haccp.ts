@@ -153,7 +153,7 @@ export async function fetchHaccpPage(
     if (code && code !== "INFO-000") {
       return {
         rows: [],
-        total: typeof block.total_count === "string" ? parseInt(block.total_count) : block.total_count ?? 0,
+        total: typeof block.total_count === "string" ? parseInt(block.total_count) || 0 : block.total_count ?? 0,
         error: `${code} ${block.RESULT?.MSG ?? ""}`.trim(),
       };
     }
