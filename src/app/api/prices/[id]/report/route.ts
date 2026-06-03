@@ -9,15 +9,6 @@ const ReportSchema = z.object({
   suggestedPrice: z.number().int().positive().optional(),
 });
 
-// 요청 IP 추출 (rate limit 키로 사용)
-function getRequestIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  const real = req.headers.get("x-real-ip");
-  if (real) return real;
-  return "unknown";
-}
-
 // POST /api/prices/[id]/report — 가격 신고 등록
 // body: { reason: string, suggestedPrice?: number }
 export async function POST(
@@ -43,7 +34,6 @@ export async function POST(
   // 익명 허용 — 로그인 사용자면 reporterId 기록
   const user = await getCurrentUser();
   const reporterId = user?.id ?? null;
-  const ip = getRequestIp(req);
 
   // Rate limit — 같은 priceId에 같은 사용자/IP 24시간 1건
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -85,7 +75,9 @@ export async function POST(
       suggestedPrice: parsed.data.suggestedPrice,
       status: "pending",
     },
+    // 응답엔 클라이언트가 필요한 최소 필드만 — 내부 레코드/IP 노출 안 함
+    select: { id: true, status: true, createdAt: true },
   });
 
-  return NextResponse.json({ ok: true, report, anonymous: !reporterId, ip });
+  return NextResponse.json({ ok: true, report, anonymous: !reporterId });
 }

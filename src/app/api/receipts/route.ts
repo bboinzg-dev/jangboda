@@ -216,8 +216,12 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "필수 필드 누락" }, { status: 400 });
   }
 
+  // 확정(카탈로그 주입)은 로그인 필수 — 익명 업로드는 demo flow 전용.
   const user = await getCurrentUser();
-  const uploaderId = user?.id;
+  if (!user) {
+    return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+  }
+  const uploaderId = user.id;
 
   // 영수증 소유자 검증 + 중복 등록 방지
   const receipt = await prisma.receipt.findUnique({
@@ -227,7 +231,9 @@ export async function PATCH(req: NextRequest) {
   if (!receipt) {
     return NextResponse.json({ error: "영수증을 찾을 수 없음" }, { status: 404 });
   }
-  if (receipt.uploaderId && receipt.uploaderId !== uploaderId) {
+  // fail-closed: 익명(uploaderId=null) 영수증도 현재 사용자 소유가 아니므로 거부.
+  // (이전: `receipt.uploaderId && ...` 단락으로 null 영수증을 누구나 확정 가능했음)
+  if (receipt.uploaderId !== uploaderId) {
     return NextResponse.json({ error: "권한 없음" }, { status: 403 });
   }
   // 이미 verified 상태면 재등록 거부 (같은 영수증 두 번 등록 방지)

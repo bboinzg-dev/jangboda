@@ -1,6 +1,7 @@
 // /idphoto 비밀번호 게이트 — Gemini API 호출은 유료이므로 통과한 사용자에게만 허용.
 // 비밀번호 비교는 항상 서버에서 수행. 클라이언트는 통과 여부 쿠키 외 정보 모름.
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { logError } from "@/lib/observability";
 
 const COOKIE_NAME = "idphoto_unlock";
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 12; // 12시간
@@ -25,6 +26,15 @@ function sign(payload: string): string {
 }
 
 export function verifyPassword(input: string): boolean {
+  // 프로덕션에서 IDPHOTO_PASSWORD 미설정 시 하드코딩 폴백("5235")으로의 인증 우회를 차단.
+  // (미설정은 배포 오설정 — 유료 Gemini API 무제한 호출 방지를 위해 fail-closed)
+  if (process.env.NODE_ENV === "production" && !process.env.IDPHOTO_PASSWORD) {
+    logError(
+      "idphoto/auth",
+      new Error("IDPHOTO_PASSWORD 미설정 — 프로덕션 인증 거부"),
+    );
+    return false;
+  }
   const expected = getPassword();
   const a = Buffer.from(input ?? "", "utf8");
   const b = Buffer.from(expected, "utf8");

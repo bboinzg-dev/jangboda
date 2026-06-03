@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/observability";
 
 // POST /api/push/subscribe — 구독 등록
 export async function POST(req: NextRequest) {
@@ -28,6 +29,19 @@ export async function POST(req: NextRequest) {
       nickname: `사용자-${user.id.slice(0, 4)}`,
     },
   });
+
+  // 소유자 변경 탐지 — 정당한 공유기기 재로그인(A→B)은 막지 않고 관찰성으로만 기록.
+  // (유출된 endpoint를 악용한 비정상 재할당을 사후 추적하기 위함)
+  const existing = await prisma.pushSubscription.findUnique({
+    where: { endpoint },
+    select: { userId: true },
+  });
+  if (existing && existing.userId !== user.id) {
+    logEvent("push.subscription.reassigned", {
+      fromUserId: existing.userId,
+      toUserId: user.id,
+    });
+  }
 
   // 같은 endpoint면 user_id만 업데이트
   await prisma.pushSubscription.upsert({
