@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logError } from "@/lib/observability";
+import { z } from "zod";
+
+// 공개 엔드포인트라 임의 JSON을 받으므로 서버 검증 필수.
+// quantity NaN/음수/문자열·productId 비문자열이 들어오면 lineTotal·total이 NaN으로 오염됨.
+const CompareSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: z.number().int().positive(),
+      })
+    )
+    .min(1)
+    .max(100), // 봇 폭격 방지 상한 (prices 라우트 MAX_ITEMS 컨벤션)
+});
 
 // POST /api/cart/compare — 장바구니 입력 → 마트별 합계 비교
 // body: { items: [{ productId, quantity }] }
@@ -9,14 +24,15 @@ import { logError } from "@/lib/observability";
 // 지금: prisma 2번만 (stores + 모든 가격 한 번에) → 메모리에서 매핑
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const items = body.items as { productId: string; quantity: number }[];
-    if (!Array.isArray(items) || items.length === 0) {
+    const body = await req.json().catch(() => null);
+    const parsed = CompareSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "장바구니가 비어있음" },
+        { error: "장바구니 입력 형식 오류", detail: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const items = parsed.data.items;
 
     const productIds = Array.from(new Set(items.map((i) => i.productId)));
 

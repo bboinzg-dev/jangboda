@@ -7,9 +7,23 @@
 // foodsafety 경로는 건드리지 않음.
 
 import { dataGoKrKey } from "@/lib/env";
+import { logError } from "@/lib/observability";
 
 const ENDPOINT =
   "https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02";
+
+// data.go.kr 공통 인증/쿼터/접근 오류 코드 — '검색결과 없음'이 아니라 키 만료·일일 한도
+// 초과·미등록 IP 같은 설정 문제. 빈 items로 내려와 '영양정보 없음'으로 묻히면 모니터링
+// 사각지대가 되므로 관찰성(logError)으로 구분 기록한다. (03=NODATA는 정상 빈 결과라 제외)
+const DATAGOKR_AUTH_ERROR_CODES = new Set([
+  "20", // SERVICE ACCESS DENIED
+  "21", // TEMPORARILY DISABLED SERVICE KEY
+  "22", // LIMITED NUMBER OF SERVICE REQUESTS EXCEEDS
+  "30", // SERVICE KEY IS NOT REGISTERED
+  "31", // DEADLINE HAS EXPIRED
+  "32", // UNREGISTERED IP
+  "33", // UNSIGNED CALL
+]);
 
 export type NutritionFields = {
   energyKcal: number | null;
@@ -318,7 +332,18 @@ export async function lookupNutrition(args: {
     }
   }
 
-  if (tryList.length === 0) return emptyResult();
+  if (tryList.length === 0) {
+    // 인증/쿼터 오류(JSON resultCode 20~33 또는 잔존 XML_ERROR)면 '결과 없음'과 구분해 기록.
+    const code = firstAttempt.resultCode;
+    if (code === "XML_ERROR" || DATAGOKR_AUTH_ERROR_CODES.has(code)) {
+      logError(
+        "dataGoKr/nutrition",
+        new Error(`data.go.kr 인증/쿼터 오류 (resultCode=${code})`),
+        { query: candidates[0] },
+      );
+    }
+    return emptyResult();
+  }
 
   const { items, query } = tryList[0];
   const best = pickBestItem(items, query);

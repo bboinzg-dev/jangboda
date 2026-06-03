@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q")?.trim() ?? "";
   const category = searchParams.get("category") ?? undefined;
   const sort = searchParams.get("sort") ?? undefined;
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "200"), 1000);
+  // NaN/음수 가드 — 형제 라우트(recalls/recipes/health-functional)와 동일 패턴.
+  // ?limit=abc→200, ?limit=-5→1, ?limit=99999→1000 으로 정규화 (take에 NaN/음수 전달 차단)
+  const limitRaw = parseInt(searchParams.get("limit") ?? "200", 10);
+  const limit = Math.min(Math.max(Number.isFinite(limitRaw) ? limitRaw : 200, 1), 1000);
   const slim = searchParams.get("slim") === "true";
 
   const products = await prisma.product.findMany({
