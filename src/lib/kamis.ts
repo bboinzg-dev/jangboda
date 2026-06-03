@@ -104,14 +104,20 @@ async function callKamisAll(
   for (const cat of categories) {
     try {
       const items = await callKamisCategory(cat, date, certKey, certId);
+      // 같은 부류 응답에 동일 품목이 여러 행(품종/등급)으로 와도 첫 유효가격 행만 채택
+      const seen = new Set<string>();
       for (const it of items) {
+        // 정확 매칭만 사용 — 과거 양방향 부분일치(includes)는 "열무".includes("무")처럼
+        // 짧은 품목명(무 231 등)에 엉뚱한 품목 가격이 오매칭되는 버그가 있었음.
         const target = KAMIS_TARGETS.find(
           (t) =>
             t.itemCategory === cat &&
-            it.item_name &&
-            (it.item_name === t.name || it.item_name.includes(t.name) || t.name.includes(it.item_name))
+            (it.item_code === t.itemCode || // 1순위: 품목코드 정확 매칭
+              it.item_name === t.name || // 2순위: 품목명 정확 일치
+              (!!it.item_name && t.name.startsWith(`${it.item_name}(`))) // 3순위: "쇠고기"→"쇠고기(한우 등심)" 안전 보강
         );
         if (!target) continue;
+        if (seen.has(target.itemCode)) continue; // 이미 채택된 품목의 중복 행 무시
         // dpr1 = 당일, dpr2 = 1일전, dpr3 = 1주전 — 콤마/공백/대시 제거 후 파싱
         const parsePrice = (s: string | undefined): number | undefined => {
           if (!s) return undefined;
@@ -120,6 +126,7 @@ async function callKamisAll(
         };
         const price = parsePrice(it.dpr1);
         if (!price) continue;
+        seen.add(target.itemCode); // 유효 가격 확보 — 이 품목은 채택 완료
         const previousPrice = parsePrice(it.dpr2);
         const changeAmount =
           previousPrice !== undefined ? price - previousPrice : undefined;
