@@ -19,9 +19,8 @@ import {
   IconArrowRight,
 } from "@/components/icons";
 
-// ISR — 60초 캐시. 가격 데이터는 10분 단위로 충분.
-// 개인화 데이터는 OnboardingCard가 자체 client-side fetch (페이지 ISR 유지를 위해)
-export const revalidate = 60;
+// 휴면 상태에서는 DB가 중지될 수 있으므로 배포 빌드가 DB 가용성에 의존하지 않게 한다.
+export const dynamic = "force-dynamic";
 
 async function getHomeData() {
   // 모든 쿼리 병렬화 — Sydney 지연 ~150ms × N 누적 회피.

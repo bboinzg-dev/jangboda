@@ -2,7 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export const revalidate = 60; // 1분 캐시
+// 휴면 상태에서는 DB가 중지될 수 있으므로 빌드 시 이 엔드포인트를 정적 생성하지 않는다.
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const [kamisLatest, naverLatest, productCount, storeCount, priceCount] =
