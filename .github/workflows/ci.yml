@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   verify:
@@ -37,6 +37,9 @@ jobs:
 
       - name: Prisma schema validate
         run: npx prisma validate
+        env:
+          DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+          DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
 
       - name: Type check
         run: npx tsc --noEmit
@@ -54,5 +57,6 @@ jobs:
           # (실제 시크릿은 Vercel에서 주입, CI는 빌드 검증만)
           NEXT_PUBLIC_SUPABASE_URL: "https://ci.invalid"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy"
+          SUPABASE_SERVICE_ROLE_KEY: "ci-dummy-service-role"
           DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
           DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
