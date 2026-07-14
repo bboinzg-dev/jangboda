@@ -36,7 +36,12 @@ async function getSlots(placement: string, limit: number) {
 }
 
 export default async function AdSlot({ placement, limit = 1 }: Props) {
-  const slots = await getSlots(placement, limit);
+  let slots;
+  try {
+    slots = await getSlots(placement, limit);
+  } catch {
+    return null;
+  }
   if (slots.length === 0) return null;
 
   return (

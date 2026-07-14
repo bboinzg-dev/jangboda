@@ -6,8 +6,9 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [kamisLatest, naverLatest, productCount, storeCount, priceCount] =
-    await Promise.all([
+  try {
+    const [kamisLatest, naverLatest, productCount, storeCount, priceCount] =
+      await Promise.all([
       prisma.price.findFirst({
         where: { source: "kamis" },
         orderBy: { createdAt: "desc" },
@@ -21,15 +22,25 @@ export async function GET() {
       prisma.product.count(),
       prisma.store.count(),
       prisma.price.count(),
-    ]);
+      ]);
 
-  return NextResponse.json({
-    kamis: { lastSyncedAt: kamisLatest?.createdAt ?? null },
-    naver: { lastSyncedAt: naverLatest?.createdAt ?? null },
-    counts: {
-      products: productCount,
-      stores: storeCount,
-      prices: priceCount,
-    },
-  });
+    return NextResponse.json({
+      database: { available: true },
+      kamis: { lastSyncedAt: kamisLatest?.createdAt ?? null },
+      naver: { lastSyncedAt: naverLatest?.createdAt ?? null },
+      counts: {
+        products: productCount,
+        stores: storeCount,
+        prices: priceCount,
+      },
+    });
+  } catch {
+    // 휴면 운영으로 DB를 중지한 경우에도 UI가 상태 응답을 안전하게 처리하게 한다.
+    return NextResponse.json({
+      database: { available: false, state: "dormant" },
+      kamis: { lastSyncedAt: null },
+      naver: { lastSyncedAt: null },
+      counts: { products: 0, stores: 0, prices: 0 },
+    });
+  }
 }

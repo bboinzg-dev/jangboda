@@ -188,7 +188,20 @@ async function getHomeData() {
 }
 
 export default async function HomePage() {
-  const { tickerData, recallTickerData, recallWindowLabel, priceCards, stats } = await getHomeData();
+  let homeData: Awaited<ReturnType<typeof getHomeData>>;
+  try {
+    homeData = await getHomeData();
+  } catch {
+    // 의도적 휴면으로 DB가 중지된 동안에도 공개 홈의 기본 탐색은 유지한다.
+    homeData = {
+      tickerData: [],
+      recallTickerData: [],
+      recallWindowLabel: "최근 30일",
+      priceCards: [],
+      stats: { products: 0, stores: 0, prices: 0 },
+    };
+  }
+  const { tickerData, recallTickerData, recallWindowLabel, priceCards, stats } = homeData;
 
   return (
     <div className="space-y-8">

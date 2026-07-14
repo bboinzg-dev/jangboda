@@ -12,28 +12,33 @@ export default async function WeeklyDealsWidget() {
 
   // 최근 7일 + 행사가 (paidPrice 있고 listPrice보다 낮음) 가격 중 절약 큰 순
   // take를 후하게 잡고 메모리에서 product distinct + 절약률 정렬
-  const recentDeals = await prisma.price.findMany({
-    where: {
-      createdAt: { gte: sevenDaysAgo },
-      paidPrice: { not: null },
-      // listPrice는 항상 채워짐
-    },
-    take: 200,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      listPrice: true,
-      paidPrice: true,
-      promotionType: true,
-      productId: true,
-      product: {
-        select: { id: true, name: true, brand: true, unit: true, imageUrl: true },
+  let recentDeals;
+  try {
+    recentDeals = await prisma.price.findMany({
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        paidPrice: { not: null },
+        // listPrice는 항상 채워짐
       },
-      store: {
-        select: { name: true, chain: { select: { name: true } } },
+      take: 200,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        listPrice: true,
+        paidPrice: true,
+        promotionType: true,
+        productId: true,
+        product: {
+          select: { id: true, name: true, brand: true, unit: true, imageUrl: true },
+        },
+        store: {
+          select: { name: true, chain: { select: { name: true } } },
+        },
       },
-    },
-  });
+    });
+  } catch {
+    return null;
+  }
 
   // product 중복 제거 — 같은 상품은 가장 절약률 큰 가격만
   const bestByProduct = new Map<
