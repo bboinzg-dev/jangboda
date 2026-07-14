@@ -24,36 +24,23 @@ const TYPE_CODES: TypeKey[] = ["ALL", "LM", "SM", "CS", "DP"];
 
 const PAGE_SIZE = 30;
 
-export default async function ParsaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; type?: string; page?: string }>;
-}) {
-  const sp = await searchParams;
-  const q = (sp.q ?? "").trim();
-  const typeParam = (sp.type ?? "ALL").toUpperCase() as TypeKey;
-  const type: TypeKey = TYPE_CODES.includes(typeParam) ? typeParam : "ALL";
-  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
+type SearchResult = {
+  goodId: string;
+  goodName: string;
+  goodSmlclsCode: string | null;
+  goodTotalCnt: string | null;
+  goodTotalDivCode: string | null;
+  detailMean: string | null;
+};
 
-  // 카테고리 lookup map (소분류, 업태)
+async function loadParsaData(q: string, page: number) {
   const [smallCats, buCats] = await Promise.all([
     prisma.parsaCategory.findMany({ where: { classCode: "AL" } }),
     prisma.parsaCategory.findMany({ where: { classCode: "BU" } }),
   ]);
-  const smallCatMap = new Map(smallCats.map((c) => [c.code, c.codeName]));
-  const buCatMap = new Map(buCats.map((c) => [c.code, c.codeName]));
 
-  // 검색 결과 (q 있을 때만) + 페이지네이션
-  let searchResults: Array<{
-    goodId: string;
-    goodName: string;
-    goodSmlclsCode: string | null;
-    goodTotalCnt: string | null;
-    goodTotalDivCode: string | null;
-    detailMean: string | null;
-  }> = [];
+  let searchResults: SearchResult[] = [];
   let searchTotal = 0;
-
   if (q) {
     const where: Prisma.ParsaProductWhereInput = {
       goodName: { contains: q, mode: "insensitive" },
@@ -77,6 +64,74 @@ export default async function ParsaPage({
     ]);
   }
 
+  const [productCountByCategory, storesByType, totalStores] = await Promise.all([
+    prisma.parsaProduct.groupBy({
+      by: ["goodSmlclsCode"],
+      _count: { _all: true },
+    }),
+    prisma.parsaStore.groupBy({
+      by: ["entpTypeCode"],
+      _count: { _all: true },
+    }),
+    prisma.parsaStore.count(),
+  ]);
+
+  return {
+    smallCats,
+    buCats,
+    searchResults,
+    searchTotal,
+    productCountByCategory,
+    storesByType,
+    totalStores,
+  };
+}
+
+type ParsaData = Awaited<ReturnType<typeof loadParsaData>>;
+
+const EMPTY_PARSA_DATA: ParsaData = {
+  smallCats: [],
+  buCats: [],
+  searchResults: [],
+  searchTotal: 0,
+  productCountByCategory: [],
+  storesByType: [],
+  totalStores: 0,
+};
+
+export default async function ParsaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; type?: string; page?: string }>;
+}) {
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
+  const typeParam = (sp.type ?? "ALL").toUpperCase() as TypeKey;
+  const type: TypeKey = TYPE_CODES.includes(typeParam) ? typeParam : "ALL";
+  const page = Math.max(parseInt(sp.page ?? "1", 10) || 1, 1);
+
+  let databaseAvailable = true;
+  let data: ParsaData;
+  try {
+    data = await loadParsaData(q, page);
+  } catch {
+    databaseAvailable = false;
+    data = EMPTY_PARSA_DATA;
+  }
+  const {
+    smallCats,
+    buCats,
+    searchResults,
+    searchTotal,
+    productCountByCategory,
+    storesByType,
+    totalStores,
+  } = data;
+
+  // 카테고리 lookup map (소분류, 업태)
+  const smallCatMap = new Map(smallCats.map((c) => [c.code, c.codeName]));
+  const buCatMap = new Map(buCats.map((c) => [c.code, c.codeName]));
+
   const totalPages = Math.max(Math.ceil(searchTotal / PAGE_SIZE), 1);
   const safePage = Math.min(page, totalPages);
 
@@ -93,10 +148,6 @@ export default async function ParsaPage({
   // 인기 카테고리 — 소분류(AL) 중에서 highCode가 있는 leaf 노드 위주로,
   // 카테고리별 상품 수가 많은 순으로 12개.
   // 단순화를 위해 모든 소분류 카테고리를 가져와 상품 수와 매핑.
-  const productCountByCategory = await prisma.parsaProduct.groupBy({
-    by: ["goodSmlclsCode"],
-    _count: { _all: true },
-  });
   const countMap = new Map(
     productCountByCategory
       .filter((g) => g.goodSmlclsCode)
@@ -113,13 +164,6 @@ export default async function ParsaPage({
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 12);
-
-  // 업태별 매장 통계
-  const storesByType = await prisma.parsaStore.groupBy({
-    by: ["entpTypeCode"],
-    _count: { _all: true },
-  });
-  const totalStores = await prisma.parsaStore.count();
 
   // 업태 필터가 적용된 검색 결과 — q와 type이 동시에 있으면
   // ParsaPrice를 통해 매장 업태로 한 번 더 필터링한다.
@@ -146,6 +190,12 @@ export default async function ParsaPage({
           생필품 가격
         </p>
       </header>
+
+      {!databaseAvailable && (
+        <div role="status" className="card p-3 text-sm text-ink-3">
+          데이터 서버가 휴면 상태여서 지금은 검색 화면만 제공합니다.
+        </div>
+      )}
 
       {/* 검색 — 제출 시 page는 자연스럽게 1로 리셋(form에 page 없음) */}
       <form action="/parsa" method="get" className="flex gap-2">

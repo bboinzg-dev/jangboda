@@ -13,6 +13,50 @@ type SearchParams = {
 
 const PAGE_SIZE = 20;
 
+async function loadRecipes(where: Prisma.RecipeWhereInput, page: number) {
+  const [categoryRows, total] = await Promise.all([
+    prisma.recipe.findMany({
+      where: { category: { not: null } },
+      distinct: ["category"],
+      select: { category: true },
+      orderBy: { category: "asc" },
+    }),
+    prisma.recipe.count({ where }),
+  ]);
+  const categories = categoryRows
+    .map((row) => row.category)
+    .filter((value): value is string => !!value);
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const safePage = Math.min(page, totalPages);
+  const recipes = await prisma.recipe.findMany({
+    where,
+    orderBy: { name: "asc" },
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      cookingMethod: true,
+      caloriesKcal: true,
+      imageMain: true,
+      hashtags: true,
+    },
+  });
+
+  return { categories, total, totalPages, safePage, recipes };
+}
+
+type RecipesData = Awaited<ReturnType<typeof loadRecipes>>;
+
+const EMPTY_RECIPES_DATA: RecipesData = {
+  categories: [],
+  total: 0,
+  totalPages: 1,
+  safePage: 1,
+  recipes: [],
+};
+
 export default async function RecipesPage({
   searchParams,
 }: {
@@ -33,37 +77,15 @@ export default async function RecipesPage({
     ];
   }
 
-  // 카테고리 칩 + total count 병렬화 (둘 다 findMany/count 직전 의존성 없음)
-  const [categoryRows, total] = await Promise.all([
-    prisma.recipe.findMany({
-      where: { category: { not: null } },
-      distinct: ["category"],
-      select: { category: true },
-      orderBy: { category: "asc" },
-    }),
-    prisma.recipe.count({ where }),
-  ]);
-  const categories = categoryRows
-    .map((r) => r.category)
-    .filter((c): c is string => !!c);
-  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1);
-  const safePage = Math.min(page, totalPages);
-
-  const recipes = await prisma.recipe.findMany({
-    where,
-    orderBy: { name: "asc" },
-    skip: (safePage - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-    select: {
-      id: true,
-      name: true,
-      category: true,
-      cookingMethod: true,
-      caloriesKcal: true,
-      imageMain: true,
-      hashtags: true,
-    },
-  });
+  let databaseAvailable = true;
+  let data: RecipesData;
+  try {
+    data = await loadRecipes(where, page);
+  } catch {
+    databaseAvailable = false;
+    data = EMPTY_RECIPES_DATA;
+  }
+  const { categories, total, totalPages, safePage, recipes } = data;
 
   // 페이지 링크 빌더
   const linkFor = (overrides: Partial<SearchParams>) => {
@@ -88,6 +110,12 @@ export default async function RecipesPage({
           식약처 조리식품 레시피 DB. 메뉴명이나 재료로 검색해보세요.
         </p>
       </header>
+
+      {!databaseAvailable && (
+        <div role="status" className="card p-3 text-sm text-ink-3">
+          데이터 서버가 휴면 상태여서 지금은 검색 화면만 제공합니다.
+        </div>
+      )}
 
       {/* 검색창 — GET form */}
       <form className="flex gap-2" method="get">
